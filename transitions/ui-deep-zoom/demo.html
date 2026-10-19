@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.5;duration=0.6" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Target geometry is hard-coded so the zoom math is exact (see TARGET in the script). */
+      .kpis { position: absolute; left: 280px; top: 108px; width: 1368px; height: 168px; }
+      .kpis .card { height: 168px; }
+      .chart-card { position: absolute; left: 280px; top: 300px; width: 1368px; height: 588px; }
+      .chart-head { display: flex; align-items: center; gap: 24px; }
+      #target { position: absolute; right: 24px; top: 24px; width: 168px; padding: 0; }
+      #target-ring { position: absolute; right: 24px; top: 24px; width: 168px; height: 48px; border-radius: 10px; box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.45); opacity: 0; }
+      .chart-body { position: absolute; left: 24px; right: 24px; bottom: 24px; height: 440px; }
+
+      .cam { position: absolute; inset: 0; } /* camera layer: transforms go here, filters on the unscaled #s1 */
+      #s2 { background: #635bff; z-index: 2; } /* = the target's fill, so the handoff is seamless */
+      #s2 .copy { position: absolute; left: 160px; top: 150px; color: #fff; }
+      #s2 .eyebrow { color: rgba(255, 255, 255, 0.72); }
+      #s2 .h1 { margin-top: 16px; }
+      #s2 .panel { position: absolute; left: 160px; top: 400px; width: 1600px; height: 560px; padding: 40px 48px; }
+      #s2 .bars { height: 360px; margin-top: 40px; gap: 22px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: dashboard -->
+      <div id="s1" class="scene">
+        <div class="cam dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Analytics</div>
+            <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+            <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Analytics</div>
+              <div class="search">Search</div>
+              <div class="avatar sky">JL</div>
+            </div>
+          </div>
+          <div class="kpis grid-3">
+            <div class="card kpi"><div class="card-label">Revenue</div><div class="card-value">$128.4k</div><span class="delta up">+12.5%</span></div>
+            <div class="card kpi"><div class="card-label">Active users</div><div class="card-value">8,421</div><span class="delta up">+4.1%</span></div>
+            <div class="card kpi"><div class="card-label">Churn</div><div class="card-value">1.8%</div><span class="delta down">+0.2%</span></div>
+          </div>
+          <div class="card chart-card">
+            <div class="chart-head">
+              <div class="h3">Revenue over time</div>
+              <div class="legend"><span><i></i>This year</span></div>
+            </div>
+            <div id="target-ring"></div>
+            <div id="target" class="btn btn-primary"><span id="target-label">View report</span></div>
+            <svg class="chart-body chart-svg" viewBox="0 0 1320 440" preserveAspectRatio="none">
+              <line class="chart-grid" x1="0" y1="110" x2="1320" y2="110" />
+              <line class="chart-grid" x1="0" y1="220" x2="1320" y2="220" />
+              <line class="chart-grid" x1="0" y1="330" x2="1320" y2="330" />
+              <path id="area" class="chart-area" d="M0,360 C110,340 165,290 220,300 S330,340 440,270 S550,190 660,210 S770,260 880,180 S990,130 1100,150 S1210,100 1320,80 L1320,440 L0,440 Z" />
+              <path id="line" class="chart-line" d="M0,360 C110,340 165,290 220,300 S330,340 440,270 S550,190 660,210 S770,260 880,180 S990,130 1100,150 S1210,100 1320,80" stroke-dasharray="1600" stroke-dashoffset="1600" />
+            </svg>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- Scene B: report, living inside the button's fill -->
+      <div id="s2" class="scene next">
+        <div class="copy">
+          <div class="eyebrow">Revenue report</div>
+          <div class="h1">Q3 revenue up 24%</div>
+        </div>
+        <div class="card panel">
+          <div class="row" style="display: flex; justify-content: space-between; align-items: center">
+            <div class="h3">Monthly revenue</div>
+            <span class="pill indigo">Jan – Dec</span>
+          </div>
+          <div class="bars">
+            <div class="bar soft" style="height: 34%"></div><div class="bar soft" style="height: 42%"></div><div class="bar soft" style="height: 39%"></div>
+            <div class="bar soft" style="height: 51%"></div><div class="bar soft" style="height: 48%"></div><div class="bar soft" style="height: 60%"></div>
+            <div class="bar" style="height: 64%"></div><div class="bar" style="height: 72%"></div><div class="bar" style="height: 69%"></div>
+            <div class="bar" style="height: 81%"></div><div class="bar" style="height: 88%"></div><div class="bar" style="height: 100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
+      tl.fromTo(".chart-card", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.12);
+      tl.to("#line", { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 0.3);
+      tl.fromTo("#area", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.out" }, 0.6);
+
+      // ---- UI Deep Zoom ----
+      const T = 1.5; // transition start
+      const D = 0.6; // zoom duration (18f @ 30fps)
+      const TARGET = { x: 1575, y: 405, w: 168, h: 48 }; // #target's box in scene px (matches CSS)
+      const cx = TARGET.x + TARGET.w / 2, cy = TARGET.y + TARGET.h / 2;
+      const COVER = Math.max(1920 / TARGET.w, 1080 / TARGET.h); // scale at which the target fills the frame
+      const S = COVER * 1.35; // overshoot so the rounded corners leave the frame
+
+      // Zoom in log space: scale = S^accel(p). A linear scale tween crawls then lurches;
+      // this keeps the perceived speed smooth and accelerating into the target.
+      const accel = gsap.parseEase("power2.in");
+      const logZoom = (p) => (Math.pow(S, accel(p)) - 1) / (S - 1);
+      const tCover = T + D * Math.sqrt(Math.log(COVER) / Math.log(S)); // inverse of power2.in
+
+      // Telegraph the target so the eye is already there when the camera moves.
+      tl.fromTo("#target-ring", { opacity: 0.9, scale: 1 }, { opacity: 0, scale: 1.25, duration: 0.5, ease: "power2.out" }, T - 0.45);
+      tl.to("#target", { scale: 0.96, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.24);
+
+      tl.set("#s1 .cam", { transformOrigin: `${cx}px ${cy}px` }, 0);
+      tl.to("#s1 .cam", { scale: S, duration: D, ease: logZoom }, T);
+      tl.to("#s1 .cam", { x: 960 - cx, y: 540 - cy, duration: D, ease: "power2.inOut" }, T);
+      tl.to("#target-label", { opacity: 0, duration: D * 0.35, ease: "power1.in" }, T); // text would smear at 30×
+      // Motion blur in screen space: blur on a scaled element is multiplied by its scale (6px × 30 = 180px).
+      tl.to("#s1", { filter: "blur(4px)", duration: D * 0.45, ease: "power1.in" }, T + D * 0.55);
+
+      // Handoff: the frame is solid #635bff from tCover; scene B shares that background.
+      tl.set("#s2", { opacity: 1 }, tCover);
+      tl.set("#s1", { visibility: "hidden" }, T + D);
+
+      // ---- Scene B entrance: content keeps travelling toward camera, decelerating ----
+      tl.fromTo("#s2 .copy", { scale: 1.4, opacity: 0, transformOrigin: "0% 0%" }, { scale: 1, opacity: 1, duration: 0.7, ease: "expo.out" }, tCover);
+      // The white panel rises in solid: fading white over indigo passes through a muddy lavender.
+      tl.fromTo("#s2 .panel", { y: 640, scale: 1.08, transformOrigin: "50% 0%" }, { y: 0, scale: 1, duration: 0.8, ease: "expo.out" }, tCover + 0.06);
+      tl.fromTo("#s2 .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.6, stagger: 0.035, ease: "power3.out" }, tCover + 0.25);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
