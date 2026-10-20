@@ -2,14 +2,14 @@
 name: kinetic-type-mask
 title: Kinetic Typography Mask
 category: masking
-duration: 1.4s (42f @ 30fps: 21f slam + hold, 21f push)
+duration: 1.4s (84f @ 60fps: 42f slam + hold, 42f push)
 energy: high
 description: A huge headline slams in with the next scene visible only inside its letterforms, then the camera pushes through one letter's stem until scene B fills the frame.
 ---
 
 # Kinetic Typography Mask (type-window push-through)
 
-A short claim slams onto scene A, and its letters are windows: scene B is already playing inside the type. The camera then pushes into the stem of one letter until the stem is wider than the frame, so scene B becomes the whole picture. The headline states the promise, and the push delivers the screen that proves it. The camera push alone is 21f; the first 21f are the slam and the hold.
+A short claim slams onto scene A, and its letters are windows: scene B is already playing inside the type. The camera then pushes into the stem of one letter until the stem is wider than the frame, so scene B becomes the whole picture. The headline states the promise, and the push delivers the screen that proves it. The camera push alone is 42f; the first 42f are the slam and the hold.
 
 ![contact sheet](contact.png)
 
@@ -22,16 +22,16 @@ A short claim slams onto scene A, and its letters are windows: scene B is alread
 
 Avoid it for copy longer than about 3 words, or when it would be the third type moment in a short video. Use [container-mask-expand](../container-mask-expand/SKILL.md) to reveal through a UI panel instead.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Slam | 0 → 5, 4 → 9 | "SHIP", then "FASTER" 4f later, appear fully opaque at 2× and drop to 1× (`power1.in`), each with a 0.985 give (2f + 2f). Scene B switches on at frame 0, but only inside the letters. |
-| Knock-back | 5 → 19 | On the first impact, scene A scales to 0.94, blurs 10px and gets a 55% `--bg` veil (`power3.out`). It becomes a quiet backdrop. |
-| Hold | 9 → 21 | Scene B moves inside the type: bars grow (frames 6 → 31) and the UI slides up 60px. The type creeps 1 → 1.04× around the I stem (`sine.in`), aiming the push. |
-| Push | 21 → 42 | The mask scales 1.04 → 28.7× around the I stem in **log space** (`power2.in` on the exponent, which is cubic) and pans the stem to frame center (`power2.inOut`). H and P stems fly past. Scene B only drifts 0.88 → 1 (far plane). Edge blur ramps 0 → 8px over frames 32 → 42. |
-| Cover | ~41.4, 42 | The stem's width passes 1920px at frame 41.4 (frame 41 is the last with slivers of scene A). At frame 42 the mask goes solid and scene A is hidden. |
-| Land | 40 → 58 | Scene B's headline rises 40px and fades in (`expo.out`), and the Live pill pops (`back.out(1.6)`). Scene B keeps settling to 1× until frame 55. |
+| Slam | 0 → 10, 8 → 18 | "SHIP", then "FASTER" 8f later, appear fully opaque at 2× and drop to 1× (`power1.in`), each with a 0.985 give (4f + 4f). Scene B switches on at frame 0, but only inside the letters. |
+| Knock-back | 10 → 37 | On the first impact, scene A scales to 0.94, blurs 10px and gets a 55% `--bg` veil (`power3.out`). It becomes a quiet backdrop. |
+| Hold | 18 → 42 | Scene B moves inside the type: bars grow (frames 12 → 64) and the UI slides up 60px. The type creeps 1 → 1.04× around the I stem (`sine.in`), aiming the push. |
+| Push | 42 → 84 | The mask scales 1.04 → 28.7× around the I stem in **log space** (`power2.in` on the exponent, which is cubic) and pans the stem to frame center (`power2.inOut`). H and P stems fly past. Scene B only drifts 0.88 → 1 (far plane). Edge blur ramps 0 → 8px over frames 65 → 84. |
+| Cover | ~82.9, 84 | The stem's width passes 1920px at frame 82.9 (frame 82 is the last with slivers of scene A). At frame 84 the mask goes solid and scene A is hidden. |
+| Land | 81 → 117 | Scene B's headline rises 40px and fades in (`expo.out`), and the Live pill pops (`back.out(1.6)`). Scene B keeps settling to 1× until frame 111. |
 
 ## Build it
 
@@ -88,27 +88,27 @@ The full working composition is in [demo.html](demo.html).
 ## Tuning
 
 - **Push (`DP`).** 0.6–0.8s. Below 0.6s the passing letters become a blur, and above 0.8s the cubic start feels like a stall.
-- **Hold (`TP − T`).** 10–15f after the last word lands. The first ~8f of the push barely move the type, so it stays readable into the push.
+- **Hold (`TP − T`).** 20–30f after the last word lands. The first ~16f of the push barely move the type, so it stays readable into the push.
 - **Overshoot (`S = COVER × 1.2–1.4`).** Raise it if you raise the edge blur, so the soft stem edges clear the frame before the mask goes solid.
-- **Slam.** Start at 1.6–2.2× and land in 4–6f. Stagger words by 3–5f so the second lands while the first is still giving.
+- **Slam.** Start at 1.6–2.2× and land in 8–12f. Stagger words by 6–10f so the second lands while the first is still giving.
 - **Target letter.** Pick a straight stem near center (I, H, L, T, E). The stem's width sets `COVER`, and a round letter (O, S) leaves curved slivers in the cover frame.
 
 ## Pitfalls
 
-- **GSAP `power2` is cubic, not quadratic.** Inverting `power2.in` with `Math.sqrt` predicts a cover several frames early. Measured here, the stem passed 1920px at frame 41.4, which matches `Math.cbrt`. Use `Math.cbrt`, or hand off at the end of the push.
-- **Opacity ramp on the slam.** Even a 2f fade leaves one frame of grey, semi-transparent letters over scene A, which reads as a double exposure. Show the words solid and let the scale do the impact.
+- **GSAP `power2` is cubic, not quadratic.** Inverting `power2.in` with `Math.sqrt` predicts a cover several frames early. Measured here, the stem passed 1920px at frame 82.9, which matches `Math.cbrt`. Use `Math.cbrt`, or hand off at the end of the push.
+- **Opacity ramp on the slam.** Even a 4f fade leaves frames of grey, semi-transparent letters over scene A, which reads as a double exposure. Show the words solid and let the scale do the impact.
 - **Letters filled with flat `--ink`.** They read as ordinary dark text, not windows. Give scene B a background with variation (two radial glows here) and live content that crosses letter edges.
 - **Scaling scene B with the mask.** If scene B rides the same 28× camera, you land on a blurred crop. Scale only the mask. Scene B is the far plane (0.88 → 1), so at cover it is already at 1:1.
 - **Blur on the scaled group.** `stdDeviation` on `#push-zoom` is multiplied by the zoom (8px × 28). Put the filter on the translate-only `#push-pan`.
-- **`power2.in` on the slam.** It's cubic too, so the word hangs at about 2× for 3 frames and then pops. `power1.in` spreads the shrink over all 5 frames.
+- **`power2.in` on the slam.** It's cubic too, so the word hangs at about 2× for 6 frames and then pops. `power1.in` spreads the shrink over all 10 frames.
 
 ## Variants
 
 - **Counter dive.** Reverse the roles. Solid letters cover scene A, scene B shows only through the counter of an O, P or A, and the push goes through the hole.
 - **Wordmark portal.** Push through a stem of the product's wordmark at the end of a brand open.
-- **Single word.** One slam ("LIVE"), no second word. Hold 10f, then push through its first stem.
+- **Single word.** One slam ("LIVE"), no second word. Hold 20f, then push through its first stem.
 - **Light landing.** Scene B on `--surface` with a dark veil over scene A, so white UI glows inside the letters.
 
 ## Sound
 
-A low sub hit on each slam landing (frames 5 and 9), then a rising air whoosh that peaks at the cover (frame 42).
+A low sub hit on each slam landing (frames 10 and 18), then a rising air whoosh that peaks at the cover (frame 84).

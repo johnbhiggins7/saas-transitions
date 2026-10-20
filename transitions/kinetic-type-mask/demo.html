@@ -150,11 +150,11 @@
       tl.fromTo(".release .row", { x: -16, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: "power3.out" }, 0.3);
 
       // ---- Kinetic Type Mask ----
-      const T = 1.4;           // slam start (transition frame 0 = video frame 42)
-      const SLAM = 0.17;       // each word: 5f
-      const W2 = 0.13;         // "FASTER" starts 4f after "SHIP"
-      const TP = T + 0.7;      // push start (transition frame 21): 12f of headline after the second slam; the cubic push keeps it legible ~8f more
-      const DP = 0.7;          // push: 21f
+      const T = 1.4;           // slam start (transition frame 0 = video frame 84)
+      const SLAM = 0.17;       // each word: 10f
+      const W2 = 0.13;         // "FASTER" starts 8f after "SHIP"
+      const TP = T + 0.7;      // push start (transition frame 42): 24f of headline after the second slam; the cubic push keeps it legible ~16f more
+      const DP = 0.7;          // push: 42f
       const D = TP + DP - T;   // whole transition, slam to cover (1.4s)
 
       // Stem of the I in SHIP: the door the camera goes through. Center and size in mask px (Inter 900, 440px), hard-coded.
@@ -176,7 +176,7 @@
       tl.set("#s2", { opacity: 1 }, T);
       [["#w1", T], ["#w2", T + W2]].forEach(([w, t]) => {
         tl.set(w, { opacity: 1 }, t);
-        tl.fromTo(w, { scale: 2 }, { scale: 1, duration: SLAM, ease: "power1.in", immediateRender: false }, t); // quad: power2.in would hang at 2× for 3f
+        tl.fromTo(w, { scale: 2 }, { scale: 1, duration: SLAM, ease: "power1.in", immediateRender: false }, t); // quad: power2.in would hang at 2× for 6f
         tl.to(w, { scale: 0.985, duration: 0.07, ease: "power2.out", yoyo: true, repeat: 1 }, t + SLAM); // impact give
       });
       // Scene A is knocked back on the first impact: it recedes, softens and washes toward --bg.
@@ -197,7 +197,7 @@
       tl.to("#s2 .cam", { scale: 1, duration: DP + 0.45, ease: "power3.inOut" }, TP);
       tl.fromTo("#edge-blur-fx", { attr: { stdDeviation: 0 } }, { attr: { stdDeviation: 8 }, duration: DP * 0.45, ease: "power2.in" }, TP + DP * 0.55);
 
-      // Handoff: the stem spans the frame at T + D·cbrt(ln(COVER/CREEP)/ln(S/CREEP)) ≈ frame 41.4; at T + D it is 1.3× wider.
+      // Handoff: the stem spans the frame at T + D·cbrt(ln(COVER/CREEP)/ln(S/CREEP)) ≈ frame 82.9; at T + D it is 1.3× wider.
       // Make the mask solid (so later tweaks to S can't open a gap) and drop scene A.
       tl.set("#mask-fill", { opacity: 1 }, T + D);
       tl.set("#s1", { visibility: "hidden" }, T + D);
