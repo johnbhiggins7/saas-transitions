@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.7" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Each scene: unscaled .focus carries the filter (blur + brightness, stays in screen px),
+         .cam inside it carries the transform. Backgrounds stay on .scene, outside the filter. */
+      .focus { position: absolute; inset: 0; }
+      .cam { position: absolute; inset: 0; }
+
+      /* ---- Scene A: Q3 review dashboard ---- */
+      .kpis { position: absolute; left: 280px; top: 108px; width: 1368px; height: 168px; }
+      .kpis .card { height: 168px; }
+      .chart-card { position: absolute; left: 280px; top: 300px; width: 1368px; height: 588px; }
+      .chart-head { display: flex; align-items: center; gap: 24px; }
+      .chart-head .pill { margin-left: auto; }
+      .chart-body { position: absolute; left: 24px; right: 24px; bottom: 24px; height: 440px; }
+      /* Endpoint of the line: card px (1344, 204) = frame px (1744, 584). */
+      #end-dot { position: absolute; left: 1332px; top: 192px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); border: 5px solid #fff; box-shadow: 0 0 0 6px rgba(99, 91, 255, 0.18); }
+      #end-tag { position: absolute; left: 1088px; top: 128px; height: 40px; padding: 0 16px; border-radius: 20px; background: var(--accent); color: #fff; font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 6px 16px rgba(99, 91, 255, 0.32); }
+      #end-tag b { color: #dcdaff; font-weight: 700; }
+
+      /* ---- Scene B: chapter card ---- */
+      #s2 { background: radial-gradient(1400px 820px at 50% 38%, #e6e4ff 0%, #eeedff 40%, #f6f8fb 100%); z-index: 2; }
+      #s2 .brand { position: absolute; left: 160px; top: 88px; padding: 0; }
+      #s2 .copy { position: absolute; left: 0; right: 0; top: 196px; text-align: center; }
+      #s2 .display { margin-top: 22px; }
+      #s2 .body { margin-top: 22px; font-size: 26px; }
+      .flow { position: absolute; left: 160px; top: 572px; width: 1600px; height: 176px; }
+      .node { position: absolute; top: 0; width: 460px; height: 176px; padding: 32px; display: grid; grid-template-columns: 64px 1fr; column-gap: 22px; align-content: start; }
+      .node .tile { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; grid-row: span 3; }
+      .node .small { font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 14px; }
+      .node .h3 { margin-top: 6px; font-size: 26px; }
+      .node .sub { margin-top: 8px; font-size: 17px; color: var(--ink-2); }
+      .wire { position: absolute; top: 78px; width: 110px; height: 20px; overflow: visible; }
+      .wire line { stroke: var(--accent); stroke-width: 4; stroke-linecap: round; }
+      .wire circle { fill: var(--accent); }
+      #live { position: absolute; left: 0; right: 0; top: 800px; display: flex; justify-content: center; }
+      #live .pill { height: 40px; padding: 0 18px; font-size: 17px; gap: 10px; }
+      #live i { width: 10px; height: 10px; border-radius: 50%; background: var(--green); display: inline-block; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: the Q3 review that closes chapter one -->
+      <div id="s1" class="scene">
+        <div id="f1" class="focus">
+          <div id="c1" class="cam dots">
+            <div class="app">
+              <aside class="app-sidebar">
+                <div class="brand"><span class="brand-mark"></span>Northwind</div>
+                <div class="nav-item"><span class="nav-icon"></span>Home</div>
+                <div class="nav-item active"><span class="nav-icon"></span>Analytics</div>
+                <div class="nav-item"><span class="nav-icon"></span>Automations</div>
+                <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+                <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+              </aside>
+              <div class="app-body">
+                <div class="app-topbar">
+                  <div class="page-title">Q3 review</div>
+                  <div class="search">Search</div>
+                  <div class="avatar sky">JL</div>
+                </div>
+              </div>
+              <div class="kpis grid-3">
+                <div class="card kpi"><div class="card-label">Revenue</div><div class="card-value">$412.8k</div><span class="delta up">+24.0%</span></div>
+                <div class="card kpi"><div class="card-label">Net retention</div><div class="card-value">118%</div><span class="delta up">+6 pts</span></div>
+                <div class="card kpi"><div class="card-label">Churn risk</div><div class="card-value">5.4%</div><span class="delta down">+1.1%</span></div>
+              </div>
+              <div class="card chart-card">
+                <div class="chart-head">
+                  <div class="h3">Revenue, Jul – Sep</div>
+                  <div class="legend"><span><i></i>This quarter</span></div>
+                  <span class="pill indigo">Q3</span>
+                </div>
+                <svg class="chart-body chart-svg" viewBox="0 0 1320 440" preserveAspectRatio="none">
+                  <line class="chart-grid" x1="0" y1="110" x2="1320" y2="110" />
+                  <line class="chart-grid" x1="0" y1="220" x2="1320" y2="220" />
+                  <line class="chart-grid" x1="0" y1="330" x2="1320" y2="330" />
+                  <path id="area" class="chart-area" d="M0,370 C110,350 165,300 220,310 S330,330 440,280 S550,210 660,225 S770,250 880,190 S990,140 1100,150 S1210,100 1320,80 L1320,440 L0,440 Z" />
+                  <path id="line" class="chart-line" d="M0,370 C110,350 165,300 220,310 S330,330 440,280 S550,210 660,225 S770,250 880,190 S990,140 1100,150 S1210,100 1320,80" stroke-dasharray="1600" stroke-dashoffset="1600" />
+                </svg>
+                <div id="end-tag">Q3 closed <b>+24%</b></div>
+                <div id="end-dot"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B: chapter two opens -->
+      <div id="s2" class="scene next">
+        <div id="f2" class="focus">
+          <div id="c2" class="cam">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="copy">
+              <div class="eyebrow">Chapter 02 · Automations</div>
+              <div class="display">Now let it run itself.</div>
+              <div class="body">Turn the Q3 signals into workflows that act on their own.</div>
+            </div>
+            <div class="flow">
+              <div class="card node" style="left: 0">
+                <div class="tile" style="background: #fff4e0">
+                  <svg width="30" height="30" viewBox="0 0 24 24"><path d="M13 2 L4 14 H11 L10 22 L20 9 H13 Z" fill="#f59e0b" /></svg>
+                </div>
+                <div class="small" style="color: #b26a00">When</div>
+                <div class="h3">Churn risk &gt; 5%</div>
+                <div class="sub">Checked every hour</div>
+              </div>
+              <svg class="wire" style="left: 460px" viewBox="0 0 110 20"><line class="wire-line" x1="14" y1="10" x2="96" y2="10" stroke-dasharray="82" stroke-dashoffset="82" /><circle class="wire-dot" cx="98" cy="10" r="6" /></svg>
+              <div class="card node" style="left: 570px">
+                <div class="tile" style="background: var(--accent-soft)">
+                  <svg width="30" height="30" viewBox="0 0 24 24"><path d="M12 3 C8.7 3 6.5 5.5 6.5 8.8 V13 L4.5 16.5 H19.5 L17.5 13 V8.8 C17.5 5.5 15.3 3 12 3 Z M9.5 18.5 C9.9 19.9 10.8 20.8 12 20.8 C13.2 20.8 14.1 19.9 14.5 18.5 Z" fill="#635bff" /></svg>
+                </div>
+                <div class="small" style="color: var(--accent-ink)">Then</div>
+                <div class="h3">Alert the account owner</div>
+                <div class="sub">Slack and email</div>
+              </div>
+              <svg class="wire" style="left: 1030px" viewBox="0 0 110 20"><line class="wire-line" x1="14" y1="10" x2="96" y2="10" stroke-dasharray="82" stroke-dashoffset="82" /><circle class="wire-dot" cx="98" cy="10" r="6" /></svg>
+              <div class="card node" style="left: 1140px">
+                <div class="tile" style="background: #e3f7f4">
+                  <svg width="30" height="30" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="#14b8a6" stroke-width="2.5" /><path d="M8 12.2 L10.8 15 L16.2 9.3" fill="none" stroke="#14b8a6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </div>
+                <div class="small" style="color: #0d8a7c">And</div>
+                <div class="h3">Open a renewal task</div>
+                <div class="sub">Due in 3 days</div>
+              </div>
+            </div>
+            <div id="live"><span class="pill green"><i></i>Workflow live · 3 steps</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
+      tl.fromTo(".chart-card", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.12);
+      tl.to("#line", { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 0.3);
+      tl.fromTo("#area", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.out" }, 0.6);
+
+      // ---- Soft Blur ----
+      const T = 1.6; // transition start
+      const D = 0.7; // defocus + hold + resolve (21f @ 30fps)
+      const BLUR = 24; // peak radius, px in screen space
+      const LIFT = 1.1; // brightness at peak: keeps the haze luminous instead of grey
+      const PEAK = { at: T + 0.267, hold: 0.133 }; // f8 -> f12
+      const END = { x: 1744, y: 584 }; // frame px of the chart endpoint (card 400,380 + 1344,204)
+      const sharp = "blur(0px) brightness(1)";
+      const soft = `blur(${BLUR}px) brightness(${LIFT})`;
+
+      // Telegraph: the last data point lands, closing the chapter, a beat before the defocus.
+      tl.fromTo("#end-dot", { scale: 0 }, { scale: 1, duration: 0.35, ease: "back.out(2.2)" }, T - 0.45);
+      tl.fromTo("#end-tag", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, T - 0.38);
+
+      // Defocus A: accelerating, with a breath toward the endpoint (lens breathing, not a push).
+      tl.fromTo("#f1", { filter: sharp }, { filter: soft, duration: PEAK.at - T, ease: "power2.in" }, T);
+      tl.fromTo("#c1", { scale: 1 }, { scale: 1.025, duration: PEAK.at + PEAK.hold - T, ease: "power2.in", transformOrigin: `${END.x}px ${END.y}px` }, T);
+
+      // Swap at equal blur: both scenes are reduced to the same low frequencies, so the crossfade
+      // reads as one image changing colour, not two images overlapping.
+      tl.fromTo("#s2", { opacity: 0 }, { opacity: 1, duration: PEAK.hold, ease: "sine.inOut" }, PEAK.at);
+      tl.set("#s1", { visibility: "hidden" }, PEAK.at + PEAK.hold);
+      // A 112px headline still reads as word shapes at 24px, so it would ghost through the swap.
+      // Let it condense out of the haze as B sharpens instead.
+      tl.fromTo("#s2 .copy", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, PEAK.at + PEAK.hold - 0.033);
+
+      // Resolve B: fast first, long settle in the 0-3px range where the eye reads sharpness.
+      tl.fromTo("#f2", { filter: soft }, { filter: sharp, duration: T + D - (PEAK.at + PEAK.hold), ease: "power3.out" }, PEAK.at + PEAK.hold);
+      tl.fromTo("#c2", { scale: 1.04 }, { scale: 1, duration: 0.9, ease: "power3.out", transformOrigin: "960px 540px" }, T + 0.3);
+
+      // ---- Scene B: the flow wires up once it is sharp ----
+      tl.to(".wire-line", { strokeDashoffset: 0, duration: 0.35, stagger: 0.12, ease: "power2.inOut" }, T + 0.55);
+      tl.fromTo(".wire-dot", { scale: 0, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.3, stagger: 0.12, ease: "back.out(2)" }, T + 0.8);
+      tl.fromTo("#live .pill", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, T + 0.95);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

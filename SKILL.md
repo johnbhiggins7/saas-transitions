@@ -101,6 +101,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Path & Stroke Leading](transitions/path-stroke-leading/SKILL.md) | Match Cuts | 0.9s | A glowing data packet draws a wire across the frame, and the next scene builds behind its head |
 | [Layered Parallax Push](transitions/parallax-push/SKILL.md) | Match Cuts | 0.6s | The next screen pushes the old one out with background, UI and foreground at staggered speeds |
 | [Cross-Dissolve](transitions/cross-dissolve/SKILL.md) | Soft | 0.8s | The next scene fades in over an opaque scene A with opposite scale drift, so luminance never dips |
+| [Soft Blur Transition](transitions/soft-blur/SKILL.md) | Soft | 0.7s | Scene A defocuses into a brief haze and scene B resolves out of it |
 <!-- index:end -->
 
 ## Adding or changing a transition
