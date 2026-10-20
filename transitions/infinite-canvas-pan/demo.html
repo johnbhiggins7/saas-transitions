@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.5;duration=1" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Camera rig: #cam zooms around the frame center, #world dollies under it.
+         Splitting them keeps the breath from bending the pan path. */
+      .cam { position: absolute; inset: 0; transform-origin: 960px 540px; }
+      .world { position: absolute; left: 0; top: 0; width: 4800px; height: 2700px; }
+
+      /* Everything in .world is placed in world px (see CAM_A / CAM_C in the script). */
+      .wires { position: absolute; left: 0; top: 0; overflow: visible; }
+      .wire { fill: none; stroke: #c3ccd9; stroke-width: 3; stroke-linecap: round; }
+      #trail { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; }
+      /* The glow sits inside the scaled #cam on purpose: it should breathe with the world (0.88x at most). */
+      #head { fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round; filter: drop-shadow(0 0 10px rgba(99, 91, 255, 0.85)); }
+
+      .section { position: absolute; border: 2px dashed #cfd7e3; border-radius: 24px; background: rgba(255, 255, 255, 0.4); }
+      .label { position: absolute; display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+      .label .small { font-weight: 500; }
+
+      .node { position: absolute; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 20px 22px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
+      .node-row { display: flex; align-items: center; gap: 14px; }
+      .node-row .pill { margin-left: auto; }
+      .node-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; color: #fff; }
+      .node-icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .node-title { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+      .node-sub { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-top: 4px; }
+      .port { position: absolute; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; background: #fff; border: 3px solid #b7c1cf; }
+      .port.in { left: -8px; } .port.out { right: -8px; }
+      .ring { position: absolute; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.55); opacity: 0; }
+
+      .progress { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+      .progress i { display: block; height: 100%; width: 100%; background: var(--accent); border-radius: 4px; transform-origin: 0 50%; }
+      .step { display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 14px; border-radius: 10px; background: var(--surface-2); font-size: 17px; font-weight: 500; color: var(--ink-2); }
+      .step i { width: 20px; height: 20px; border-radius: 50%; background: var(--green); flex: none; box-shadow: inset 0 0 0 5px #c9f0e1; }
+      .sticky { position: absolute; padding: 24px; background: #fff3c4; border-radius: 4px; box-shadow: 0 10px 24px rgba(10, 37, 64, 0.12); font-size: 20px; line-height: 1.4; font-weight: 500; color: #5b4a12; transform: rotate(-3deg); }
+      .sticky .small { color: #8c7630; margin-top: 14px; }
+
+      .dash { position: absolute; padding: 32px; }
+      .dash .grid-3 { margin-top: 24px; }
+      .kpi-mini { background: var(--surface-2); border-radius: 12px; padding: 18px 22px; }
+      .kpi-mini .card-value { font-size: 36px; }
+      .dash-chart { height: 380px; margin-top: 24px; }
+      #chart-line { stroke-dasharray: 1 2; opacity: 0; } /* "1 2", not "1": the next dash would sit on the path end and its round cap draws a dot */
+
+      /* HUD floats over the canvas in screen space, so it never moves with the camera. */
+      .hud { position: absolute; z-index: 10; display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-lg); }
+      .toolbar { left: 50%; top: 976px; height: 64px; padding: 0 10px 0 16px; gap: 6px; border-radius: 16px; transform: translateX(-50%); }
+      .toolbar .brand-mark { width: 28px; height: 28px; border-radius: 8px; }
+      .toolbar .file { font-size: 17px; font-weight: 600; margin: 0 14px 0 6px; white-space: nowrap; }
+      .toolbar .sep { width: 1px; height: 32px; background: var(--border); margin-right: 6px; }
+      .tool { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--ink-2); }
+      .tool.active { background: var(--accent-soft); color: var(--accent-ink); }
+      .tool svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .people { right: 32px; top: 28px; height: 60px; padding: 0 8px 0 14px; gap: 14px; border-radius: 16px; }
+      .people .avatar { width: 34px; height: 34px; font-size: 13px; margin-left: -14px; box-shadow: 0 0 0 3px #fff; }
+      .people .avatar:first-child { margin-left: 0; }
+      .people .btn { height: 42px; font-size: 16px; padding: 0 18px; }
+      .minimap { left: 32px; top: 883px; width: 282px; height: 167px; border-radius: 14px; overflow: hidden; }
+      .mm-world { position: absolute; left: 9px; top: 9px; width: 4800px; height: 2700px; transform: scale(0.055); transform-origin: 0 0; background: var(--surface-2); border-radius: 120px; }
+      .mm-world b { position: absolute; background: #cdd5e1; border-radius: 40px; }
+      .mm-view { position: absolute; border: 38px solid var(--accent); border-radius: 70px; background: rgba(99, 91, 255, 0.1); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4.5" data-width="1920" data-height="1080">
+      <!-- One continuous canvas. Scene A = camera at CAM_A (Sources), scene B = camera at CAM_C (Insights). -->
+      <div id="s1" class="scene">
+        <div id="cam" class="cam">
+          <div id="world" class="world dots">
+            <svg class="wires" width="4800" height="2700" viewBox="0 0 4800 2700">
+              <path class="wire draw" pathLength="1" d="M1000,610 C1140,610 1140,780 1280,780" />
+              <path class="wire draw" pathLength="1" d="M1000,780 L1280,780" />
+              <path class="wire draw" pathLength="1" d="M1000,950 C1140,950 1140,780 1280,780" />
+              <path class="wire draw" pathLength="1" d="M1680,780 C1945,780 1945,1200 2210,1200 L2550,1460 C2785,1460 2785,1760 3020,1760" />
+              <path class="wire" d="M2550,1200 C2655,1200 2655,935 2760,935" />
+              <!-- Data packet: same path as the main wire. The card above it hides the segment inside the pipeline node. -->
+              <path id="trail" pathLength="100" stroke-dasharray="100 200" stroke-dashoffset="100" d="M1680,780 C1945,780 1945,1200 2210,1200 L2550,1460 C2785,1460 2785,1760 3020,1760" />
+              <path id="head" pathLength="100" stroke-dasharray="2 300" stroke-dashoffset="2" opacity="0" d="M1680,780 C1945,780 1945,1200 2210,1200 L2550,1460 C2785,1460 2785,1760 3020,1760" />
+            </svg>
+
+            <!-- Cluster A: Sources -> Ingest -->
+            <div class="section" id="sources" style="left: 540px; top: 520px; width: 500px; height: 520px"></div>
+            <div class="label" id="sources-label" style="left: 544px; top: 478px">Sources <span class="small">3 connected</span></div>
+            <div class="node src" style="left: 580px; top: 560px; width: 420px; height: 100px">
+              <div class="node-row">
+                <span class="node-icon" style="background: var(--sky)"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" /></svg></span>
+                <div><div class="node-title">Orders DB</div><div class="node-sub">postgres · 2.4M rows</div></div>
+                <span class="pill green">Synced</span>
+              </div>
+              <i class="port out"></i>
+            </div>
+            <div class="node src" style="left: 580px; top: 730px; width: 420px; height: 100px">
+              <div class="node-row">
+                <span class="node-icon" style="background: var(--accent)"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3" /><path d="M2 10h20M6 15h4" /></svg></span>
+                <div><div class="node-title">Payments</div><div class="node-sub">billing events · live</div></div>
+                <span class="pill green">Synced</span>
+              </div>
+              <i class="port out"></i>
+            </div>
+            <div class="node src" style="left: 580px; top: 900px; width: 420px; height: 100px">
+              <div class="node-row">
+                <span class="node-icon" style="background: var(--teal)"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4" /><path d="M2 21c0-4 3-6 7-6s7 2 7 6M16 4a4 4 0 010 8M22 21c0-3-1.5-5-4-5.7" /></svg></span>
+                <div><div class="node-title">CRM accounts</div><div class="node-sub">18.2k accounts</div></div>
+                <span class="pill green">Synced</span>
+              </div>
+              <i class="port out"></i>
+            </div>
+            <div class="node" id="ingest" style="left: 1280px; top: 716px; width: 400px; height: 128px">
+              <div class="node-row">
+                <span class="node-icon" style="background: var(--ink)"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0114-5.3M20 12a8 8 0 01-14 5.3M18 3v4h-4M6 21v-4h4" /></svg></span>
+                <div><div class="node-title">Northwind Sync</div><div class="node-sub">ingest · 12.4k rows/s</div></div>
+              </div>
+              <div class="progress"><i id="sync-fill"></i></div>
+              <i class="port in"></i><i class="port out" id="ingest-port"></i>
+            </div>
+            <i class="ring" id="ingest-ring" style="left: 1672px; top: 772px"></i>
+
+            <!-- Cluster B: Transform (only on screen mid-pan) -->
+            <div class="label" style="left: 2214px; top: 1108px">Transform</div>
+            <div class="node" style="left: 2210px; top: 1150px; width: 340px; height: 340px">
+              <div class="node-row">
+                <span class="node-icon" style="background: var(--green)"><svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h16M4 18h7M17 3l3 3-3 3" /></svg></span>
+                <div><div class="node-title">Revenue model</div><div class="node-sub">dbt · 3 steps</div></div>
+              </div>
+              <div class="step"><i></i>Join on customer_id</div>
+              <div class="step"><i></i>Clean &amp; dedupe</div>
+              <div class="step"><i></i>Recognize revenue</div>
+              <div class="small">Last run 2m ago</div>
+              <i class="port in" style="top: 50px"></i><i class="port out" style="top: 50px"></i><i class="port out" style="top: 310px"></i>
+            </div>
+            <div class="node" style="left: 2760px; top: 880px; width: 360px; height: 110px">
+              <div class="node-row">
+                <span class="node-icon" style="background: var(--pink)"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6" /></svg></span>
+                <div><div class="node-title">Sync to CRM</div><div class="node-sub">reverse ETL · hourly</div></div>
+              </div>
+              <i class="port in"></i>
+            </div>
+            <div class="sticky" style="left: 1560px; top: 1480px; width: 260px">
+              Add the warehouse as a 4th source next sprint
+              <div class="small">Maya · 2d</div>
+            </div>
+
+            <!-- Cluster C: Insights dashboard -->
+            <div class="label" style="left: 3024px; top: 1476px">Insights <span class="small">Revenue dashboard</span></div>
+            <div class="card dash" style="left: 3020px; top: 1520px; width: 1080px; height: 680px">
+              <div class="node-row">
+                <span class="node-icon" style="background: var(--accent-soft); color: var(--accent)"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg></span>
+                <div><div class="h3">Revenue insights</div><div class="node-sub">fed by Revenue model</div></div>
+                <span class="pill indigo" id="live">Updated just now</span>
+              </div>
+              <div class="grid-3">
+                <div class="kpi-mini"><div class="card-label">MRR</div><div class="card-value">$482k</div><span class="delta up">+8.2%</span></div>
+                <div class="kpi-mini"><div class="card-label">Net retention</div><div class="card-value">118%</div><span class="delta up">+3.0%</span></div>
+                <div class="kpi-mini"><div class="card-label">Expansion</div><div class="card-value">$61k</div><span class="delta up">+12.4%</span></div>
+              </div>
+              <svg class="dash-chart chart-svg" viewBox="0 0 1016 340" preserveAspectRatio="none">
+                <line class="chart-grid" x1="0" y1="85" x2="1016" y2="85" />
+                <line class="chart-grid" x1="0" y1="170" x2="1016" y2="170" />
+                <line class="chart-grid" x1="0" y1="255" x2="1016" y2="255" />
+                <path id="chart-area" class="chart-area" d="M0,290 C90,280 130,240 200,248 S310,270 400,220 S500,160 600,175 S700,200 790,140 S900,100 1016,60 L1016,340 L0,340 Z" />
+                <path id="chart-line" class="chart-line" pathLength="1" stroke-dashoffset="1" d="M0,290 C90,280 130,240 200,248 S310,270 400,220 S500,160 600,175 S700,200 790,140 S900,100 1016,60" />
+              </svg>
+              <i class="port in" id="dash-port" style="top: 240px"></i>
+            </div>
+            <i class="ring" id="dash-ring" style="left: 3012px; top: 1752px"></i>
+          </div>
+        </div>
+
+        <!-- Canvas HUD (screen space) -->
+        <div class="hud people">
+          <div class="avatar pink">MR</div><div class="avatar amber">DK</div><div class="avatar sky">JL</div>
+          <div class="btn btn-primary">Share</div>
+        </div>
+        <div class="hud toolbar">
+          <span class="brand-mark"></span><span class="file">Revenue pipeline</span><span class="sep"></span>
+          <span class="tool"><svg viewBox="0 0 24 24"><path d="M5 3l14 7-6 2-2 6z" /></svg></span>
+          <span class="tool active"><svg viewBox="0 0 24 24"><path d="M8 12V5.5a1.5 1.5 0 013 0V11m0-6.5a1.5 1.5 0 013 0V11m0-5a1.5 1.5 0 013 0v7a7 7 0 01-7 7h-.5a6 6 0 01-4.8-2.4L4 14.6a1.6 1.6 0 012.5-2L8 14" /></svg></span>
+          <span class="tool"><svg viewBox="0 0 24 24"><path d="M7 3v18M17 3v18M3 7h18M3 17h18" /></svg></span>
+          <span class="tool"><svg viewBox="0 0 24 24"><circle cx="5" cy="19" r="2" /><circle cx="19" cy="5" r="2" /><path d="M7 19c7 0 3-14 10-14" /></svg></span>
+          <span class="tool"><svg viewBox="0 0 24 24"><path d="M4 4h16v10l-6 6H4zM14 20v-6h6" /></svg></span>
+          <span class="tool"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z" /></svg></span>
+        </div>
+        <div class="hud minimap">
+          <div class="mm-world">
+            <b style="left: 540px; top: 520px; width: 500px; height: 520px"></b>
+            <b style="left: 1280px; top: 716px; width: 400px; height: 128px"></b>
+            <b style="left: 2210px; top: 1150px; width: 340px; height: 340px"></b>
+            <b style="left: 2760px; top: 880px; width: 360px; height: 110px"></b>
+            <b style="left: 1560px; top: 1480px; width: 260px; height: 220px; background: #f3df8f"></b>
+            <b style="left: 3020px; top: 1520px; width: 1080px; height: 680px"></b>
+            <div id="mm-view" class="mm-view" style="left: 240px; top: 240px; width: 1920px; height: 1080px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".hud", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.out" }, 0);
+      tl.fromTo("#sources, #sources-label", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.out" }, 0);
+      tl.fromTo(".src", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.07, ease: "power3.out" }, 0.05);
+      tl.fromTo("#ingest", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.22);
+      tl.fromTo(".wire.draw", { strokeDasharray: "1 2", strokeDashoffset: 1 }, { strokeDashoffset: 0, autoRound: false, duration: 0.6, ease: "power2.inOut" }, 0.35);
+      tl.fromTo("#sync-fill", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "power2.inOut" }, 0.45);
+
+      // ---- Infinite Canvas Pan ----
+      const T = 1.5; // transition start
+      const D = 1.0; // pan duration (30f @ 30fps)
+      const CAM_A = { x: 1200, y: 780 };  // world point at frame center in scene A
+      const CAM_C = { x: 3560, y: 1880 }; // ... and in scene B
+      const BREATH = 0.88; // camera scale at mid-pan
+      const breath = (p) => Math.sin(Math.PI * p) ** 2; // 0 -> 1 -> 0 with flat ends, peaks with pan speed
+
+      // Telegraph: sync completes, the out port pings, the packet leaves just ahead of the camera.
+      tl.set("#ingest-port", { borderColor: "#635bff" }, T - 0.3);
+      // Ring pings use set + to: a fromTo would render its opacity-0.9 "from" state from frame 0.
+      tl.set("#ingest-ring", { opacity: 0.9 }, T - 0.3);
+      tl.to("#ingest-ring", { scale: 3, opacity: 0, duration: 0.5, ease: "power2.out" }, T - 0.3);
+      tl.set("#head", { opacity: 1 }, T - 0.1);
+      // autoRound: false on every dash tween: GSAP rounds px values, so a pathLength-normalized offset would snap.
+      tl.to("#trail", { strokeDashoffset: 0, autoRound: false, duration: 0.95, ease: "power3.inOut" }, T - 0.1);
+      tl.to("#head", { strokeDashoffset: -98, autoRound: false, duration: 0.95, ease: "power3.inOut" }, T - 0.1);
+
+      // Dolly: world translates so CAM_A -> CAM_C sits at frame center. Zoom rig breathes around 960,540.
+      tl.fromTo("#world", { x: 960 - CAM_A.x, y: 540 - CAM_A.y }, { x: 960 - CAM_C.x, y: 540 - CAM_C.y, duration: D, ease: "power3.inOut" }, T);
+      tl.fromTo("#cam", { scale: 1 }, { scale: BREATH, duration: D, ease: breath }, T);
+
+      // Minimap viewport mirrors the camera in world units (its parent is the world scaled to 0.055).
+      tl.fromTo("#mm-view", { x: 0, y: 0 }, { x: CAM_C.x - CAM_A.x, y: CAM_C.y - CAM_A.y, duration: D, ease: "power3.inOut" }, T);
+      tl.fromTo("#mm-view", { scale: 1 }, { scale: 1 / BREATH, duration: D, ease: breath }, T);
+
+      // ---- Landing: the packet reaches the dashboard as the camera settles ----
+      const ARRIVE = T + 0.85; // = packet start (T - 0.1) + 0.95
+      tl.to("#head", { opacity: 0, duration: 0.15, ease: "power1.in" }, ARRIVE);
+      tl.set("#dash-port", { borderColor: "#635bff" }, ARRIVE);
+      tl.set("#dash-ring", { opacity: 0.9 }, ARRIVE);
+      tl.to("#dash-ring", { scale: 3.2, opacity: 0, duration: 0.55, ease: "power2.out" }, ARRIVE);
+      tl.fromTo("#live", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.7)" }, ARRIVE + 0.05);
+      tl.set("#chart-line", { opacity: 1 }, ARRIVE);
+      tl.to("#chart-line", { strokeDashoffset: 0, autoRound: false, duration: 0.9, ease: "power2.out" }, ARRIVE);
+      tl.fromTo("#chart-area", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, ARRIVE + 0.55); // after the line is ~85% drawn
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

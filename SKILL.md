@@ -71,6 +71,7 @@ Approved transitions only. A transition appears here once its render has been re
 | --- | --- | --- | --- |
 | [UI Deep Zoom](transitions/ui-deep-zoom/SKILL.md) | Camera & Spatial | 0.6s | The camera rushes into one small UI element until its fill becomes the next scene's background |
 | [Contextual Pullback](transitions/contextual-pullback/SKILL.md) | Camera & Spatial | 0.8s | Snaps back from a macro UI action and tilts to 2.5D, revealing the surfaces it updated |
+| [Infinite Canvas Pan](transitions/infinite-canvas-pan/SKILL.md) | Camera & Spatial | 1s | Glides across one dot-grid canvas between node clusters, with a slight mid-pan zoom-out |
 <!-- index:end -->
 
 ## Adding or changing a transition
