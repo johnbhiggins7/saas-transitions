@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.5;duration=0.8" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Every box is hard-coded in scene px so the x-ray SVG in #s2 can trace it exactly. */
+      #root { --x: 0; } /* scanline position in px; drives both the line and #s2's clip */
+      .app { border: 0; box-shadow: 0 0 0 1px var(--border), var(--shadow-lg); } /* no border: app-relative px = scene px - (120, 80) */
+      .kpis { position: absolute; left: 280px; top: 108px; width: 1368px; height: 168px; }
+      .kpis .card { height: 168px; }
+      .chart-card, .src-card { border: 0; box-shadow: 0 0 0 1px var(--border), var(--shadow); } /* same trick: a border would shift the absolute children 1px off the x-ray */
+      .chart-card { position: absolute; left: 280px; top: 300px; width: 896px; height: 588px; }
+      .chart-head { display: flex; align-items: center; justify-content: space-between; }
+      .chart-body { position: absolute; left: 24px; bottom: 24px; width: 848px; height: 440px; }
+      .src-card { position: absolute; left: 1200px; top: 300px; width: 448px; height: 588px; }
+      .src-head { display: flex; align-items: baseline; justify-content: space-between; }
+      .src-row { position: absolute; left: 24px; right: 24px; height: 92px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border); }
+      .src-icon { width: 40px; height: 40px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700; }
+      .src-name { font-size: 17px; font-weight: 600; }
+      .src-row .pill { margin-left: auto; }
+      .src-card .btn { position: absolute; left: 24px; right: 24px; bottom: 24px; }
+
+      /* Scene B: the same layout as an x-ray. */
+      #s2 { background-color: #0a2540; z-index: 2; clip-path: inset(0 max(0px, calc((1920 - var(--x)) * 1px)) 0 0); }
+      #s2.dots { background-image: radial-gradient(rgba(125, 211, 252, 0.12) 1.5px, rgba(125, 211, 252, 0) 1.5px); }
+      #xray { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+      #xray .wf { fill: rgba(125, 211, 252, 0.03); stroke: rgba(125, 211, 252, 0.6); stroke-width: 1.5; }
+      #xray .wf.dash { stroke-dasharray: 6 6; fill: none; }
+      #xray .wf.on { stroke: #8b85ff; fill: rgba(139, 133, 255, 0.16); }
+      #xray .rule { stroke: rgba(125, 211, 252, 0.45); stroke-width: 1; fill: none; }
+      #xray .rule.dash { stroke-dasharray: 4 8; }
+      #xray text { font-family: var(--mono); font-size: 15px; font-weight: 500; fill: rgba(186, 230, 253, 0.62); }
+      #xray text.hi { font-size: 24px; fill: #e0f2fe; }
+      #xray text.md { font-size: 18px; fill: #e0f2fe; }
+      #xray text.live { fill: #34d399; }
+      #xray .red { stroke: #f472b6; stroke-width: 1.5; fill: none; }
+      #xray text.red-t { fill: #f472b6; font-size: 13px; stroke: none; }
+      #xray .plot { stroke: #8b85ff; stroke-width: 2.5; fill: none; }
+      #xray .bus { stroke: #38bdf8; stroke-width: 2; fill: none; stroke-dasharray: 5 9; }
+      #xray .node { fill: #7dd3fc; filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.9)); }
+
+      /* The scanline: a 4px core, a bloom that stretches with speed, and an afterglow trailing over scene B. */
+      #scan { position: absolute; left: 0; top: 0; width: 0; height: 1080px; z-index: 5; opacity: 0; transform: translateX(calc(var(--x) * 1px)); }
+      .scan-trail { position: absolute; top: 0; bottom: 0; right: 0; width: 320px; background: linear-gradient(90deg, rgba(56, 189, 248, 0), rgba(56, 189, 248, 0.14) 70%, rgba(125, 211, 252, 0.3)); }
+      .scan-glow { position: absolute; top: 0; bottom: 0; left: -70px; width: 140px; background: linear-gradient(90deg, rgba(99, 91, 255, 0), rgba(99, 91, 255, 0.26) 35%, rgba(186, 230, 253, 0.6) 50%, rgba(99, 91, 255, 0.26) 65%, rgba(99, 91, 255, 0)); }
+      .scan-core { position: absolute; top: 0; bottom: 0; left: -2px; width: 4px; background: #fff; box-shadow: 0 0 2px 1px #fff, 0 0 10px 3px #bae6fd, 0 0 28px 8px rgba(56, 189, 248, 0.7), 0 0 72px 22px rgba(99, 91, 255, 0.45); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: the dashboard skin -->
+      <div id="s1" class="scene dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Analytics</div>
+            <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+            <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Analytics</div>
+              <div class="search">Search</div>
+              <div class="avatar sky">JL</div>
+            </div>
+          </div>
+          <div class="kpis grid-3">
+            <div class="card kpi"><div class="card-label">Revenue</div><div class="card-value">$128.4k</div><span class="delta up">+12.5%</span></div>
+            <div class="card kpi"><div class="card-label">Active users</div><div class="card-value">8,421</div><span class="delta up">+4.1%</span></div>
+            <div class="card kpi"><div class="card-label">Churn</div><div class="card-value">1.8%</div><span class="delta down">+0.2%</span></div>
+          </div>
+          <div class="card chart-card">
+            <div class="chart-head">
+              <div class="h3">Revenue over time</div>
+              <div class="legend"><span><i></i>This year</span></div>
+            </div>
+            <svg class="chart-body chart-svg" viewBox="0 0 848 440">
+              <line class="chart-grid" x1="0" y1="110" x2="848" y2="110" />
+              <line class="chart-grid" x1="0" y1="220" x2="848" y2="220" />
+              <line class="chart-grid" x1="0" y1="330" x2="848" y2="330" />
+              <path id="area" class="chart-area" d="M32,352 C48.3,346.3 97.3,321.7 130,318 C162.7,314.3 195.3,339.3 228,330 C260.7,320.7 293.3,269.7 326,262 C358.7,254.3 391.3,293.3 424,284 C456.7,274.7 489.3,216 522,206 C554.7,196 587.3,234.7 620,224 C652.7,213.3 685.3,164 718,142 C750.7,120 799.7,100.3 816,92 L816,440 L32,440 Z" />
+              <path id="line" class="chart-line" d="M32,352 C48.3,346.3 97.3,321.7 130,318 C162.7,314.3 195.3,339.3 228,330 C260.7,320.7 293.3,269.7 326,262 C358.7,254.3 391.3,293.3 424,284 C456.7,274.7 489.3,216 522,206 C554.7,196 587.3,234.7 620,224 C652.7,213.3 685.3,164 718,142 C750.7,120 799.7,100.3 816,92" stroke-dasharray="1100" stroke-dashoffset="1100" />
+            </svg>
+          </div>
+          <div class="card src-card">
+            <div class="src-head"><div class="h3">Sources</div><div class="small">4 connected</div></div>
+            <div class="src-row" style="top: 72px"><span class="src-icon" style="background: var(--accent)">S</span><div><div class="src-name">Stripe</div><div class="small">Payments</div></div><span class="pill green">Synced</span></div>
+            <div class="src-row" style="top: 164px"><span class="src-icon" style="background: var(--sky)">SF</span><div><div class="src-name">Salesforce</div><div class="small">CRM</div></div><span class="pill green">Synced</span></div>
+            <div class="src-row" style="top: 256px"><span class="src-icon" style="background: var(--teal)">PG</span><div><div class="src-name">Postgres</div><div class="small">Product DB</div></div><span class="pill green">Synced</span></div>
+            <div class="src-row" style="top: 348px"><span class="src-icon" style="background: var(--green)">Sg</span><div><div class="src-name">Segment</div><div class="small">Events</div></div><span class="pill green">Synced</span></div>
+            <div class="btn">Add source</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B: the same boxes as an x-ray (layout outlines, bindings, data nodes). Coordinates mirror scene A. -->
+      <div id="s2" class="scene next dots">
+        <svg id="xray" viewBox="0 0 1920 1080">
+          <!-- app shell -->
+          <rect class="wf" x="120" y="80" width="1680" height="920" rx="20" />
+          <line class="rule" x1="367.5" y1="80" x2="367.5" y2="1000" />
+          <line class="rule" x1="368" y1="155.5" x2="1800" y2="155.5" />
+          <!-- sidebar: nav items become routes -->
+          <rect class="wf" x="148" y="108" width="32" height="32" rx="9" /><text class="md" x="192" y="130">northwind</text>
+          <rect class="wf dash" x="138" y="168" width="212" height="44" rx="10" /><rect class="wf" x="150" y="180" width="20" height="20" rx="6" /><text x="182" y="195">/home</text>
+          <rect class="wf on" x="138" y="218" width="212" height="44" rx="10" /><rect class="wf" x="150" y="230" width="20" height="20" rx="6" /><text class="md" x="182" y="246">/analytics</text>
+          <rect class="wf dash" x="138" y="268" width="212" height="44" rx="10" /><rect class="wf" x="150" y="280" width="20" height="20" rx="6" /><text x="182" y="295">/customers</text>
+          <rect class="wf dash" x="138" y="318" width="212" height="44" rx="10" /><rect class="wf" x="150" y="330" width="20" height="20" rx="6" /><text x="182" y="345">/billing</text>
+          <rect class="wf dash" x="138" y="368" width="212" height="44" rx="10" /><rect class="wf" x="150" y="380" width="20" height="20" rx="6" /><text x="182" y="395">/settings</text>
+          <!-- topbar -->
+          <text class="hi" x="400" y="126">&lt;AnalyticsPage /&gt;</text>
+          <rect class="wf dash" x="1348" y="96" width="360" height="44" rx="10" /><text x="1368" y="123">search(q)</text>
+          <circle class="wf" cx="1748" cy="118" r="20" /><text x="1748" y="123" text-anchor="middle">jl</text>
+          <!-- redlines -->
+          <path class="red" d="M400,166 V178 M400,172 H840 M840,166 V178" />
+          <rect x="600" y="164" width="40" height="16" fill="#0a2540" /><text class="red-t" x="620" y="177" text-anchor="middle">440</text>
+          <path class="red" d="M840,284 H864 M840,278 V290 M864,278 V290" /><text class="red-t" x="852" y="272" text-anchor="middle">24</text>
+          <!-- KPI cards: values become the queries behind them -->
+          <rect class="wf" x="400" y="188" width="440" height="168" rx="16" />
+          <text x="424" y="226">KpiCard#revenue</text><text class="hi" x="424" y="272">SUM(charges.amount)</text><text x="424" y="318">stripe · 30d → $128.4k</text>
+          <rect class="wf" x="864" y="188" width="440" height="168" rx="16" />
+          <text x="888" y="226">KpiCard#active</text><text class="hi" x="888" y="272">COUNT(DISTINCT uid)</text><text x="888" y="318">segment · 7d → 8,421</text>
+          <rect class="wf" x="1328" y="188" width="440" height="168" rx="16" />
+          <text x="1352" y="226">KpiCard#churn</text><text class="hi" x="1352" y="272">churned / active_0</text><text x="1352" y="318">sfdc · 30d → 1.8%</text>
+          <!-- chart: the smooth line becomes raw data points -->
+          <rect class="wf" x="400" y="380" width="896" height="588" rx="16" />
+          <text class="md" x="424" y="428">LineChart#revenue</text><text x="1272" y="428" text-anchor="end">pg.revenue_daily · 365 rows</text>
+          <path class="rule dash" d="M424,614 H1272 M424,724 H1272 M424,834 H1272" />
+          <line class="rule" x1="424" y1="944" x2="1272" y2="944" />
+          <text x="1226" y="580" text-anchor="end">dec · 128.4k</text>
+          <polyline class="plot" points="456,856 554,822 652,834 750,766 848,788 946,710 1044,728 1142,646 1240,596" />
+          <!-- sources card -->
+          <rect class="wf" x="1320" y="380" width="448" height="588" rx="16" />
+          <text class="md" x="1344" y="428">connectors[4]</text><text class="live" x="1744" y="428" text-anchor="end">● live</text>
+          <rect class="wf" x="1344" y="478" width="40" height="40" rx="10" /><text class="md" x="1400" y="494">stripe.charges</text><text x="1400" y="518">12.4k rows/h</text>
+          <rect class="wf" x="1344" y="570" width="40" height="40" rx="10" /><text class="md" x="1400" y="586">sfdc.accounts</text><text x="1400" y="610">delta · 15m</text>
+          <rect class="wf" x="1344" y="662" width="40" height="40" rx="10" /><text class="md" x="1400" y="678">pg.events</text><text x="1400" y="702">cdc · wal</text>
+          <rect class="wf" x="1344" y="754" width="40" height="40" rx="10" /><text class="md" x="1400" y="770">segment.track</text><text x="1400" y="794">3.1k events/s</text>
+          <path class="rule dash" d="M1344,543.5 H1744 M1344,635.5 H1744 M1344,727.5 H1744 M1344,819.5 H1744" />
+          <rect class="wf dash" x="1344" y="896" width="400" height="48" rx="10" /><text x="1544" y="925" text-anchor="middle">+ addSource()</text>
+          <!-- data bus: sources feed the KPI queries -->
+          <path id="bus" class="bus" d="M1344,498 H1308 M1344,590 H1308 M1344,682 H1308 M1344,774 H1308 V368 M620,356 V368 H1548 V356 M1084,356 V368" />
+          <!-- data nodes: each pings as the scanline crosses its cx -->
+          <circle class="node" cx="456" cy="856" r="6" /><circle class="node" cx="554" cy="822" r="6" /><circle class="node" cx="652" cy="834" r="6" />
+          <circle class="node" cx="750" cy="766" r="6" /><circle class="node" cx="848" cy="788" r="6" /><circle class="node" cx="946" cy="710" r="6" />
+          <circle class="node" cx="1044" cy="728" r="6" /><circle class="node" cx="1142" cy="646" r="6" /><circle class="node" cx="1240" cy="596" r="7" />
+          <circle class="node" cx="620" cy="368" r="5" /><circle class="node" cx="1084" cy="368" r="5" /><circle class="node" cx="1548" cy="368" r="5" /><circle class="node" cx="1308" cy="368" r="5" />
+          <circle class="node" cx="1308" cy="498" r="5" /><circle class="node" cx="1308" cy="590" r="5" /><circle class="node" cx="1308" cy="682" r="5" /><circle class="node" cx="1308" cy="774" r="5" />
+          <text x="120" y="1044">x-ray · layout + data bindings</text>
+        </svg>
+      </div>
+
+      <!-- The scanline sits above both scenes and rides the same --x as the clip edge. -->
+      <div id="scan"><div class="scan-trail"></div><div class="scan-glow"></div><div class="scan-core"></div></div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
+      tl.fromTo(".chart-card, .src-card", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0.12);
+      tl.fromTo(".src-row", { x: 16, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: "power3.out" }, 0.3);
+      tl.to("#line", { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 0.3);
+      tl.fromTo("#area", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.out" }, 0.6);
+
+      // ---- X-Ray Scanline ----
+      const T = 1.5; // sweep start
+      const D = 0.8; // sweep duration (24f @ 30fps)
+      const X0 = 0, X1 = 2000; // line centre in px: starts on the left frame edge, ends far enough right for the bloom to leave
+      // One CSS variable drives both #scan's translateX and #s2's clip-path inset, so the edge can never drift off the line.
+      // Inverse of power2.inOut (GSAP power2 is CUBIC: 4p^3 / 1-(2-2p)^3/2): the time the line reaches x.
+      // Used to fire each node's ping exactly as the line crosses it.
+      const inv = (y) => (y < 0.5 ? Math.cbrt(y / 4) : 1 - Math.cbrt(2 * (1 - y)) / 2);
+      const tCross = (x) => T + D * inv((x - X0) / (X1 - X0));
+
+      // Telegraph: the scanner powers on at the left edge, growing from its centre.
+      tl.fromTo("#scan", { opacity: 0 }, { opacity: 1, duration: 0.1, ease: "power1.out" }, T - 0.27);
+      tl.fromTo(".scan-core", { scaleY: 0 }, { scaleY: 1, duration: 0.3, ease: "expo.out" }, T - 0.27);
+      tl.fromTo(".scan-glow", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power1.out" }, T - 0.2);
+
+      tl.set("#s2", { opacity: 1 }, T); // still clipped to zero width until --x moves
+      tl.fromTo("#root", { "--x": X0 }, { "--x": X1, duration: D, ease: "power2.inOut" }, T);
+      // power2.inOut's speed grows with (2p)^2 up to the midpoint, so a power1.in yoyo stretches the bloom exactly with speed.
+      tl.fromTo(".scan-glow", { scaleX: 1 }, { scaleX: 2.4, duration: D / 2, ease: "power1.in", yoyo: true, repeat: 1 }, T);
+      tl.set("#s1", { visibility: "hidden" }, tCross(1920));
+      // The trail and bloom would park on the right edge. Fade them out with an out-ease so nothing is left to pop at T + D.
+      tl.to("#scan", { opacity: 0, duration: 0.2, ease: "power2.out" }, T + D - 0.2);
+
+      // ---- Scene B lands: nodes ping as the line crosses them, then data flows along the bus ----
+      document.querySelectorAll("#xray .node").forEach((n) => {
+        tl.fromTo(n, { scale: 2.6, fill: "#ffffff", transformOrigin: "50% 50%" }, { scale: 1, fill: "#7dd3fc", duration: 0.5, ease: "expo.out" }, tCross(+n.getAttribute("cx")));
+      });
+      tl.fromTo("#bus", { strokeDashoffset: 0 }, { strokeDashoffset: -140, duration: 4 - T, ease: "none" }, T); // ambient flow, so linear
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
