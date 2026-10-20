@@ -129,13 +129,13 @@
 
       // ---- Device-to-Canvas Wrap ----
       const T = 1.5; // transition start
-      const D = 0.8; // move duration (24f @ 30fps)
+      const D = 0.8; // move duration (48f @ 60fps)
       const K = 0.55; // final screen scale: the 1920×1080 UI lands as a 1056×594 screen
       const P = 2400; // #s1 perspective (px)
       const zFor = (s) => P * (1 - 1 / s); // dolly depth at which the z=0 plane appears at scale s
       const TILT = 8, TILT_PEAK = 13; // lid lean (deg): overshoots, then settles
 
-      // Telegraph: a 9f push-in (wind-up) before the pull-back.
+      // Telegraph: an 18f push-in (wind-up) before the pull-back.
       tl.fromTo(".rig", { z: 0 }, { z: zFor(1.025), duration: 0.3, ease: "power2.inOut" }, T - 0.3);
       // Dolly the device away in z instead of scaling it: 2D scale leaves the deck's depth and the lid's lean full-size.
       tl.to(".rig", { z: zFor(K), duration: D, ease: "power2.out" }, T);

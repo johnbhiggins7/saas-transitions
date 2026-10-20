@@ -2,7 +2,7 @@
 name: device-to-canvas-wrap
 title: Device-to-Canvas Wrap
 category: camera-spatial
-duration: 0.8s (24f @ 30fps)
+duration: 0.8s (48f @ 60fps)
 energy: medium
 description: A frameless full-bleed UI pulls back and lands inside a 3D laptop screen while the bezel grows out from its edges and the keyboard deck rises into frame.
 ---
@@ -22,16 +22,16 @@ The full-bleed product UI recedes, and a laptop builds itself around it. The bez
 
 Avoid it mid-demo when the next beat needs the UI legible. At 55% scale the small text becomes texture. Use [contextual-pullback](../contextual-pullback/SKILL.md) or [component-reflow](../component-reflow/SKILL.md) instead.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Wind-up | −9 → 0 | The rig dollies toward camera to an apparent 1.025× (`power2.inOut`) and comes to rest. It is still frameless and full-bleed. |
-| Pull-back | 0 → 24 | The rig dollies away in z to an apparent 0.55× (`power2.out`). Measured on the render: frame 1 is already 0.92× (22% of the move), 87% is done by frame 8 and 96% by frame 12, and it settles by frame 20. |
-| Wrap | 0 → 14 | The lid's `clip-path` opens from exactly the screen rect to the full lid, so the bezel, chin and camera dot grow outward from the UI's edges. The screen corners round off from 0 to 14px. |
-| Deck rises | 1 → 8 | The keyboard deck sits flat, hinged at the lid's bottom edge (`rotateX(90deg)`), so it enters from below the frame as the rig recedes. Up close the perspective is wide, and it flattens as the rig settles. |
-| Lean | 0 → 10 → 24 | The lid tips back 0 → 13° (`power2.out`), then settles to 8° (`sine.inOut`). This secondary motion lags the dolly and makes it read as an object with weight. |
-| Land | 4 → 32 | The floor shadow fades in and widens (scaleX 0.6 → 1). The eyebrow and headline rise in from frame 9, staggered by 2f. |
+| Wind-up | −18 → 0 | The rig dollies toward camera to an apparent 1.025× (`power2.inOut`) and comes to rest. It is still frameless and full-bleed. |
+| Pull-back | 0 → 48 | The rig dollies away in z to an apparent 0.55× (`power2.out`). Measured on the render: frame 1 is about 0.96× and frame 2 already 0.92× (22% of the move), 87% is done by frame 16 and 96% by frame 24, and it settles by frame 40. |
+| Wrap | 0 → 29 | The lid's `clip-path` opens from exactly the screen rect to the full lid, so the bezel, chin and camera dot grow outward from the UI's edges. The screen corners round off from 0 to 14px. |
+| Deck rises | 2 → 16 | The keyboard deck sits flat, hinged at the lid's bottom edge (`rotateX(90deg)`), so it enters from below the frame as the rig recedes. Up close the perspective is wide, and it flattens as the rig settles. |
+| Lean | 0 → 19 → 48 | The lid tips back 0 → 13° (`power2.out`), then settles to 8° (`sine.inOut`). This secondary motion lags the dolly and makes it read as an object with weight. |
+| Land | 7 → 64 | The floor shadow fades in and widens (scaleX 0.6 → 1). The eyebrow and headline rise in from frame 18, staggered by 3.6f. |
 
 ## Build it
 
@@ -73,8 +73,8 @@ The full working composition is in [demo.html](demo.html).
 - **Landed scale `K`.** 0.45–0.65. Lower frees room for copy. Below about 0.4 the UI stops reading as UI.
 - **Perspective `P`.** 1800–3200px. Lower acts like a wider lens: more keystone, and a deck that balloons mid-move. Above about 3200px the deck flattens to a sliver and the laptop looks like a monitor.
 - **Lean.** Rest 5–10° with a peak 4–6° past it. Past about 15° at rest, the screen keystones enough that the UI looks distorted.
-- **Ease.** Apparent scale is `P / (P − z)`, so a z tween front-loads the shrink by itself, close to log space. `power2.out` on z already lands like `power3`/`power4` on screen: 22% of the shrink happens in frame 1. `power3.out` measured 33%, and `expo.out` is harsher still, reading as a cut.
-- **Duration.** 0.7–1.0s (21–30f). The visible travel is mostly over by frame 10, and the lean settle fills the rest.
+- **Ease.** Apparent scale is `P / (P − z)`, so a z tween front-loads the shrink by itself, close to log space. `power2.out` on z already lands like `power3`/`power4` on screen: 22% of the shrink happens by frame 2. `power3.out` measured 33%, and `expo.out` is harsher still, reading as a cut.
+- **Duration.** 0.7–1.0s (42–60f). The visible travel is mostly over by frame 20, and the lean settle fills the rest.
 
 ## Pitfalls
 
@@ -93,4 +93,4 @@ The full working composition is in [demo.html](demo.html).
 
 ## Sound
 
-A soft air whoosh starting on frame 0 and peaking by frame 2 (fastest shrink), then a low, muted thud as the lean settles near frames 20–24.
+A soft air whoosh starting on frame 0 and peaking by frame 4 (fastest shrink), then a low, muted thud as the lean settles near frames 40–48.
