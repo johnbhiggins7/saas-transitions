@@ -20,7 +20,7 @@ Each transition lives in `transitions/<slug>/`:
 | --- | --- |
 | `SKILL.md` | The subskill: when to use it, frame-by-frame anatomy, GSAP code, tuning, pitfalls, variants, sound pairing |
 | `demo.html` | A working two-scene HyperFrames composition built on the shared light UI kit |
-| `preview.mp4` | The rendered demo (1920×1080, 30fps) |
+| `preview.mp4` | The rendered demo (1920×1080, 60fps) |
 | `contact.png` | 12 frames across the transition window. Read this to *see* the transition without playing video. |
 
 **To use one:** pick it from the matrix below, open its `SKILL.md`, and look at `contact.png`. Then adapt the code from `demo.html` to your scenes. Read `/hyperframes-core` first if you haven't written a composition before.
@@ -56,7 +56,7 @@ Pick **2–3 signature transitions per video** and let them do 80% of the work (
 ## House rules for every transition
 
 - **Ease hard.** Never linear. Use a fast-in, long exponential settle (`expo.out`, `power3/4`). UI cards may overshoot 2–5% (`back.out(1.2)`).
-- **Keep it tight.** 10–20 frames at 30fps (0.33–0.67s) for the move itself. Camera rushes and morphs can run to 24f. Anything longer stalls the narrative.
+- **Keep it tight.** 20–40 frames at 60fps (0.33–0.67s) for the move itself. Camera rushes and morphs can run to 48f (0.8s). Anything longer stalls the narrative.
 - **The transition is the exit.** Don't fade scene A out before the move. Outgoing and incoming animate in the same window (`/hyperframes-animation` → `transitions/overview.md`).
 - **Telegraph, then move.** Draw the eye to where the motion starts, a few frames before it starts.
 - **Seek-safe.** Use one paused GSAP timeline with `tl.set` for state flips, never `onComplete`, and no `Math.random`.

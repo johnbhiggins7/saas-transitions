@@ -16,7 +16,7 @@ transitions/<slug>/
 
 ## demo.html contract
 
-- **Canvas.** 1920×1080 and 30fps (the render script passes `--fps 30`). Root `data-duration` is 3.5–6s. Scene A gets about 1.2–2s to establish, then the transition, then scene B holds at least 1.2s after it lands.
+- **Canvas.** 1920×1080 and 60fps (the render script passes `--fps 60`). Timelines are time-based, but anything per-frame must use 60: baked keyframes (one sample per rendered frame), frame-snapped constants (`F = 1 / 60`), and shutter-style motion blur sized to a frame's travel (half what 30fps needs). Count frames at 60fps everywhere in SKILL.md. Root `data-duration` is 3.5–6s. Scene A gets about 1.2–2s to establish, then the transition, then scene B holds at least 1.2s after it lands.
 - **Head.** Include `<meta name="hf-transition" content="start=<T>;duration=<D>">`, the GSAP 3.14.2 CDN script, and `<link rel="stylesheet" href="../../shared/ui-kit.css" />`. `T`/`D` must match the script; the render script uses them to frame `contact.png`.
 - **Scenes.** `<div id="s1" class="scene">` is visible. Later scenes use `class="scene next"` (opacity 0) and get revealed by the timeline. Never put `class="clip"` on scene divs. Only `#root` carries `data-composition-id` / `data-start` / `data-duration` / `data-width` / `data-height`.
 - **One world or two scenes.** When the mechanic is a camera move through one continuous space (pan, pullback, z-push, isometric stack), build a single `.scene` holding a large world in a `.cam` layer, and frame scene A and scene B as two camera positions in it. The `hf-transition` meta still marks the move.
@@ -61,7 +61,7 @@ Position elements absolutely in scene pixels when the motion depends on them. Fl
 name: <slug>
 title: <Human Title>
 category: camera-spatial | morphing | ui-native | masking | match-cuts | soft
-duration: <D>s (<frames>f @ 30fps)
+duration: <D>s (<frames>f @ 60fps)
 energy: calm | medium | medium-high | high
 description: <one sentence: what moves, and what it becomes. Used by the gallery and the index.>
 ---
@@ -76,7 +76,7 @@ description: <one sentence: what moves, and what it becomes. Used by the gallery
 <bullets with concrete SaaS situations; link sibling transitions with relative links ../<slug>/SKILL.md>
 <one line on when to avoid it, and what to use instead>
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 <table: Beat | Frames | What happens. Frame 0 = transition start.>
 
 ## Build it

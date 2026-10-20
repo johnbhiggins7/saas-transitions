@@ -11,7 +11,7 @@ render_one() {
   local slug="$1" dir="transitions/$1"
   [ -f "$dir/demo.html" ] || { echo "✗ $slug: no $dir/demo.html" >&2; return 1; }
 
-  hyperframes render -c "$dir/demo.html" --fps 30 --quality looks --strict --quiet --workers 2 \
+  hyperframes render -c "$dir/demo.html" --fps 60 --quality looks --strict --quiet --workers 2 \
     --output "$dir/preview.mp4" >"$dir/.render.log" 2>&1 \
     || { echo "✗ $slug: render failed (see $dir/.render.log)" >&2; tail -20 "$dir/.render.log" >&2; return 1; }
 
