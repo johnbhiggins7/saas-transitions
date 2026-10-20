@@ -161,7 +161,7 @@
 
       // ---- Rack Focus ----
       const T = 1.6; // transition start
-      const D = 0.7; // full rack (21f @ 30fps)
+      const D = 0.7; // full rack (42f @ 60fps)
       const CARD = { x: 72, y: 556, w: 900, h: 432 }; // #insight box in frame px (matches CSS)
 
       // One variable drives the pull: the focal plane travels front (0) -> back (1) on power2.inOut.
@@ -185,7 +185,7 @@
       tl.to("#bg-cam", { scale: 1, duration: D, ease: "power2.inOut" }, T);
 
       // ---- Scene B landing: the chart answers the card as focus arrives ----
-      const tLand = T + D * 0.7; // back plane is under 1px of blur from here (f15)
+      const tLand = T + D * 0.7; // back plane is under ~1px of blur from here (f29.4)
       tl.to("#band", { scaleY: 1, duration: 0.5, ease: "expo.out" }, tLand);
       tl.to("#callout", { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.6)" }, tLand + 0.06);
       tl.fromTo("#dot-ring", { opacity: 0.9, scale: 1 }, { opacity: 0, scale: 2.4, duration: 0.7, ease: "power2.out" }, tLand + 0.06);

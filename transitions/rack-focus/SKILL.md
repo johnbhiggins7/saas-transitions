@@ -2,7 +2,7 @@
 name: rack-focus
 title: Rack Focus
 category: camera-spatial
-duration: 0.7s (21f @ 30fps)
+duration: 0.7s (42f @ 60fps)
 energy: calm
 description: Focus pulls from a sharp foreground card to the blurred dashboard behind it. The card softens and drifts toward the lens while the back plane sharpens and settles.
 ---
@@ -21,15 +21,15 @@ Two depth planes share the frame the whole time: a sharp foreground element and 
 
 Avoid it when the two scenes aren't stacked in depth, or when the front element would cover what scene B needs to show. It stays on screen, soft. Use [soft-blur](../soft-blur/SKILL.md) or [cross-dissolve](../cross-dissolve/SKILL.md) instead.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −8 → 0 | The card's "View breakdown" button presses (scale 0.95 yoyo, about 4f each way). The press gives the eye a reason to look past the card. |
-| Release | 0 → 8 | The focal plane leaves the card on `power2.inOut`. Card blur goes 0 → 2px (visible from f5) and the card starts drifting toward the lens. The back plane is still above 8px. |
-| Both soft | 8 → 13 | Card 2 → 8px, dashboard 8 → 2px, crossing at about 5px on f10–11. Nothing in frame is sharp for about 5f. This dip is what makes it a rack and not a dissolve. |
-| Land | 13 → 21 | The dashboard is at about 2px on f13 and under 1px from f15, settling from scale 1.035 → 1 around the chart. The card ends at 14px blur, 1.06×, offset (−80, +36). Its right edge has cleared the chart panel. |
-| Answer | 15 → 38 | The chart's October band grows (`expo.out`), the "EMEA +18%" callout pops at f17 (`back.out(1.6)`) and the endpoint ring pulses. |
+| Telegraph | −16 → 0 | The card's "View breakdown" button presses (scale 0.95 yoyo, about 7f each way). The press gives the eye a reason to look past the card. |
+| Release | 0 → 16 | The focal plane leaves the card on `power2.inOut`. Card blur goes 0 → 2px (visible from f10) and the card starts drifting toward the lens. The back plane is still above 8px. |
+| Both soft | 16 → 26 | Card 2 → 8px, dashboard 8 → 2px, crossing at about 5px on f21. Nothing in frame is sharp for about 10f. This dip is what makes it a rack and not a dissolve. |
+| Land | 26 → 42 | The dashboard is at about 2px on f26 and under 1px from f30, settling from scale 1.035 → 1 around the chart. The card ends at 14px blur, 1.06×, offset (−80, +36). Its right edge has cleared the chart panel. |
+| Answer | 29 → 75 | The chart's October band grows (`expo.out`), the "EMEA +18%" callout pops at f33 (`back.out(1.6)`) and the endpoint ring pulses. |
 
 ## Build it
 
@@ -60,7 +60,7 @@ tl.fromTo("#fg-cam", { x: 0, y: 0, scale: 1 }, { x: -80, y: 36, scale: 1.06, dur
 tl.fromTo("#bg-focus", { filter: `blur(${BLUR}px)` }, { filter: "blur(0px)", duration: D, ease: refocus }, T);
 tl.to("#bg-cam", { scale: 1, duration: D, ease: "power2.inOut" }, T);
 
-const tLand = T + D * 0.7; // back plane under ~1px from here (f15)
+const tLand = T + D * 0.7; // back plane under ~1px from here (f29.4)
 tl.to("#band", { scaleY: 1, duration: 0.5, ease: "expo.out" }, tLand);
 tl.to("#callout", { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.6)" }, tLand + 0.06);
 ```
@@ -71,13 +71,13 @@ The full working composition is in [demo.html](demo.html).
 
 - **Duration.** 0.6–0.8s. The readable transfer is only the middle third, so under 0.5s it looks like a blur glitch.
 - **`BLUR`.** 10–18px at 1080p. Under 8px the back plane stays legible in scene A and there's no depth. Over 20px the soft card turns into white fog.
-- **`K` (perceptual exponent).** At 0.7s, `K = 1` gives about 10f where nothing is sharp (mushy). `1.5` gives about 5f (the demo). `2` gives about 3f, and the pull starts to read as a snap.
+- **`K` (perceptual exponent).** At 0.7s, `K = 1` gives about 20f where nothing is sharp (mushy). `1.5` gives about 10f (the demo). `2` gives about 6f, and the pull starts to read as a snap.
 - **Front drift.** Keep x/y under about 100px and scale 1.04–1.08. Any more and it reads as a camera push.
 - **Back breathing.** Start at 1.02–1.05× and settle to 1. Scale around the target's centre so the target doesn't slide.
 
 ## Pitfalls
 
-- **Easing the blur radius directly.** The first build ran `power2.inOut` on both radii with a 4f lag. Measured edge energy showed the card effectively soft by f8 and the chart not sharp until f18: 10f where nothing reads. Shape the radius with the `K` exponent instead.
+- **Easing the blur radius directly.** The first build ran `power2.inOut` on both radii with an 8f lag. Measured edge energy showed the card effectively soft by f16 and the chart not sharp until f36: 20f where nothing reads. Shape the radius with the `K` exponent instead.
 - **Fading the front plane out.** That turns the move into a [soft-blur](../soft-blur/SKILL.md) dissolve. The defocused card stays at full opacity, so plan the layout: it should cover only back-plane content that scene B doesn't need, and drift away from the target.
 - **px `transformOrigin` on SVG children.** GSAP resolves px origins on SVG elements against the element's own bbox, not the viewBox, so `"698px 98px"` on the endpoint ring pivots about 700px away. Use `"50% 50%"` or `svgOrigin`.
 - **Filter and transform on one node.** Keep blur on the unscaled `.focus` wrapper so it stays in screen pixels and the transform tweens never touch `filter`.
@@ -91,4 +91,4 @@ The full working composition is in [demo.html](demo.html).
 
 ## Sound
 
-A soft airy swell (lens-ring whir) peaking on the crossover at f10–11, then a light tick when the callout lands at f17.
+A soft airy swell (lens-ring whir) peaking on the crossover at f21, then a light tick when the callout lands at f33.
