@@ -74,6 +74,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Infinite Canvas Pan](transitions/infinite-canvas-pan/SKILL.md) | Camera & Spatial | 1s | Glides across one dot-grid canvas between node clusters, with a slight mid-pan zoom-out |
 | [Whip Pan](transitions/whip-pan/SKILL.md) | Camera & Spatial | 0.43s | Whips to peak speed under horizontal motion blur, with a hard cut on the fastest frame |
 | [Z-Space Push](transitions/z-space-push/SKILL.md) | Camera & Spatial | 0.8s | Flies through blurred foreground layers to land sharp on a panel deep behind them |
+| [Rack Focus](transitions/rack-focus/SKILL.md) | Camera & Spatial | 0.7s | Focus pulls from a foreground card to the dashboard behind it, with almost no movement |
 <!-- index:end -->
 
 ## Adding or changing a transition

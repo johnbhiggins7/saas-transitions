@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.7" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Two depth planes. Each has an unscaled wrapper that carries the blur (.focus)
+         and an inner layer that carries the transform (.cam), so the blur stays in screen px. */
+      .focus { position: absolute; inset: 0; }
+      .cam { position: absolute; inset: 0; }
+
+      /* ---- Back plane: retention dashboard ---- */
+      .kpis { position: absolute; left: 280px; top: 108px; width: 520px; height: 160px; }
+      .kpis .card { height: 160px; }
+      .risk { position: absolute; left: 280px; top: 292px; width: 520px; height: 596px; }
+      .risk .table { margin-top: 16px; }
+      .risk .tr { grid-template-columns: 2fr 1fr 1fr; }
+      /* The rack target. Frame box: x 944, y 188, 824×780 (app at 120,80). */
+      #panel { position: absolute; left: 824px; top: 108px; width: 824px; height: 780px; padding: 32px; }
+      .panel-head { display: flex; align-items: center; gap: 24px; }
+      .panel-head .pill { margin-left: auto; }
+      .legend .emea i { background: var(--pink); }
+      .legend .rest i { background: #c7d0dc; }
+      .panel-stat { display: flex; align-items: baseline; gap: 16px; margin-top: 28px; }
+      .panel-stat .card-value { font-size: 56px; margin-top: 0; }
+      .chart { position: absolute; left: 32px; top: 236px; width: 760px; height: 460px; }
+      .chart svg { position: absolute; left: 0; top: 0; }
+      .chart .other { fill: none; stroke: #c7d0dc; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+      .chart .emea { fill: none; stroke: var(--pink); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; }
+      .chart .month { font-size: 15px; fill: var(--muted); font-family: Inter, sans-serif; }
+      #callout { position: absolute; left: 540px; top: 0px; height: 36px; padding: 0 14px; border-radius: 18px; background: var(--pink); color: #fff; font-size: 16px; font-weight: 700; display: flex; align-items: center; box-shadow: 0 6px 16px rgba(236, 72, 153, 0.35); }
+
+      /* ---- Front plane: AI insight card, hanging over the app window's left edge ---- */
+      #insight { position: absolute; left: 72px; top: 556px; width: 900px; height: 432px; padding: 40px; border-radius: 24px; box-shadow: 0 2px 6px rgba(10, 37, 64, 0.08), 0 40px 100px rgba(10, 37, 64, 0.28); }
+      .ins-top { display: flex; align-items: center; gap: 16px; }
+      .ai-glyph { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #7a73ff, #635bff 55%, #4b44d6); display: flex; align-items: center; justify-content: center; }
+      .ins-top .small { margin-left: auto; }
+      #insight .h2 { margin-top: 28px; font-size: 44px; }
+      #insight .body { margin-top: 14px; max-width: 780px; }
+      .ins-foot { position: absolute; left: 40px; right: 40px; bottom: 40px; display: flex; align-items: center; gap: 12px; }
+      .stack { display: flex; }
+      .stack .avatar { border: 3px solid #fff; margin-right: -10px; }
+      .ins-foot .small { margin-left: 18px; color: var(--ink-2); }
+      .ins-foot .btn:first-of-type { margin-left: auto; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <div id="s1" class="scene">
+        <!-- Back plane (starts out of focus) -->
+        <div id="bg-focus" class="focus">
+          <div id="bg-cam" class="cam dots">
+            <div class="app">
+              <aside class="app-sidebar">
+                <div class="brand"><span class="brand-mark"></span>Northwind</div>
+                <div class="nav-item"><span class="nav-icon"></span>Home</div>
+                <div class="nav-item active"><span class="nav-icon"></span>Retention</div>
+                <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+                <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+                <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+              </aside>
+              <div class="app-body">
+                <div class="app-topbar">
+                  <div class="page-title">Retention</div>
+                  <div class="search">Search</div>
+                  <div class="avatar sky">JL</div>
+                </div>
+              </div>
+              <div class="kpis grid-2">
+                <div class="card"><div class="card-label">Net retention</div><div class="card-value">96.2%</div><span class="delta down">−1.4%</span></div>
+                <div class="card"><div class="card-label">At-risk accounts</div><div class="card-value">14</div><span class="delta down">+3</span></div>
+              </div>
+              <div class="card risk">
+                <div class="h3">Accounts at risk</div>
+                <div class="table">
+                  <div class="tr head"><span>Account</span><span>Seats</span><span>Status</span></div>
+                  <div class="tr"><span class="cell-main"><span class="avatar pink">AC</span>Acme Corp</span><span>38%</span><span class="pill amber">At risk</span></div>
+                  <div class="tr"><span class="cell-main"><span class="avatar teal">GX</span>Globex</span><span>34%</span><span class="pill amber">At risk</span></div>
+                  <div class="tr"><span class="cell-main"><span class="avatar amber">IN</span>Initech</span><span>31%</span><span class="pill pink">Critical</span></div>
+                  <div class="tr"><span class="cell-main"><span class="avatar sky">UM</span>Umbrella</span><span>52%</span><span class="pill green">Healthy</span></div>
+                  <div class="tr"><span class="cell-main"><span class="avatar">HO</span>Hooli</span><span>61%</span><span class="pill green">Healthy</span></div>
+                </div>
+              </div>
+              <div id="panel" class="card">
+                <div class="panel-head">
+                  <div class="h3">Churn by region</div>
+                  <div class="legend"><span class="emea"><i></i>EMEA</span><span class="rest"><i></i>Other regions</span></div>
+                  <span class="pill">Last 6 months</span>
+                </div>
+                <div class="panel-stat">
+                  <div class="card-value">4.6%</div>
+                  <span class="delta down">+18% EMEA churn</span>
+                </div>
+                <div class="chart">
+                  <svg width="760" height="460" viewBox="0 0 760 460">
+                    <rect id="band" x="636" y="0" width="124" height="420" rx="10" fill="rgba(236, 72, 153, 0.09)" />
+                    <line class="chart-grid" x1="0" y1="105" x2="760" y2="105" />
+                    <line class="chart-grid" x1="0" y1="210" x2="760" y2="210" />
+                    <line class="chart-grid" x1="0" y1="315" x2="760" y2="315" />
+                    <line class="chart-grid" x1="0" y1="420" x2="760" y2="420" />
+                    <polyline class="other" points="20,310 164,320 308,300 452,310 596,330 698,320" />
+                    <polyline class="other" points="20,240 164,230 308,250 452,260 596,240 698,250" />
+                    <polyline class="other" points="20,180 164,200 308,170 452,190 596,180 698,200" />
+                    <polyline class="emea" points="20,220 164,210 308,230 452,180 596,130 698,60" />
+                    <circle id="dot-ring" cx="698" cy="60" r="10" fill="none" stroke="#ec4899" stroke-width="3" />
+                    <circle cx="698" cy="60" r="9" fill="#ec4899" stroke="#fff" stroke-width="3" />
+                    <text class="month" x="20" y="452" text-anchor="middle">May</text>
+                    <text class="month" x="164" y="452" text-anchor="middle">Jun</text>
+                    <text class="month" x="308" y="452" text-anchor="middle">Jul</text>
+                    <text class="month" x="452" y="452" text-anchor="middle">Aug</text>
+                    <text class="month" x="596" y="452" text-anchor="middle">Sep</text>
+                    <text class="month" x="698" y="452" text-anchor="middle">Oct</text>
+                  </svg>
+                  <div id="callout">EMEA +18%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Front plane (starts in focus) -->
+        <div id="fg-focus" class="focus">
+          <div id="fg-cam" class="cam">
+            <div id="insight" class="card">
+              <div class="ins-top">
+                <div class="ai-glyph">
+                  <svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 2 L14.2 9.8 L22 12 L14.2 14.2 L12 22 L9.8 14.2 L2 12 L9.8 9.8 Z" fill="#fff" /></svg>
+                </div>
+                <div class="eyebrow">Northwind AI · Insight</div>
+                <div class="small">Just now</div>
+              </div>
+              <div class="h2">Churn risk is up 18% in EMEA</div>
+              <div class="body">Three enterprise accounts fell below 40% seat usage in October, led by a drop in Reports.</div>
+              <div class="ins-foot">
+                <div class="stack"><span class="avatar pink">AC</span><span class="avatar teal">GX</span><span class="avatar amber">IN</span></div>
+                <span class="small">Acme, Globex, Initech</span>
+                <div class="btn">Dismiss</div>
+                <div id="cta" class="btn btn-primary">View breakdown</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A: back plane is already soft; the insight card arrives sharp ----
+      const BLUR = 14; // px of defocus on the out-of-focus plane, in screen space
+      tl.set("#bg-focus", { filter: `blur(${BLUR}px)` }, 0);
+      tl.set("#bg-cam", { scale: 1.035, transformOrigin: "1356px 578px" }, 0); // back plane sits slightly magnified until it's in focus
+      tl.fromTo("#insight", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 0.1);
+      tl.fromTo("#insight .ins-top, #insight .h2, #insight .body, #insight .ins-foot", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0.25);
+      tl.set("#band", { scaleY: 0, transformOrigin: "50% 100%" }, 0);
+      tl.set("#callout", { opacity: 0, scale: 0.6, transformOrigin: "100% 100%" }, 0);
+      tl.set("#dot-ring", { opacity: 0, transformOrigin: "50% 50%" }, 0);
+
+      // ---- Rack Focus ----
+      const T = 1.6; // transition start
+      const D = 0.7; // full rack (21f @ 30fps)
+      const CARD = { x: 72, y: 556, w: 900, h: 432 }; // #insight box in frame px (matches CSS)
+
+      // One variable drives the pull: the focal plane travels front (0) -> back (1) on power2.inOut.
+      // Each plane's blur = BLUR x (its distance from the focal plane)^K. K > 1 keeps each plane
+      // near-sharp longer, because the eye reads 0 -> 2px of blur as most of the change.
+      const K = 1.5;
+      const pull = gsap.parseEase("power2.inOut");
+      const defocus = (p) => Math.pow(pull(p), K); // front plane: focal plane moving away
+      const refocus = (p) => 1 - Math.pow(1 - pull(p), K); // back plane: focal plane arriving
+
+      // Telegraph: the CTA presses, motivating the look past the card.
+      tl.to("#cta", { scale: 0.95, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.26);
+
+      // Front plane: defocus, and drift toward the lens (bigger, off-axis) so it reads as nearer.
+      tl.set("#fg-cam", { transformOrigin: `${CARD.x + CARD.w / 2}px ${CARD.y + CARD.h / 2}px` }, 0);
+      tl.fromTo("#fg-focus", { filter: "blur(0px)" }, { filter: `blur(${BLUR}px)`, duration: D, ease: defocus }, T);
+      tl.fromTo("#fg-cam", { x: 0, y: 0, scale: 1 }, { x: -80, y: 36, scale: 1.06, duration: D, ease: "power2.inOut" }, T);
+
+      // Back plane: comes into focus with a small scale settle (lens breathing).
+      tl.fromTo("#bg-focus", { filter: `blur(${BLUR}px)` }, { filter: "blur(0px)", duration: D, ease: refocus }, T);
+      tl.to("#bg-cam", { scale: 1, duration: D, ease: "power2.inOut" }, T);
+
+      // ---- Scene B landing: the chart answers the card as focus arrives ----
+      const tLand = T + D * 0.7; // back plane is under 1px of blur from here (f15)
+      tl.to("#band", { scaleY: 1, duration: 0.5, ease: "expo.out" }, tLand);
+      tl.to("#callout", { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.6)" }, tLand + 0.06);
+      tl.fromTo("#dot-ring", { opacity: 0.9, scale: 1 }, { opacity: 0, scale: 2.4, duration: 0.7, ease: "power2.out" }, tLand + 0.06);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
