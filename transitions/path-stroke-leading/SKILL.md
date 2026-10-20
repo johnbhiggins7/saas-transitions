@@ -2,7 +2,7 @@
 name: path-stroke-leading
 title: Path & Stroke Leading
 category: match-cuts
-duration: 0.9s (27f @ 30fps)
+duration: 0.9s (54f @ 60fps)
 energy: medium-high
 description: A glowing data packet draws a wire across the frame from a source port to a destination; scene A is wiped away behind the head and scene B's nodes pop onto the wire as the head reaches them.
 ---
@@ -20,16 +20,16 @@ A bright head travels along a curved path and draws a stroke behind it. Scene B 
 
 Avoid it when nothing in the story actually flows, such as a settings change or a pricing page. A line crossing the frame for no reason reads as a generic wipe. Use [border-rail-wipe](../border-rail-wipe/SKILL.md) or [light-sweep](../light-sweep/SKILL.md) instead.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −15 → 0 | A ring pings off the source port (scale 1 → 2.6, 15f). At −9 the head charges at the port (scale 0 → 1, `back.out(2.2)`). The wire SVG turns visible at f0, under the head. |
-| Launch | 0 → 10 | The head leaves the port from rest (`power2.inOut` on arc length). It covers only 7% of the path (110px) in the first 7f. The mask edge reaches scene A's panel at f7. |
-| Node 1 | 9 → 12 | Dedupe pops at f9, one frame before the head reaches its left port: opacity is set to 1 and it scales 0.6 → 1 (`back.out(1.7)`) from its left edge, so its port stays on the wire tip. The head runs under the card from f10 to f12 (hidden at f11), and the card's glow ring fades from f12. |
-| Dive | 12 → 17 | This is the fastest stretch: ~170px/frame of arc at f13.5. Convert to USD pops at f14 and the head passes through it from f15 to f17 (hidden at f16; the trail and mask edge lead). The white trail core stretches to ~290px because its length follows speed. |
-| Settle | 17 → 26 | The head climbs into the destination port, decelerating. Scene A is fully wiped at f21. The last 7f cover 7% of the path. Trails fade from f24. |
-| Land | 25 → 45 | The head is absorbed into the port (scale → 0, 5f from f25). At f27 the destination hard-swaps from dashed to live with its value already rising (it started at f26, hidden), a ring pings, and the card bumps to 1.05 for 3f then settles on `expo.out`. |
+| Telegraph | −30 → 0 | A ring pings off the source port (scale 1 → 2.6, 30f). At −18 the head charges at the port (scale 0 → 1, `back.out(2.2)`). The wire SVG turns visible at f0, under the head. |
+| Launch | 0 → 20 | The head leaves the port from rest (`power2.inOut` on arc length). It covers only 7% of the path (110px) in the first 14f. The mask edge reaches scene A's panel at f15. |
+| Node 1 | 19 → 24 | Dedupe pops at f19, one frame before the head reaches its left port (f20): opacity is set to 1 and it scales 0.6 → 1 (`back.out(1.7)`) from its left edge, so its port stays on the wire tip. The head runs under the card from f20 to f24 (hidden on f21–23), and the card's glow ring fades from f24. |
+| Dive | 24 → 34 | This is the fastest stretch: ~86px/frame of arc at f27.5. Convert to USD pops at f29 and the head passes through it from f30 to f34 (hidden on f31–33; the trail and mask edge lead). The white trail core stretches to ~290px because its length follows speed. |
+| Settle | 34 → 52 | The head climbs into the destination port, decelerating. Scene A is fully wiped at f41. The last 14f cover 7% of the path. Trails fade from f48. |
+| Land | 50 → 90 | The head is absorbed into the port (scale → 0, 11f from f50). At f54 the destination hard-swaps from dashed to live with its value already rising (it started at f52, hidden), a ring pings, and the card bumps to 1.05 for 6f then settles on `expo.out`. |
 
 ## Build it
 
@@ -84,7 +84,7 @@ const tLand = T + D;
 tl.to("#head", { scale: 0, duration: 0.18, ease: "power2.in" }, tLand - 0.06);
 tl.to(".trail", { opacity: 0, duration: 0.3, ease: "power1.out" }, tLand - 0.1);
 tl.set("#dst .empty", { opacity: 0 }, tLand).set("#dst .live", { opacity: 1 }, tLand);
-// Starts a frame early under the hidden .live card, so the swap frame never shows an empty body.
+// Starts ~2 frames (0.04s) early under the hidden .live card, so the swap frame never shows an empty body.
 tl.fromTo("#dst .value", { y: 14, opacity: 0.35 }, { y: 0, opacity: 1, duration: 0.45, ease: "expo.out" }, tLand - 0.04);
 tl.to("#dst", { scale: 1.05, duration: 0.1, ease: "power2.out" }, tLand).to("#dst", { scale: 1, duration: 0.5, ease: "expo.out" }, tLand + 0.1);
 ```
@@ -93,8 +93,8 @@ The full working composition is in [demo.html](demo.html). It also has the desti
 
 ## Tuning
 
-- **Duration.** 0.8–1.0s for a ~1600px path. Peak arc speed is 3 × LEN / frames for `power2.inOut` (a cubic): 178px/frame here, carried by the trail streak. Faster and the head jumps between frames instead of streaking. Shorter paths can go down to 0.6s.
-- **Ease.** `power2.inOut`. The head has to leave from rest and arrive at rest, because it starts and ends on a port. `power3.inOut` covers under 60px in the first 7f, which feels stuck after the telegraph. Out-only eases make the head jump straight out of the source.
+- **Duration.** 0.8–1.0s for a ~1600px path. Peak arc speed is 3 × LEN / frames for `power2.inOut` (a cubic): 89px/frame here, carried by the trail streak. Faster and the head jumps between frames instead of streaking. Shorter paths can go down to 0.6s.
+- **Ease.** `power2.inOut`. The head has to leave from rest and arrive at rest, because it starts and ends on a port. `power3.inOut` covers under 60px in the first 14f, which feels stuck after the telegraph. Out-only eases make the head jump straight out of the source.
 - **Trail lags (0.2 / 0.07 of the move).** The trail is the head's own recent path, so it stretches in the dive and shrinks to nothing on arrival. Raise the lag for a longer streak. Above 0.3 it reads as a second line.
 - **Mask edge.** Transparent exactly at the head's x, opaque 16px behind it. Never let it get ahead of the head. A hard `clip-path` slices glyphs mid-letter; a feather wider than ~24px double-exposes both scenes' text in the band.
 - **Curve amplitude.** The middle segment drops 360px over 280px. Steeper curves make the mask edge stall while the head dives. Flatter curves turn it into a plain left-to-right wipe.
@@ -112,8 +112,8 @@ The full working composition is in [demo.html](demo.html). It also has the desti
 
 - **Line-graph lead.** The path is a chart line. Each data point of scene B's chart pops as the head reaches it, and the head stops on the latest value.
 - **Exit right.** No destination card: the wire runs off the right edge and the mask edge reaches x = 1920 as the head leaves. Use this when scene B has no single endpoint.
-- **Branch.** At a node, start a second driver on a second path with the same ease, offset by 2–3f. The flow fans out to two destinations.
+- **Branch.** At a node, start a second driver on a second path with the same ease, offset by 4–6f. The flow fans out to two destinations.
 
 ## Sound
 
-A rising electric zip that follows the head, soft ticks as it passes through each node (f10, f15), and a low thump plus a chime when it lands at f27.
+A rising electric zip that follows the head, soft ticks as it passes through each node (f20, f30), and a low thump plus a chime when it lands at f54.

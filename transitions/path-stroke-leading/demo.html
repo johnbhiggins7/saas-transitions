@@ -192,7 +192,7 @@
 
       // ---- Path & Stroke Leading ----
       const T = 1.5; // transition start
-      const D = 0.9; // head travel, source port → destination port (27f @ 30fps)
+      const D = 0.9; // head travel, source port → destination port (54f @ 60fps)
       const EASE = gsap.parseEase("power2.inOut"); // leaves the port from rest, settles into the next one
 
       // Wire geometry, mirrored from CSS: source port, node boxes (left x, center y, width), destination port.
@@ -263,7 +263,7 @@
       NODES.forEach((n, i) => {
         const tIn = timeAt(ends[i * 2] / LEN), tOut = timeAt(ends[i * 2 + 1] / LEN);
         // The node lands over scene A (right of the edge), so opacity is set, not faded: any fade ghosts the table through it.
-        tl.set(n.el, { opacity: 1 }, tIn - 0.033);
+        tl.set(n.el, { opacity: 1 }, tIn - 0.033); // 0.033s (~2 frames) before the head reaches the port
         tl.fromTo(n.el, { scale: 0.6 }, { scale: 1, duration: 0.4, ease: "back.out(1.7)" }, tIn - 0.033);
         tl.fromTo(`${n.el} .flash`, { opacity: 1 }, { opacity: 0, duration: 0.5, ease: "power2.out" }, tOut);
       });
@@ -276,7 +276,7 @@
       tl.set("#dst-ring", { scale: 1, opacity: 0.9 }, tLand);
       tl.to("#dst-ring", { scale: 2.6, opacity: 0, duration: 0.5, ease: "power2.out" }, tLand);
       // Hard swap on impact (a crossfade double-exposes "Waiting for data…" under the value). The value starts rising
-      // a frame early, hidden by .live, so the swap frame already shows it instead of an empty card body.
+      // ~2 frames (0.04s) early, hidden by .live, so the swap frame already shows it instead of an empty card body.
       tl.set("#dst .empty", { opacity: 0 }, tLand);
       tl.set("#dst .live", { opacity: 1 }, tLand);
       tl.fromTo("#dst .value", { y: 14, opacity: 0.35 }, { y: 0, opacity: 1, duration: 0.45, ease: "expo.out" }, tLand - 0.04);
