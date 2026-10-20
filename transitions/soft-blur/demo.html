@@ -147,10 +147,11 @@
 
       // ---- Soft Blur ----
       const T = 1.6; // transition start
-      const D = 0.7; // defocus + hold + resolve (21f @ 30fps)
+      const F = 1 / 60; // one frame
+      const D = 0.7; // defocus + hold + resolve (42f @ 60fps)
       const BLUR = 24; // peak radius, px in screen space
       const LIFT = 1.1; // brightness at peak: keeps the haze luminous instead of grey
-      const PEAK = { at: T + 0.267, hold: 0.133 }; // f8 -> f12
+      const PEAK = { at: T + 16 * F, hold: 8 * F }; // f16 -> f24
       const END = { x: 1744, y: 584 }; // frame px of the chart endpoint (card 400,380 + 1344,204)
       const sharp = "blur(0px) brightness(1)";
       const soft = `blur(${BLUR}px) brightness(${LIFT})`;
@@ -169,7 +170,7 @@
       tl.set("#s1", { visibility: "hidden" }, PEAK.at + PEAK.hold);
       // A 112px headline still reads as word shapes at 24px, so it would ghost through the swap.
       // Let it condense out of the haze as B sharpens instead.
-      tl.fromTo("#s2 .copy", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, PEAK.at + PEAK.hold - 0.033);
+      tl.fromTo("#s2 .copy", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, PEAK.at + PEAK.hold - 2 * F);
 
       // Resolve B: fast first, long settle in the 0-3px range where the eye reads sharpness.
       tl.fromTo("#f2", { filter: soft }, { filter: sharp, duration: T + D - (PEAK.at + PEAK.hold), ease: "power3.out" }, PEAK.at + PEAK.hold);
