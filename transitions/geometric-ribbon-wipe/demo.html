@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.5;duration=0.6" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* ---- Scene A: sources page ---- */
+      .sources { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+      .src { display: grid; gap: 14px; height: 196px; }
+      .src-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+      .src-icon svg { width: 28px; height: 28px; }
+      .src-meta { font-size: 15px; color: var(--muted); margin-top: -8px; }
+      .sync-card { height: 532px; display: flex; flex-direction: column; }
+      .sync-head { display: flex; align-items: center; justify-content: space-between; }
+      .sync-card .bars { flex: 1; height: auto; margin-top: 32px; gap: 18px; }
+
+      /* ---- Ribbons: full-frame solids clipped to a band between two edges.
+         --a = trailing edge, --b = leading edge (x at the frame's bottom); the top of each edge leads by 400px (LEAN). ---- */
+      .ribbons { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+      .ribbon { position: absolute; inset: 0; --a: -400px; --b: -400px;
+        clip-path: polygon(calc(var(--a) + 400px) 0, calc(var(--b) + 400px) 0, var(--b) 100%, var(--a) 100%); }
+      #rb-indigo { background: var(--accent); }
+      #rb-sky { background: var(--sky); }
+      #rb-soft { background: #c9c6ff; } /* not --accent-soft: too pale to read at 400px per frame */
+      #rb-ink { background: var(--ink); }
+
+      /* ---- Scene B: chapter title + workflow ---- */
+      #s2 .copy { position: absolute; left: 160px; top: 372px; width: 820px; } /* copy and flow card share the y = 540 centre line */
+      #s2 .chapter { display: flex; align-items: center; gap: 18px; }
+      #s2 .chapter .num { font-family: var(--mono); font-size: 18px; font-weight: 600; color: #fff; background: var(--accent); border-radius: 8px; padding: 6px 12px; }
+      #s2 .display { margin-top: 32px; }
+      #s2 .body { margin-top: 32px; width: 640px; }
+      #s2 .flow { position: absolute; left: 1080px; top: 250px; width: 680px; height: 580px; padding: 36px 40px; }
+      .flow-head { display: flex; align-items: center; justify-content: space-between; }
+      .node { display: flex; align-items: center; gap: 18px; height: 112px; padding: 0 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+      .node .src-icon { flex: none; }
+      .node-title { font-size: 20px; font-weight: 600; }
+      .node-sub { font-size: 15px; color: var(--muted); margin-top: 4px; }
+      .link { width: 2px; height: 40px; margin-left: 49px; background: var(--border); }
+      .nodes { margin-top: 36px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: chapter 1, data sources connected -->
+      <div id="s1" class="scene dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Sources</div>
+            <div class="nav-item"><span class="nav-icon"></span>Workflows</div>
+            <div class="nav-item"><span class="nav-icon"></span>Reports</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Sources</div>
+              <div class="search">Search</div>
+              <div class="avatar sky">JL</div>
+            </div>
+            <div class="app-content">
+              <div class="sources">
+                <div class="card src">
+                  <div class="src-icon" style="background: var(--accent-soft)"><svg viewBox="0 0 28 28" fill="none" stroke="#635bff" stroke-width="2.4"><ellipse cx="14" cy="7" rx="9" ry="3.5" /><path d="M5 7v14c0 2 4 3.5 9 3.5s9-1.5 9-3.5V7M5 14c0 2 4 3.5 9 3.5s9-1.5 9-3.5" /></svg></div>
+                  <div class="h3">Warehouse</div>
+                  <div class="src-meta">2.4M rows</div>
+                  <span class="pill green">Synced</span>
+                </div>
+                <div class="card src">
+                  <div class="src-icon" style="background: #e0f4fd"><svg viewBox="0 0 28 28" fill="none" stroke="#0ea5e9" stroke-width="2.4"><rect x="3" y="7" width="22" height="15" rx="3" /><path d="M3 12h22" /></svg></div>
+                  <div class="h3">Billing</div>
+                  <div class="src-meta">18,204 invoices</div>
+                  <span class="pill green">Synced</span>
+                </div>
+                <div class="card src">
+                  <div class="src-icon" style="background: #fde8f3"><svg viewBox="0 0 28 28" fill="none" stroke="#ec4899" stroke-width="2.4"><circle cx="11" cy="10" r="4" /><path d="M3 23c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5M19 6.5a4 4 0 0 1 0 7.5M21 16.8c2.4.8 4 2.9 4 6.2" /></svg></div>
+                  <div class="h3">CRM</div>
+                  <div class="src-meta">8,421 accounts</div>
+                  <span class="pill green">Synced</span>
+                </div>
+                <div class="card src">
+                  <div class="src-icon" style="background: #fff4e0"><svg viewBox="0 0 28 28" fill="none" stroke="#f59e0b" stroke-width="2.4" stroke-linejoin="round"><path d="M16 3 6 16h8l-2 9 10-13h-8z" /></svg></div>
+                  <div class="h3">Product events</div>
+                  <div class="src-meta">41k / hour</div>
+                  <span class="pill green">Synced</span>
+                </div>
+              </div>
+              <div class="card sync-card">
+                <div class="sync-head">
+                  <div class="h3">Rows synced, last 14 days</div>
+                  <div class="legend"><span><i></i>All sources</span></div>
+                </div>
+                <div class="bars">
+                  <div class="bar soft" style="height: 30%"></div><div class="bar soft" style="height: 36%"></div><div class="bar soft" style="height: 33%"></div><div class="bar soft" style="height: 41%"></div>
+                  <div class="bar soft" style="height: 46%"></div><div class="bar soft" style="height: 44%"></div><div class="bar soft" style="height: 52%"></div><div class="bar" style="height: 58%"></div>
+                  <div class="bar" style="height: 63%"></div><div class="bar" style="height: 61%"></div><div class="bar" style="height: 72%"></div><div class="bar" style="height: 79%"></div>
+                  <div class="bar" style="height: 86%"></div><div class="bar" style="height: 100%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B: chapter 2 title card -->
+      <div id="s2" class="scene next">
+        <div class="copy">
+          <div class="chapter"><span class="num">02</span><span class="eyebrow">Automate</span></div>
+          <div class="display">Put your data<br />to work</div>
+          <div class="body">Synced sources trigger workflows that follow up on their own.</div>
+        </div>
+        <div class="card flow">
+          <div class="flow-head">
+            <div class="h3">Churn save</div>
+            <span class="pill green">Live</span>
+          </div>
+          <div class="nodes">
+            <div class="node">
+              <div class="src-icon" style="background: #fff4e0"><svg viewBox="0 0 28 28" fill="none" stroke="#f59e0b" stroke-width="2.4" stroke-linejoin="round"><path d="M16 3 6 16h8l-2 9 10-13h-8z" /></svg></div>
+              <div><div class="node-title">Churn risk above 70%</div><div class="node-sub">Trigger · Product events</div></div>
+            </div>
+            <div class="link"></div>
+            <div class="node">
+              <div class="src-icon" style="background: #fde8f3"><svg viewBox="0 0 28 28" fill="none" stroke="#ec4899" stroke-width="2.4"><circle cx="11" cy="10" r="4" /><path d="M3 23c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" /></svg></div>
+              <div><div class="node-title">Alert the account owner</div><div class="node-sub">Action · CRM</div></div>
+            </div>
+            <div class="link"></div>
+            <div class="node">
+              <div class="src-icon" style="background: var(--accent-soft)"><svg viewBox="0 0 28 28" fill="none" stroke="#635bff" stroke-width="2.4" stroke-linecap="round"><rect x="4" y="4" width="20" height="20" rx="5" /><path d="m9 14 3.5 3.5L19 11" /></svg></div>
+              <div><div class="node-title">Create a save-offer task</div><div class="node-sub">Action · Billing</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ribbon layer, above both scenes. DOM order = stacking order: ink is on top. -->
+      <div class="ribbons">
+        <div id="rb-indigo" class="ribbon"></div>
+        <div id="rb-sky" class="ribbon"></div>
+        <div id="rb-soft" class="ribbon"></div>
+        <div id="rb-ink" class="ribbon"></div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo("#s1 .src", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
+      tl.fromTo("#s1 .sync-card", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.18);
+      tl.fromTo("#s1 .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.6, stagger: 0.03, ease: "power3.out" }, 0.3);
+
+      // ---- Geometric Ribbon Wipe ----
+      const T = 1.5; // first edge starts moving
+      const D = 0.6; // last edge has left (18f @ 30fps)
+      const F = 1 / 30;
+      const E = 9 * F; // one edge crossing the frame: indigo's two crossings must fit in D, so E = D / 2
+      const LEAN = 400; // the top of every edge leads its bottom by 400px (~20 deg); matches the CSS clip-path
+      // Bottom -> top in z. in / out = frame (after T) where the leading / trailing edge starts to cross.
+      // First in is last out, so the bands nest: A | indigo | sky | soft | ink | soft | sky | indigo | B.
+      // Uneven offsets keep the bands from reading as evenly spaced stripes.
+      const RIBBONS = [
+        { el: "#rb-indigo", in: 0, out: 9 },
+        { el: "#rb-sky", in: 1, out: 8 },
+        { el: "#rb-soft", in: 2.5, out: 6.5 },
+        { el: "#rb-ink", in: 3.5, out: 6 },
+      ];
+      RIBBONS.forEach((r) => {
+        // Each edge travels its own bottom x from -LEAN (top corner at the left frame edge) to 1920.
+        tl.fromTo(r.el, { "--b": `${-LEAN}px` }, { "--b": "1920px", duration: E, ease: "sine.inOut" }, T + r.in * F);
+        tl.fromTo(r.el, { "--a": `${-LEAN}px` }, { "--a": "1920px", duration: E, ease: "sine.inOut" }, T + r.out * F);
+      });
+
+      // f9: indigo's leading edge has just landed and its trailing edge has not moved, so it spans the frame.
+      const SWAP = T + 9 * F;
+      tl.set("#s2", { opacity: 1 }, SWAP);
+      tl.set("#s1", { visibility: "hidden" }, SWAP);
+
+      // ---- Scene B entrance: content is carried into place by the trailing ribbons ----
+      tl.fromTo("#s2 .copy", { x: -90 }, { x: 0, duration: 0.9, ease: "expo.out" }, SWAP);
+      tl.fromTo("#s2 .flow", { x: -140 }, { x: 0, duration: 0.9, ease: "expo.out" }, SWAP + 0.06);
+      tl.fromTo("#s2 .node", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.07, ease: "power3.out" }, SWAP + 0.12);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

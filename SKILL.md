@@ -93,6 +93,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Border & Navigation Rail Wipe](transitions/border-rail-wipe/SKILL.md) | Masking | 0.6s | The sidebar rail slides across as the wipe edge, then docks as the next view's panel |
 | [Kinetic Typography Mask](transitions/kinetic-type-mask/SKILL.md) | Masking | 1.4s | A headline slams in with the next scene inside its letters, then the camera pushes through a stem |
 | [Text Split Reveal](transitions/text-split/SKILL.md) | Masking | 0.9s | A headline slams in, then the frame splits along the type and the halves slide apart |
+| [Geometric & Brand Ribbon Wipe](transitions/geometric-ribbon-wipe/SKILL.md) | Masking | 0.6s | Staggered diagonal brand ribbons cover the frame for the swap, then trail off |
 <!-- index:end -->
 
 ## Adding or changing a transition
