@@ -2,7 +2,7 @@
 name: liquid-blob-morph
 title: Liquid Blob Morph
 category: morphing
-duration: 0.8s (24f @ 30fps)
+duration: 0.8s (48f @ 60fps)
 energy: medium-high
 description: A pressed button melts into a wobbling indigo blob that splashes droplets and floods the frame, then the next scene opens through an organic, lavender-rimmed hole in the liquid.
 ---
@@ -21,25 +21,25 @@ The fill of a UI element turns into liquid: it swells into an irregular drop, th
 
 Avoid it in serious tones (security, finance, enterprise admin), where it reads as a toy. Use [ui-deep-zoom](../ui-deep-zoom/SKILL.md) for a CTA, or [container-mask-expand](../container-mask-expand/SKILL.md) for a card.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −26 → 0 | The cursor glides onto the button (f−26 → −8) and clicks at f−6. A ripple and a 0.97 press start at f−5. The label and arrow fade over f−3 → 0, and the cursor fades out with them. |
-| Swell | 0 → 4 | The flood path starts as the ellipse inscribed in the pill (same fill, so invisible) and bulges into a wobbling ~170px drop (`power2.out` over the first 30%). By f3 the pill's ends are swallowed, and `#cta` is hidden at f4 while the drop still covers it all. A lavender lead slides out from behind the indigo over f0 → 3. |
-| Splash | 2 → 12 | Five droplets pinch off at f2/f3. A goo filter draws the necks. They fly out on `power3.out` and the surge swallows them again. |
-| Surge | 4 → 12 | The radius gains `1600·u⁴` while the centre drifts 364px up toward (930, 470) on `power2.inOut`. The last corner fills at f12. |
-| Open | 10 → 23 | Scene B switches on at f10, clipped to a zero-area path. A hole grows from (1020, 470), over the In progress tickets (text shows from f12), on `power1.inOut` with a lavender rim 1% ahead and 55px wider (about 55–80px thick). The indigo is gone at f22, and the lavender drains off the bottom-left corner by f23. |
-| Handoff | 24 | The clip path is removed and scene A plus the liquid are hidden. Nothing visible changes. |
-| Land | 10 → 37 | The app scales 1.05 → 1 (`expo.out`, 27f). Columns rise 48px from the centre out, then tickets settle with `back.out(1.2)`. The motion happens inside the opening hole, without opacity. |
+| Telegraph | −53 → 0 | The cursor glides onto the button (f−53 → −17) and clicks at f−12. A ripple and a 0.97 press start at f−11. The label and arrow fade over f−6 → 0, and the cursor fades out with them. |
+| Swell | 0 → 8 | The flood path starts as the ellipse inscribed in the pill (same fill, so invisible) and bulges into a wobbling ~170px drop (`power2.out` over the first 30%). By f6 the pill's ends are swallowed, and `#cta` is hidden at f8 while the drop still covers it all. A lavender lead slides out from behind the indigo over f0 → 6. |
+| Splash | 4 → 24 | Five droplets pinch off at f4/f6. A goo filter draws the necks. They fly out on `power3.out` and the surge swallows them again. |
+| Surge | 8 → 23 | The radius gains `1600·u⁴` while the centre drifts 364px up toward (930, 470) on `power2.inOut`. The last corner fills at f23. |
+| Open | 20 → 46 | Scene B switches on at f20, clipped to a zero-area path. A hole grows from (1020, 470), over the In progress tickets (text shows from f24), on `power1.inOut` with a lavender rim 1% ahead and 55px wider (about 55–80px thick). The indigo is gone at f43, and the lavender drains off the bottom-left corner by f46. |
+| Handoff | 48 | The clip path is removed and scene A plus the liquid are hidden. Nothing visible changes. |
+| Land | 20 → 74 | The app scales 1.05 → 1 (`expo.out`, 54f). Columns rise 48px from the centre out, then tickets settle with `back.out(1.2)`. The motion happens inside the opening hole, without opacity. |
 
 ## Build it
 
 Structure: `#s1` (z 0) › `svg#liquid` (z 1: `g[filter=goo]` › `#lead`, `g[filter=goo]` › `#flood` + droplets, then `#rim`, with `clipPath#reveal` › `#reveal-path` in its defs) › `#s2` (z 2, `clip-path: url(#reveal)`). The goo filter is `feGaussianBlur 10` followed by an alpha matrix `0 0 0 22 -9`.
 
 ```js
-const FPS = 30, T = 1.6, FLOOD_F = 13, REVEAL_AT = 10, REVEAL_F = 14; // reveal starts 3f before the flood lands
-const D = (REVEAL_AT + REVEAL_F) / FPS;                                // 24f = 0.8s
+const F = 1 / 60, T = 1.6, FLOOD_F = 26, REVEAL_AT = 20, REVEAL_F = 28; // one baked shape per 60fps frame; reveal starts 6f before the flood lands
+const D = (REVEAL_AT + REVEAL_F) * F;                                   // 48f = 0.8s
 const BTN = { x: 760, y: 790, w: 400, h: 88 }, bx = BTN.x + BTN.w / 2, by = BTN.y + BTN.h / 2; // hard-coded from CSS
 const FLOOD_TO = { x: 930, y: 470 }, REVEAL_FROM = { x: 1020, y: 470 }, REVEAL_TO = { x: 960, y: 540 }, N = 20;
 // [harmonic, amplitude, phase, wobble]: harmonics 2/3/5 never line up, so the outline never repeats
@@ -73,24 +73,24 @@ function floodShape(u, lobes, grow = 1, pad = 0, start = 1) {
   return blob(cx, cy, (a) => startR(a) * start + (r * wobble(a, lobes, u) - startR(a) * start) * m);
 }
 function revealShape(v, lobes, pad) {
-  const r = 1320 * open(v) + pad; // clears the last corner at f23, 1f before the handoff
+  const r = 1320 * open(v) + pad; // clears the last corner at f46, 2f before the handoff
   const cx = REVEAL_FROM.x + (REVEAL_TO.x - REVEAL_FROM.x) * v, cy = REVEAL_FROM.y + (REVEAL_TO.y - REVEAL_FROM.y) * v;
   return blob(cx, cy, (a) => r * wobble(a, lobes, v));
 }
-function bake(sel, start, frames, shape) { // one keyframe per frame from a pure function: seek-safe, no onUpdate
+function bake(sel, start, frames, shape) { // one keyframe per rendered 60fps frame from a pure function: seek-safe, no onUpdate
   tl.set(sel, { attr: { d: shape(0) } }, start);
-  for (let i = 1; i <= frames; i++) tl.to(sel, { attr: { d: shape(i / frames) }, duration: 1 / FPS, ease: "none" }, start + (i - 1) / FPS);
+  for (let i = 1; i <= frames; i++) tl.to(sel, { attr: { d: shape(i / frames) }, duration: F, ease: "none" }, start + (i - 1) * F);
 }
 tl.set("#lead, #flood", { attr: { d: blob(bx, by, () => 0) } }, 0); // zero-area, same structure; never d=""
 tl.set("#reveal-path, #rim", { attr: { d: blob(REVEAL_FROM.x, REVEAL_FROM.y, () => 0) } }, 0);
 tl.to("#cta-label, #cta-arrow", { opacity: 0, duration: 0.1, ease: "power1.in" }, T - 0.1);
-tl.set("#cta", { visibility: "hidden" }, T + 4 / FPS); // fully covered at f3-5; the drift uncovers it at f6
+tl.set("#cta", { visibility: "hidden" }, T + 8 * F); // fully covered at f6-10; the drift uncovers it at f12
 bake("#flood", T, FLOOD_F, (u) => floodShape(u, FLOOD_LOBES));
-bake("#lead", T, FLOOD_F, (u) => { // lavender meniscus: starts at 0.9× (hidden), slides out over 3f
-  const k = clamp01((u * FLOOD_F) / 3);
+bake("#lead", T, FLOOD_F, (u) => { // lavender meniscus: starts at 0.9× (hidden), slides out over 6f
+  const k = clamp01((u * FLOOD_F) / 6);
   return floodShape(u, FLOOD_LOBES.map(([n, a, p, w]) => [n, a, p + 0.9 * k, w]), 0.9 + 0.17 * k, 26 * k, 0.9);
 });
-const TR = T + REVEAL_AT / FPS;
+const TR = T + REVEAL_AT * F;
 tl.set("#s2", { opacity: 1 }, TR);
 bake("#reveal-path", TR, REVEAL_F, (v) => revealShape(v, REVEAL_LOBES, 0));
 bake("#rim", TR, REVEAL_F, (v) => revealShape(clamp01(v + 0.01), RIM_LOBES, 55));
@@ -102,17 +102,17 @@ The full working composition, including the droplets and scene B's landing, is i
 
 ## Tuning
 
-- **Flood length (`FLOOD_F`).** 11–15f. Under 10f the swell reads as a pop rather than as liquid gathering.
-- **Overlap (`REVEAL_AT`).** Start the hole 2–3f before the flood lands. Any earlier and scene A's last corner and scene B's hole are both on screen for several frames.
+- **Flood length (`FLOOD_F`).** 22–30f. Under 20f the swell reads as a pop rather than as liquid gathering.
+- **Overlap (`REVEAL_AT`).** Start the hole 4–6f before the flood lands. Any earlier and scene A's last corner and scene B's hole are both on screen for several frames.
 - **Lobes.** Keep the summed amplitude at or under about 0.25 (0.23 here) so it reads as a drop, not a star. With N = 20, keep harmonics at 5 or below, because each lobe needs about 4 points or the spline aliases into spikes. Avoid multiples of each other: 2/4/6 reads as a flower.
 - **Goo.** Blur 10 with the alpha matrix `22 −9`. Raising the blur fattens the necks between drop and droplets. Lowering it, or steepening the matrix, gives a harder splatter.
-- **Reveal radius.** Set it so the hole clears the last corner 1–2f before `T + D` (1320 here, from (1020, 470)). Check with a polar test over the frame edge, not by eye.
+- **Reveal radius.** Set it so the hole clears the last corner 2–4f before `T + D` (1320 here, from (1020, 470)). Check with a polar test over the frame edge, not by eye.
 
 ## Pitfalls
 
-- **Lead at full offset from frame 0.** On f1 the lavender lead outlined the indigo pill like a sticker, so the button looked stamped instead of melting. Start it at 0.9× inside the flood and ramp the offset and phase over 3f.
-- **Overshooting the reveal.** A 16f reveal at `r = 1350` drained the last corner at f23 of a 26f window, so the tail was dead frames. A 14f reveal at 1320 clears it at f23, 1f before the f24 handoff. The radius barely grows over the last 2f while the lobes keep turning, so test it with a polygon check against the frame edge.
-- **Leaving the button in scene A.** The flood's centre drifts 364px up, and at f6–7 its lower edge uncovered the pill and its shadow, so the button read as stamped behind the liquid. Hide `#cta` at f4, while the drop fully covers it.
+- **Lead at full offset from frame 0.** On f2 the lavender lead outlined the indigo pill like a sticker, so the button looked stamped instead of melting. Start it at 0.9× inside the flood and ramp the offset and phase over 6f.
+- **Overshooting the reveal.** A 32f reveal at `r = 1350` drained the last corner at f46 of a 52f window, so the tail was dead frames. A 28f reveal at 1320 clears it at f46, 2f before the f48 handoff. The radius barely grows over the last 4f while the lobes keep turning, so test it with a polygon check against the frame edge.
+- **Leaving the button in scene A.** The flood's centre drifts 364px up, and at f12–14 its lower edge uncovered the pill and its shadow, so the button read as stamped behind the liquid. Hide `#cta` at f8, while the drop fully covers it.
 - **Sampling the pill by angle.** Equal angles bunch points on the rounded ends and spread them along the flat sides, so the spline goes wavy. Start from the inscribed ellipse in the same fill.
 - **Mismatched path structure.** `attr: { d }` only interpolates numbers pairwise. Every keyframe, including the collapsed start, must come from the same `blob()` (M + 20 C + Z). An empty `d` or a different point count snaps.
 - **Filters don't apply inside `<clipPath>`.** The hole can't be gooey. Put the rim as a separate filled path under scene B and let its offset sell the liquid edge. Keep its lobes within ~0.15 rad of the hole's and its lead at ~1%: at 0.7 rad and 6% it was 190px thick mid-reveal and went to zero thickness late, so indigo touched scene B.
@@ -126,4 +126,4 @@ The full working composition, including the droplets and scene B's landing, is i
 
 ## Sound
 
-A wet "bloop" on the click (f−5), then a soft rising synth swell that peaks at full cover (f12) and opens into an airy release as the hole grows.
+A wet "bloop" on the click (f−11), then a soft rising synth swell that peaks at full cover (f23) and opens into an airy release as the hole grows.

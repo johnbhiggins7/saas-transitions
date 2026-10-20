@@ -134,11 +134,11 @@
       tl.fromTo("#cta", { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.6)" }, 0.36);
 
       // ---- Liquid Blob Morph ----
-      const FPS = 30;
+      const F = 1 / 60;                               // one 60fps frame: one baked shape per rendered frame
       const T = 1.6;                                  // transition start
-      const FLOOD_F = 13;                             // flood: button -> full frame
-      const REVEAL_AT = 10, REVEAL_F = 14;            // reveal starts 3f before the flood lands
-      const D = (REVEAL_AT + REVEAL_F) / FPS;         // 24f = 0.8s
+      const FLOOD_F = 26;                             // flood: button -> full frame
+      const REVEAL_AT = 20, REVEAL_F = 28;            // reveal starts 6f before the flood lands
+      const D = (REVEAL_AT + REVEAL_F) * F;           // 48f = 0.8s
       const BTN = { x: 760, y: 790, w: 400, h: 88 };  // #cta box in scene px (matches CSS)
       const bx = BTN.x + BTN.w / 2, by = BTN.y + BTN.h / 2;
       const FLOOD_TO = { x: 930, y: 470 };            // the flood's centre flows up into the frame
@@ -188,7 +188,7 @@
       }
       // Reveal: a hole opens in the flood and grows past the corners.
       function revealShape(v, lobes, pad) {
-        const r = 1320 * open(v) + pad; // clears the last corner at f23, 1f before the handoff
+        const r = 1320 * open(v) + pad; // clears the last corner at f46, 2f before the handoff
         const cx = REVEAL_FROM.x + (REVEAL_TO.x - REVEAL_FROM.x) * v, cy = REVEAL_FROM.y + (REVEAL_TO.y - REVEAL_FROM.y) * v;
         return blob(cx, cy, (ang) => r * wobble(ang, lobes, v));
       }
@@ -197,7 +197,7 @@
       function bake(sel, start, frames, shape) {
         tl.set(sel, { attr: { d: shape(0) } }, start);
         for (let i = 1; i <= frames; i++) {
-          tl.to(sel, { attr: { d: shape(i / frames) }, duration: 1 / FPS, ease: "none" }, start + (i - 1) / FPS);
+          tl.to(sel, { attr: { d: shape(i / frames) }, duration: F, ease: "none" }, start + (i - 1) * F);
         }
       }
       const collapsed = (x, y) => blob(x, y, () => 0); // same command structure, zero area
@@ -213,29 +213,29 @@
       tl.to("#cursor", { opacity: 0, duration: 0.08, ease: "power1.in" }, T - 0.08); // its tail pokes past the start ellipse
 
       // Flood: a thin lavender lead (7% + 26px wider) rides the indigo body's edge like a meniscus.
-      // It slides out from behind the indigo over 3f: at full offset on f1 it outlines the pill like a sticker.
+      // It slides out from behind the indigo over 6f: at full offset on f2 it outlines the pill like a sticker.
       bake("#flood", T, FLOOD_F, (u) => floodShape(u, FLOOD_LOBES));
       bake("#lead", T, FLOOD_F, (u) => {
-        const k = clamp01((u * FLOOD_F) / 3);
+        const k = clamp01((u * FLOOD_F) / 6);
         const lobes = FLOOD_LOBES.map(([n, a, p, w]) => [n, a, p + 0.9 * k, w]);
         return floodShape(u, lobes, 0.9 + 0.17 * k, 26 * k, 0.9);
       });
 
-      // The drop fully covers the pill at f3-5; hide it before the drift uncovers it at f6.
-      tl.set("#cta", { visibility: "hidden" }, T + 4 / FPS);
+      // The drop fully covers the pill at f6-10; hide it before the drift uncovers it at f12.
+      tl.set("#cta", { visibility: "hidden" }, T + 8 * F);
 
       // Splash: droplets pinch off the drop (goo filter makes the necks) and get swallowed by the surge.
       const DROPS = [[-420, -210], [400, -270], [-200, -410], [470, 40], [90, -460]];
       document.querySelectorAll(".drop").forEach((el, i) => {
         const [dx, dy] = DROPS[i];
-        const at = T + (2 + (i % 2)) / FPS;
+        const at = T + (4 + 2 * (i % 2)) * F;
         tl.set(el, { opacity: 1 }, at); // a set reverts on a backward seek; a fromTo's "from" state would stay visible
         tl.fromTo(el, { x: dx * 0.25, y: dy * 0.25, scale: 0.5, transformOrigin: "50% 50%" },
           { x: dx, y: dy, scale: 1, duration: 0.5, ease: "power3.out" }, at);
       });
 
       // Reveal: scene B shows through an opening hole; the lavender rim leads it.
-      const TR = T + REVEAL_AT / FPS;
+      const TR = T + REVEAL_AT * F;
       tl.set("#s2", { opacity: 1 }, TR);
       bake("#reveal-path", TR, REVEAL_F, (v) => revealShape(v, REVEAL_LOBES, 0));
       bake("#rim", TR, REVEAL_F, (v) => revealShape(clamp01(v + 0.01), RIM_LOBES, 55));
