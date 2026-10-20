@@ -171,7 +171,7 @@
 
       // ---- Shared-Element Transition ----
       const T = 1.5; // transition start
-      const D = 0.6; // hero move (18f @ 30fps)
+      const D = 0.6; // hero move (36f @ 60fps)
       // Hard-coded rects in root px (match CSS). Never measure at load: entrances are mid-tween.
       const FIRST = { x: 864, y: 604, w: 440, h: 320 }; // grid slot 5 (#hero's CSS left/top)
       const LAST = { x: 400, y: 188, w: 1368, h: 248 }; // detail header
@@ -179,12 +179,12 @@
       const RING_OFF = "0 0 0 0 rgba(99,91,255,0), 0 1px 2px rgba(10,37,64,0.06), 0 12px 32px rgba(10,37,64,0.08)";
       const RING_ON = "0 0 0 3px rgba(99,91,255,0.55), 0 2px 4px rgba(10,37,64,0.06), 0 24px 64px rgba(10,37,64,0.18)";
 
-      // Telegraph: select (ring + lift), then a 5f press. The eye is on the card before anything leaves.
+      // Telegraph: select (ring + lift), then an 11f press. The eye is on the card before anything leaves.
       tl.to("#hero", { boxShadow: RING_ON, y: -6, duration: 0.25, ease: "power2.out" }, T - 0.5);
       tl.to("#hero", { scale: 0.98, duration: 0.09, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.2);
 
       // The layout swaps out around it: neighbours drop away first (nearest first), filling expo's slow start.
-      // Opacity eases OUT so they visibly leave on frame 1; y eases IN so they still fall rather than float.
+      // Opacity eases OUT so they visibly leave by frame 2; y eases IN so they still fall rather than float.
       tl.to(".grid-head", { y: -12, duration: 0.2, ease: "power2.in" }, T);
       tl.to(".grid-head", { opacity: 0, duration: 0.15, ease: "power2.out" }, T);
       [["#p2", 0], ["#p4", 0.03], ["#p6", 0.03], ["#p1", 0.06], ["#p3", 0.06]].forEach(([el, d]) => {
