@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.5;duration=0.8" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* One shared lens for both scenes, centred on the frame. */
+      .scene { perspective: 1800px; perspective-origin: 960px 540px; }
+      #s2 { background: transparent; z-index: 2; } /* B flies in over A's stage; the dot grid stays put */
+
+      /* A slab = the app window (front face) + a stack of thin edge layers behind it.
+         preserve-3d lives here, not on .app: .app has overflow:hidden, which would flatten its children. */
+      .slab { position: absolute; left: 120px; top: 80px; width: 1680px; height: 920px; transform-style: preserve-3d; }
+      .slab .app { left: 0; top: 0; box-shadow: none; }
+      .slab .edge { position: absolute; inset: 0; border-radius: 20px; }
+      .slab .edge:first-child { box-shadow: var(--shadow-lg); } /* the back-most layer casts the slab's shadow */
+
+      /* Scene A: analytics */
+      .kpis .card { height: 156px; }
+      .chart-card { height: 600px; display: flex; flex-direction: column; }
+      .chart-head { display: flex; align-items: center; justify-content: space-between; }
+      .chart-card .bars { flex: 1; margin-top: 36px; gap: 22px; }
+
+      /* Scene B: customers */
+      .table-card { padding: 12px 24px 8px; }
+      .table-head { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+      .table-head .pills { display: flex; gap: 10px; }
+      .tr { height: 66px; grid-template-columns: 2.2fr 1fr 1fr 1fr; }
+      .tr:last-child { border-bottom: none; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: analytics dashboard -->
+      <div id="s1" class="scene dots">
+        <div id="slab-a" class="slab">
+          <div class="app">
+            <aside class="app-sidebar">
+              <div class="brand"><span class="brand-mark"></span>Northwind</div>
+              <div class="nav-item"><span class="nav-icon"></span>Home</div>
+              <div class="nav-item active"><span class="nav-icon"></span>Analytics</div>
+              <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+              <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+              <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+            </aside>
+            <div class="app-body">
+              <div class="app-topbar">
+                <div class="page-title">Analytics</div>
+                <div class="search">Search</div>
+                <div class="avatar sky">JL</div>
+              </div>
+              <div class="app-content">
+                <div class="kpis grid-3">
+                  <div class="card kpi"><div class="card-label">Revenue</div><div class="card-value">$128.4k</div><span class="delta up">+12.5%</span></div>
+                  <div class="card kpi"><div class="card-label">Active customers</div><div class="card-value">1,284</div><span class="delta up">+6.2%</span></div>
+                  <div class="card kpi"><div class="card-label">Net retention</div><div class="card-value">118%</div><span class="delta up">+3.0%</span></div>
+                </div>
+                <div class="card chart-card">
+                  <div class="chart-head">
+                    <div class="h3">Revenue by month</div>
+                    <div class="legend"><span><i></i>This year</span></div>
+                  </div>
+                  <div class="bars">
+                    <div class="bar soft" style="height: 34%"></div><div class="bar soft" style="height: 42%"></div><div class="bar soft" style="height: 39%"></div>
+                    <div class="bar soft" style="height: 51%"></div><div class="bar soft" style="height: 48%"></div><div class="bar soft" style="height: 60%"></div>
+                    <div class="bar" style="height: 64%"></div><div class="bar" style="height: 72%"></div><div class="bar" style="height: 69%"></div>
+                    <div class="bar" style="height: 81%"></div><div class="bar" style="height: 88%"></div><div class="bar" style="height: 100%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B: the customers behind that revenue -->
+      <div id="s2" class="scene next">
+        <div id="slab-b" class="slab">
+          <div class="app">
+            <aside class="app-sidebar">
+              <div class="brand"><span class="brand-mark"></span>Northwind</div>
+              <div class="nav-item"><span class="nav-icon"></span>Home</div>
+              <div class="nav-item"><span class="nav-icon"></span>Analytics</div>
+              <div class="nav-item active"><span class="nav-icon"></span>Customers</div>
+              <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+              <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+            </aside>
+            <div class="app-body">
+              <div class="app-topbar">
+                <div class="page-title">Customers</div>
+                <div class="search">Search</div>
+                <div class="btn btn-primary">Add customer</div>
+              </div>
+              <div class="app-content">
+                <div class="card table-card">
+                  <div class="table-head">
+                    <div class="h3">Top accounts</div>
+                    <div class="pills"><span class="pill indigo">All plans</span><span class="pill">Last 30 days</span></div>
+                  </div>
+                  <div class="table">
+                    <div class="tr head"><div>Customer</div><div>Plan</div><div>MRR</div><div>Status</div></div>
+                    <div class="tr row"><div class="cell-main"><span class="avatar">LL</span>Lumen Labs</div><div>Enterprise</div><div>$12,400</div><span class="pill green">Active</span></div>
+                    <div class="tr row"><div class="cell-main"><span class="avatar sky">OF</span>Orbit Freight</div><div>Enterprise</div><div>$9,850</div><span class="pill green">Active</span></div>
+                    <div class="tr row"><div class="cell-main"><span class="avatar pink">KH</span>Kestrel Health</div><div>Growth</div><div>$6,120</div><span class="pill amber">Trial ends</span></div>
+                    <div class="tr row"><div class="cell-main"><span class="avatar teal">BL</span>Brightline</div><div>Growth</div><div>$4,980</div><span class="pill green">Active</span></div>
+                    <div class="tr row"><div class="cell-main"><span class="avatar amber">CP</span>Copperleaf</div><div>Starter</div><div>$2,340</div><span class="pill indigo">Upgraded</span></div>
+                    <div class="tr row"><div class="cell-main"><span class="avatar sky">FN</span>Fieldnote</div><div>Starter</div><div>$1,960</div><span class="pill green">Active</span></div>
+                    <div class="tr row"><div class="cell-main"><span class="avatar pink">PC</span>Parcel &amp; Co</div><div>Starter</div><div>$1,410</div><span class="pill green">Active</span></div>
+                    <div class="tr row"><div class="cell-main"><span class="avatar teal">NB</span>Northbeam</div><div>Growth</div><div>$1,180</div><span class="pill green">Active</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ---- Extrusion: thin edge layers stacked behind each window (deterministic, built once) ----
+      const DEPTH = 72; // slab thickness in px
+      const LAYERS = 24; // 3px apart: dense enough to read as a solid side at any tilt here
+      const FRONT = [226, 232, 240], BACK = [168, 181, 199]; // edge shade, near the face -> back of the slab
+      document.querySelectorAll(".slab").forEach((slab) => {
+        for (let i = 1; i <= LAYERS; i++) {
+          const k = i / LAYERS;
+          const edge = document.createElement("div");
+          edge.className = "edge";
+          edge.style.transform = `translateZ(${-k * DEPTH}px)`;
+          edge.style.background = `rgb(${FRONT.map((c, j) => Math.round(c + (BACK[j] - c) * k)).join(",")})`;
+          slab.prepend(edge); // back-most ends up first in DOM
+        }
+      });
+
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo("#s1 .kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
+      tl.fromTo("#s1 .chart-card", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.12);
+      tl.fromTo("#s1 .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.6, stagger: 0.035, ease: "power3.out" }, 0.3);
+
+      // ---- Perspective Tilt & Extrusion ----
+      const T = 1.5; // transition start
+      const D = 0.8; // move duration (24f @ 30fps)
+      const TILT_A = { rotationX: 25, rotationY: -15 }; // top falls back, face turns left: bottom + right edges show
+      const TILT_B = { rotationX: 25, rotationY: 15 }; // mirrored yaw so B's extruded side faces the centre
+      const AWAY = { x: -700, z: -2200 }; // deep enough that A's tilted footprint sits inside B's landed frame
+      const ENTRY = { x: 3000, z: -1600 }; // off-frame right even counting the yawed near corner, which swings toward camera
+
+      // Telegraph: a 6f lean toward camera before the window falls back.
+      tl.fromTo("#slab-a", { rotationX: 0 }, { rotationX: -5, duration: 0.2, ease: "power2.out" }, T - 0.2);
+
+      // A: tilt leads (full tilt at 55% of the move), so the extrusion is already showing while it recedes.
+      tl.to("#slab-a", { ...TILT_A, duration: D * 0.55, ease: "power3.inOut" }, T);
+      tl.fromTo("#slab-a", { x: 0, z: 0 }, { ...AWAY, duration: D, ease: "power3.inOut" }, T);
+
+      // B: travels the whole window, holds its tilt until ~30%, then flattens into the landing.
+      tl.set("#s2", { opacity: 1 }, T);
+      tl.fromTo("#slab-b", { ...ENTRY }, { x: 0, z: 0, duration: D, ease: "power3.inOut" }, T);
+      tl.fromTo("#slab-b", { ...TILT_B }, { rotationX: 0, rotationY: 0, duration: D * 0.7, ease: "power3.inOut" }, T + D * 0.3);
+      tl.set("#slab-a", { visibility: "hidden" }, T + D); // fully covered by B from here
+
+      // ---- Scene B: rows settle in while the window is in flight, so B never reads as an empty frame ----
+      tl.fromTo("#s2 .row", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.04, ease: "power3.out" }, T + D * 0.3);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
