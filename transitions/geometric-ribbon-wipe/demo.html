@@ -156,18 +156,18 @@
 
       // ---- Geometric Ribbon Wipe ----
       const T = 1.5; // first edge starts moving
-      const D = 0.6; // last edge has left (18f @ 30fps)
-      const F = 1 / 30;
-      const E = 9 * F; // one edge crossing the frame: indigo's two crossings must fit in D, so E = D / 2
+      const D = 0.6; // last edge has left (36f @ 60fps)
+      const F = 1 / 60;
+      const E = 18 * F; // one edge crossing the frame: indigo's two crossings must fit in D, so E = D / 2
       const LEAN = 400; // the top of every edge leads its bottom by 400px (~20 deg); matches the CSS clip-path
       // Bottom -> top in z. in / out = frame (after T) where the leading / trailing edge starts to cross.
       // First in is last out, so the bands nest: A | indigo | sky | soft | ink | soft | sky | indigo | B.
       // Uneven offsets keep the bands from reading as evenly spaced stripes.
       const RIBBONS = [
-        { el: "#rb-indigo", in: 0, out: 9 },
-        { el: "#rb-sky", in: 1, out: 8 },
-        { el: "#rb-soft", in: 2.5, out: 6.5 },
-        { el: "#rb-ink", in: 3.5, out: 6 },
+        { el: "#rb-indigo", in: 0, out: 18 },
+        { el: "#rb-sky", in: 2, out: 16 },
+        { el: "#rb-soft", in: 5, out: 13 },
+        { el: "#rb-ink", in: 7, out: 12 },
       ];
       RIBBONS.forEach((r) => {
         // Each edge travels its own bottom x from -LEAN (top corner at the left frame edge) to 1920.
@@ -175,8 +175,8 @@
         tl.fromTo(r.el, { "--a": `${-LEAN}px` }, { "--a": "1920px", duration: E, ease: "sine.inOut" }, T + r.out * F);
       });
 
-      // f9: indigo's leading edge has just landed and its trailing edge has not moved, so it spans the frame.
-      const SWAP = T + 9 * F;
+      // f18: indigo's leading edge has just landed and its trailing edge has not moved, so it spans the frame.
+      const SWAP = T + 18 * F;
       tl.set("#s2", { opacity: 1 }, SWAP);
       tl.set("#s1", { visibility: "hidden" }, SWAP);
 
