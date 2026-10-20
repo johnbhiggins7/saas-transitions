@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.8" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Scene A: onboarding finish card. The CTA box is hard-coded (see BTN in the script). */
+      .onb { position: absolute; left: 460px; top: 170px; width: 1000px; height: 760px; padding: 64px 72px; border-radius: 28px; }
+      .steps { display: flex; gap: 8px; margin: 18px 0 28px; }
+      .steps i { width: 56px; height: 6px; border-radius: 3px; background: var(--accent); }
+      .onb .body { margin-top: 18px; max-width: 760px; }
+      .checks { margin-top: 40px; display: grid; gap: 16px; }
+      .check { display: flex; align-items: center; gap: 16px; height: 72px; padding: 0 22px; border-radius: 14px; background: var(--surface-2); font-size: 20px; font-weight: 600; }
+      .check .tick { width: 30px; height: 30px; border-radius: 50%; background: var(--green); flex: none; display: flex; align-items: center; justify-content: center; }
+      .check .meta { margin-left: auto; font-size: 16px; font-weight: 500; color: var(--muted); display: flex; align-items: center; }
+      .check .meta .avatar { width: 32px; height: 32px; font-size: 12px; border: 2px solid var(--surface-2); margin-left: -8px; }
+      #cta { position: absolute; left: 760px; top: 790px; width: 400px; height: 88px; border-radius: 44px; background: #635bff; color: #fff;
+        display: flex; align-items: center; justify-content: center; gap: 14px; font-size: 24px; font-weight: 600; letter-spacing: -0.01em;
+        box-shadow: 0 2px 4px rgba(10, 37, 64, 0.12), 0 12px 28px rgba(99, 91, 255, 0.38); }
+      #s1 { z-index: 0; } /* own stacking context, so the kit cursor (z 50) sinks under the liquid */
+      #cursor { left: 0; top: 0; }
+      #ripple { left: 1010px; top: 846px; }
+
+      /* Liquid layer: sits between the scenes. Paths are written by the timeline. */
+      #liquid { position: absolute; left: 0; top: 0; z-index: 1; pointer-events: none; }
+      .drop { opacity: 0; }
+
+      /* Scene B: the workspace, revealed through the #reveal clip path. */
+      #s2 { z-index: 2; clip-path: url(#reveal); }
+      #s2 .app-content { padding: 32px; }
+      .topbar-avatars { display: flex; }
+      .topbar-avatars .avatar { border: 2px solid #fff; margin-left: -10px; }
+      .kanban { height: 780px; }
+      .col { gap: 14px; }
+      .col-title { font-size: 16px; display: flex; justify-content: space-between; }
+      .ticket { font-size: 19px; padding: 20px; gap: 16px; }
+      .ticket .row { display: flex; align-items: center; justify-content: space-between; }
+      .ticket .avatar { width: 32px; height: 32px; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4.4" data-width="1920" data-height="1080">
+      <!-- Scene A: onboarding is done, one button left to press -->
+      <div id="s1" class="scene dots">
+        <div class="card onb">
+          <div class="eyebrow">Step 3 of 3</div>
+          <div class="steps"><i></i><i></i><i></i></div>
+          <div class="h1">Your workspace is ready</div>
+          <div class="body">Northwind set up your first board, pulled in your tasks and invited the team.</div>
+          <div class="checks">
+            <div class="check"><span class="tick"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg></span>Connected Slack<span class="meta">#launch</span></div>
+            <div class="check"><span class="tick"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg></span>Imported 128 tasks<span class="meta">from Trello</span></div>
+            <div class="check"><span class="tick"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg></span>Invited your team<span class="meta"><span class="avatar sky">JL</span><span class="avatar pink">MR</span><span class="avatar amber">AK</span></span></div>
+          </div>
+        </div>
+        <div id="cta"><span id="cta-label">Open workspace</span><svg id="cta-arrow" width="22" height="22" viewBox="0 0 22 22"><path d="M4 11 H17 M12 5.5 L17.5 11 L12 16.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+        <div id="ripple" class="ripple"></div>
+        <svg id="cursor" class="cursor" viewBox="0 0 40 40"><path d="M8 4 L8 32 L15 25 L20 36 L25 34 L20 23 L30 23 Z" fill="#0a2540" stroke="#fff" stroke-width="2.5" stroke-linejoin="round" /></svg>
+      </div>
+
+      <!-- Liquid: lavender lead + indigo flood (gooey, so droplets pinch off and merge), then the lavender rim of the reveal -->
+      <svg id="liquid" width="1920" height="1080" viewBox="0 0 1920 1080">
+        <defs>
+          <!-- Blur + alpha threshold = metaballs. sRGB so the indigo stays exactly #635bff. -->
+          <filter id="goo" filterUnits="userSpaceOnUse" x="-200" y="-200" width="2320" height="1480" color-interpolation-filters="sRGB">
+            <feGaussianBlur stdDeviation="10" />
+            <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" />
+          </filter>
+          <clipPath id="reveal" clipPathUnits="userSpaceOnUse"><path id="reveal-path" /></clipPath>
+        </defs>
+        <g filter="url(#goo)"><path id="lead" fill="#a7a2ff" /></g>
+        <g filter="url(#goo)">
+          <path id="flood" fill="#635bff" />
+          <circle class="drop" cx="960" cy="834" r="36" fill="#635bff" />
+          <circle class="drop" cx="960" cy="834" r="28" fill="#635bff" />
+          <circle class="drop" cx="960" cy="834" r="22" fill="#635bff" />
+          <circle class="drop" cx="960" cy="834" r="30" fill="#635bff" />
+          <circle class="drop" cx="960" cy="834" r="20" fill="#635bff" />
+        </g>
+        <path id="rim" fill="#a7a2ff" />
+      </svg>
+
+      <!-- Scene B: the workspace the button opened -->
+      <div id="s2" class="scene next dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Boards</div>
+            <div class="nav-item"><span class="nav-icon"></span>Inbox</div>
+            <div class="nav-item"><span class="nav-icon"></span>Reports</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Launch plan</div>
+              <div class="topbar-avatars"><span class="avatar sky">JL</span><span class="avatar pink">MR</span><span class="avatar amber">AK</span></div>
+              <div class="btn btn-primary">New task</div>
+            </div>
+            <div class="app-content">
+              <div class="kanban">
+                <div class="col">
+                  <div class="col-title"><span>To do</span><span>3</span></div>
+                  <div class="ticket">Write launch email<div class="row"><span class="pill amber">Marketing</span><span class="avatar pink">MR</span></div></div>
+                  <div class="ticket">Record product demo<div class="row"><span class="pill indigo">Video</span><span class="avatar sky">JL</span></div></div>
+                  <div class="ticket">Update pricing page<div class="row"><span class="pill">Web</span><span class="avatar amber">AK</span></div></div>
+                </div>
+                <div class="col">
+                  <div class="col-title"><span>In progress</span><span>2</span></div>
+                  <div class="ticket">Onboarding checklist<div class="row"><span class="pill indigo">Product</span><span class="avatar sky">JL</span></div></div>
+                  <div class="ticket">Beta feedback triage<div class="row"><span class="pill pink">Research</span><span class="avatar teal">SN</span></div></div>
+                </div>
+                <div class="col">
+                  <div class="col-title"><span>Done</span><span>2</span></div>
+                  <div class="ticket">Import Trello board<div class="row"><span class="pill green">Shipped</span><span class="avatar amber">AK</span></div></div>
+                  <div class="ticket">Connect Slack<div class="row"><span class="pill green">Shipped</span><span class="avatar pink">MR</span></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".onb", { y: 28, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, 0);
+      tl.fromTo(".check", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.07, ease: "power3.out" }, 0.18);
+      tl.fromTo("#cta", { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.6)" }, 0.36);
+
+      // ---- Liquid Blob Morph ----
+      const FPS = 30;
+      const T = 1.6;                                  // transition start
+      const FLOOD_F = 13;                             // flood: button -> full frame
+      const REVEAL_AT = 10, REVEAL_F = 14;            // reveal starts 3f before the flood lands
+      const D = (REVEAL_AT + REVEAL_F) / FPS;         // 24f = 0.8s
+      const BTN = { x: 760, y: 790, w: 400, h: 88 };  // #cta box in scene px (matches CSS)
+      const bx = BTN.x + BTN.w / 2, by = BTN.y + BTN.h / 2;
+      const FLOOD_TO = { x: 930, y: 470 };            // the flood's centre flows up into the frame
+      const REVEAL_FROM = { x: 1020, y: 470 }, REVEAL_TO = { x: 960, y: 540 };
+      const N = 20;                                   // points around each blob
+
+      // Lobes: [harmonic, amplitude, phase, wobble]. Mixed harmonics (2, 3, 5) so the outline never repeats.
+      const FLOOD_LOBES = [[2, 0.1, 0.4, 3.4], [3, 0.08, 2.6, -4.6], [5, 0.05, 1.1, 6.2]];
+      const REVEAL_LOBES = [[2, 0.1, 1.9, -2.4], [3, 0.06, 0.3, 2.8], [4, 0.04, 2.2, -3.6]];
+      const RIM_LOBES = REVEAL_LOBES.map(([n, a, p, w]) => [n, a, p - 0.15, w]);
+      const wobble = (ang, lobes, t) => lobes.reduce((k, [n, amp, ph, w]) => k + amp * Math.sin(n * ang + ph + w * t), 1);
+
+      // Start shape: the ellipse inscribed in the button. Same fill, so it is invisible until it bulges out.
+      // (Sampling the pill itself by angle bunches points on the flat sides and the spline goes wavy.)
+      const startR = (ang) => 1 / Math.hypot(Math.cos(ang) / (BTN.w / 2 - 4), Math.sin(ang) / (BTN.h / 2 - 3));
+
+      // Closed Catmull-Rom spline as "M + N×C + Z": every frame has the same commands and number count,
+      // which is what lets GSAP interpolate attr:d without MorphSVG.
+      function smoothPath(pts) {
+        const n = pts.length, P = (i) => pts[(i + n) % n], f = (v) => v.toFixed(1);
+        let d = `M${f(pts[0][0])},${f(pts[0][1])}`;
+        for (let i = 0; i < n; i++) {
+          const [x0, y0] = P(i - 1), [x1, y1] = P(i), [x2, y2] = P(i + 1), [x3, y3] = P(i + 2);
+          d += `C${f(x1 + (x2 - x0) / 6)},${f(y1 + (y2 - y0) / 6)} ${f(x2 - (x3 - x1) / 6)},${f(y2 - (y3 - y1) / 6)} ${f(x2)},${f(y2)}`;
+        }
+        return d + "Z";
+      }
+      function blob(cx, cy, radius) { // radius(angle) -> px
+        const pts = [];
+        for (let i = 0; i < N; i++) {
+          const ang = (i / N) * Math.PI * 2, r = radius(ang);
+          pts.push([cx + Math.cos(ang) * r, cy + Math.sin(ang) * r]);
+        }
+        return smoothPath(pts);
+      }
+
+      const swell = gsap.parseEase("power2.out"), surge = gsap.parseEase("power3.in");
+      const drift = gsap.parseEase("power2.inOut"), open = gsap.parseEase("power1.inOut");
+      const clamp01 = (v) => Math.min(Math.max(v, 0), 1);
+
+      // Flood: the button gathers into a wobbling drop (first ~30%), then surges past the corners.
+      function floodShape(u, lobes, grow = 1, pad = 0, start = 1) {
+        const m = swell(clamp01(u / 0.3));
+        const r = (70 + 100 * swell(clamp01(u / 0.35)) + 1600 * surge(u)) * grow + pad;
+        const cx = bx + (FLOOD_TO.x - bx) * drift(u), cy = by + (FLOOD_TO.y - by) * drift(u);
+        return blob(cx, cy, (ang) => startR(ang) * start + (r * wobble(ang, lobes, u) - startR(ang) * start) * m);
+      }
+      // Reveal: a hole opens in the flood and grows past the corners.
+      function revealShape(v, lobes, pad) {
+        const r = 1320 * open(v) + pad; // clears the last corner at f23, 1f before the handoff
+        const cx = REVEAL_FROM.x + (REVEAL_TO.x - REVEAL_FROM.x) * v, cy = REVEAL_FROM.y + (REVEAL_TO.y - REVEAL_FROM.y) * v;
+        return blob(cx, cy, (ang) => r * wobble(ang, lobes, v));
+      }
+
+      // Bake one keyframe per frame from a pure function of progress. Seek-safe: plain tweens, no onUpdate.
+      function bake(sel, start, frames, shape) {
+        tl.set(sel, { attr: { d: shape(0) } }, start);
+        for (let i = 1; i <= frames; i++) {
+          tl.to(sel, { attr: { d: shape(i / frames) }, duration: 1 / FPS, ease: "none" }, start + (i - 1) / FPS);
+        }
+      }
+      const collapsed = (x, y) => blob(x, y, () => 0); // same command structure, zero area
+      tl.set("#lead, #flood", { attr: { d: collapsed(bx, by) } }, 0);
+      tl.set("#reveal-path, #rim", { attr: { d: collapsed(REVEAL_FROM.x, REVEAL_FROM.y) } }, 0);
+
+      // Telegraph: cursor arrives, clicks; the label goes as the button is pressed.
+      tl.fromTo("#cursor", { x: 1330, y: 1020 }, { x: 1004, y: 840, duration: 0.6, ease: "power3.inOut" }, 0.72);
+      tl.to("#cursor", { scale: 0.86, duration: 0.08, ease: "power2.out", yoyo: true, repeat: 1, transformOrigin: "20% 10%" }, T - 0.2);
+      tl.fromTo("#ripple", { scale: 0, opacity: 0.6 }, { scale: 3.2, opacity: 0, duration: 0.4, ease: "power2.out" }, T - 0.18);
+      tl.to("#cta", { scale: 0.97, duration: 0.08, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.18);
+      tl.to("#cta-label, #cta-arrow", { opacity: 0, duration: 0.1, ease: "power1.in" }, T - 0.1);
+      tl.to("#cursor", { opacity: 0, duration: 0.08, ease: "power1.in" }, T - 0.08); // its tail pokes past the start ellipse
+
+      // Flood: a thin lavender lead (7% + 26px wider) rides the indigo body's edge like a meniscus.
+      // It slides out from behind the indigo over 3f: at full offset on f1 it outlines the pill like a sticker.
+      bake("#flood", T, FLOOD_F, (u) => floodShape(u, FLOOD_LOBES));
+      bake("#lead", T, FLOOD_F, (u) => {
+        const k = clamp01((u * FLOOD_F) / 3);
+        const lobes = FLOOD_LOBES.map(([n, a, p, w]) => [n, a, p + 0.9 * k, w]);
+        return floodShape(u, lobes, 0.9 + 0.17 * k, 26 * k, 0.9);
+      });
+
+      // The drop fully covers the pill at f3-5; hide it before the drift uncovers it at f6.
+      tl.set("#cta", { visibility: "hidden" }, T + 4 / FPS);
+
+      // Splash: droplets pinch off the drop (goo filter makes the necks) and get swallowed by the surge.
+      const DROPS = [[-420, -210], [400, -270], [-200, -410], [470, 40], [90, -460]];
+      document.querySelectorAll(".drop").forEach((el, i) => {
+        const [dx, dy] = DROPS[i];
+        const at = T + (2 + (i % 2)) / FPS;
+        tl.set(el, { opacity: 1 }, at); // a set reverts on a backward seek; a fromTo's "from" state would stay visible
+        tl.fromTo(el, { x: dx * 0.25, y: dy * 0.25, scale: 0.5, transformOrigin: "50% 50%" },
+          { x: dx, y: dy, scale: 1, duration: 0.5, ease: "power3.out" }, at);
+      });
+
+      // Reveal: scene B shows through an opening hole; the lavender rim leads it.
+      const TR = T + REVEAL_AT / FPS;
+      tl.set("#s2", { opacity: 1 }, TR);
+      bake("#reveal-path", TR, REVEAL_F, (v) => revealShape(v, REVEAL_LOBES, 0));
+      bake("#rim", TR, REVEAL_F, (v) => revealShape(clamp01(v + 0.01), RIM_LOBES, 55));
+      tl.set("#s2", { clipPath: "none" }, T + D);
+      tl.set("#s1, #liquid", { visibility: "hidden" }, T + D);
+
+      // ---- Scene B entrance: content settles as the liquid drains off it ----
+      tl.fromTo("#s2 .app", { scale: 1.05, transformOrigin: "840px 460px" }, { scale: 1, duration: 0.9, ease: "expo.out" }, TR);
+      // No opacity: the hole is the reveal. Faded tickets inside it read as washed out, not arriving.
+      tl.fromTo("#s2 .col", { y: 48 }, { y: 0, duration: 0.7, stagger: { each: 0.05, from: "center" }, ease: "expo.out" }, TR);
+      tl.fromTo("#s2 .ticket", { y: 24, scale: 0.94 }, { y: 0, scale: 1, duration: 0.55, stagger: { each: 0.03, from: "center" }, ease: "back.out(1.2)" }, TR + 0.06);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
