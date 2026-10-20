@@ -148,12 +148,12 @@
       tl.fromTo("#s1 .a-pop", { y: 36, scale: 0.94, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.5, stagger: 0.1, ease: "back.out(1.4)" }, 0.45);
 
       // ---- Layered Parallax Push ----
-      const T = 1.6; // push start (frame 48)
-      const D = 0.6; // 18f @ 30fps
+      const T = 1.6; // push start (frame 96 @ 60fps)
+      const D = 0.6; // 36f @ 60fps
       const W = 1920; // the main layer travels one frame width
       const BG = 0.5, FG = 1.4; // layer speeds relative to the main UI
-      const LAG = 4 / 30; // B's foreground lands 4f after its UI
-      const BLUR = 8; // peak horizontal blur on the 1x layer, px
+      const LAG = 8 / 60; // B's foreground lands 8f after its UI
+      const BLUR = 4; // peak horizontal blur on the 1x layer, px: 8 was tuned at 30fps; each 60fps frame covers half the travel
       const ease = "power3.inOut";
 
       // Telegraph: the Continue button pulses and presses on the side B arrives from.
@@ -161,7 +161,7 @@
       tl.to("#next", { scale: 0.95, duration: 0.1, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.24);
 
       // Nested tweens with one ease and one duration add linearly, so the net speeds are exactly 0.5x / 1x / 1.4x,
-      // except B's lagged foreground, which trails by up to ~0.25W (about 490px, f11) mid-push.
+      // except B's lagged foreground, which trails by up to ~0.25W (about 490px, f22) mid-push.
       tl.to("#s1", { x: -W, duration: D, ease }, T);
       tl.to("#s1 .bg", { x: W * (1 - BG), duration: D, ease }, T); // net −0.5W: lags behind, clipped by the seam
       tl.to("#s1 .fg", { x: -W * (FG - 1), duration: D, ease }, T); // net −1.4W: leaves first
@@ -171,7 +171,7 @@
       tl.fromTo("#s2", { boxShadow: "-32px 0 64px rgba(10, 37, 64, 0)" }, { boxShadow: "-32px 0 64px rgba(10, 37, 64, 0.1)", duration: 0.2, ease: "power2.in" }, T);
       tl.fromTo("#s2", { x: W }, { x: 0, duration: D, ease }, T);
       tl.fromTo("#s2 .bg", { x: -W * (1 - BG) }, { x: 0, duration: D, ease }, T); // arrives first
-      // B's foreground is off-frame for the first half anyway, so starting it 4f late costs nothing
+      // B's foreground is off-frame for the first half anyway, so starting it 8f late costs nothing
       // and makes it land last: bg, then UI, then chips.
       tl.fromTo("#s2 .fg", { x: W * (FG - 1) }, { x: 0, duration: D, ease }, T + LAG);
       tl.set("#s1", { visibility: "hidden" }, T + D);

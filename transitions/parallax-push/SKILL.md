@@ -2,7 +2,7 @@
 name: parallax-push
 title: Layered Parallax Push
 category: match-cuts
-duration: 0.6s (18f @ 30fps)
+duration: 0.6s (36f @ 60fps)
 energy: medium
 description: Scene B pushes scene A out sideways while each scene's background grid, main UI and floating toasts travel at 0.5x, 1x and 1.4x, so the old screen peels away in depth and the new one lands layer by layer.
 ---
@@ -21,27 +21,27 @@ A horizontal push where every scene is three planes: a background grid with big 
 
 Avoid it when scene B is a detail of scene A. Use [ui-deep-zoom](../ui-deep-zoom/SKILL.md) for that. For a jump between unrelated modules at high energy, use [whip-pan](../whip-pan/SKILL.md). If both screens live on one canvas and you want the trip itself shown, use [infinite-canvas-pan](../infinite-canvas-pan/SKILL.md).
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −15 → −1 | A ring pulses off scene A's Continue button, on the side B will come from. The button presses (scale 0.95, yoyo) over −7 → −1. |
-| Launch | 0 → 5 | All layers start together on `power3.inOut`, which is a quartic in GSAP, so the first frames barely move: the UI has travelled 37px by f4 and 91px by f5. B's panel, with a lavender tint, slides in at the right edge from f3; its edge shadow ramps in over f0 → f6 (`power2.in`) so it never runs ahead of the panel. |
-| Push | 5 → 13 | Peak speed at f9: the UI moves 361px per frame, the foreground 505 and the background 180. At f9 the seam is at mid-frame. A's dark toast has slid 384px along the card from its corner. The edge of B's "02" numeral peeks out just right of the seam, revealed as the seam passes. Horizontal blur also peaks at f9: 8px on the UI, 11px on A's foreground, none on the background. |
-| Land | 13 → 18 | B's UI brakes from 91px out to rest. At every frame B's background is half as far from home as its UI, so it reads as arriving first. A is hidden at f18, by which point it is entirely off-frame. |
-| Trail | 13 → 22 | B's chips start their extra 0.4W (768px) overshoot 4f late, so they sit about 475px from home at f13, 78px at f16 and 15px at f18, and lock onto the card's corners by f21–22. |
+| Telegraph | −30 → −2 | A ring pulses off scene A's Continue button, on the side B will come from. The button presses (scale 0.95, yoyo) over −14 → −2. |
+| Launch | 0 → 10 | All layers start together on `power3.inOut`, which is a quartic in GSAP, so the first frames barely move: the UI has travelled 37px by f8 and 91px by f10. B's panel, with a lavender tint, slides in at the right edge from about f6; its edge shadow ramps in over f0 → f12 (`power2.in`) so it never runs ahead of the panel. |
+| Push | 10 → 26 | Peak speed at f18: the UI moves 196px per frame, the foreground 275 and the background 98. At f18 the seam is at mid-frame. A's dark toast has slid 384px along the card from its corner. The edge of B's "02" numeral peeks out just right of the seam, revealed as the seam passes. Horizontal blur also peaks at f18: 4px on the UI, 5.6px on A's foreground, none on the background. |
+| Land | 26 → 36 | B's UI brakes from 91px out to rest. At every frame B's background is half as far from home as its UI, so it reads as arriving first. A is hidden at f36, by which point it is entirely off-frame. |
+| Trail | 26 → 44 | B's chips start their extra 0.4W (768px) overshoot 8f late, so they sit about 475px from home at f26, 78px at f32 and 15px at f36, and lock onto the card's corners by f42–44. |
 
 ## Build it
 
 Structure: each scene is a `.scene` panel (it moves at 1x and has `overflow: hidden`) › `.bg` (grid plus landmarks, which counter-move), `.ui` (rides with the panel) and `.fg` (floats, which over-move). The grid overhangs its panel by 960px on each side. Each `.ui`/`.fg` carries an SVG `feGaussianBlur stdDeviation="X 0"` filter. Scene B's panel has a tint and a `-32px 0 64px` shadow so the seam reads.
 
 ```js
-const T = 1.6;           // push start (frame 48)
-const D = 0.6;           // 18f
+const T = 1.6;           // push start (frame 96 @ 60fps)
+const D = 0.6;           // 36f
 const W = 1920;          // the main layer travels one frame width
 const BG = 0.5, FG = 1.4; // layer speeds relative to the UI
-const LAG = 4 / 30;      // B's foreground lands 4f after its UI
-const BLUR = 8;          // peak horizontal blur on the 1x layer, px
+const LAG = 8 / 60;      // B's foreground lands 8f after its UI
+const BLUR = 4;          // peak horizontal blur on the 1x layer, px: 8 was tuned at 30fps; each 60fps frame covers half the travel
 const ease = "power3.inOut";
 
 tl.fromTo("#next-ring", { opacity: 0.9, scale: 1 }, { opacity: 0, scale: 1.3, duration: 0.5, ease: "power2.out" }, T - 0.5);
@@ -49,7 +49,7 @@ tl.to("#next", { scale: 0.95, duration: 0.1, ease: "power2.out", yoyo: true, rep
 
 // The panel carries the 1x move and the children add their offsets. With one ease and one duration
 // the nested tweens add linearly, so the net speeds are exactly 0.5x / 1x / 1.4x on every frame,
-// except B's lagged foreground, which trails by up to ~0.25W (about 490px, f11) mid-push.
+// except B's lagged foreground, which trails by up to ~0.25W (about 490px, f22) mid-push.
 tl.to("#s1", { x: -W, duration: D, ease }, T);
 tl.to("#s1 .bg", { x: W * (1 - BG), duration: D, ease }, T);  // net −0.5W, disappears behind the seam
 tl.to("#s1 .fg", { x: -W * (FG - 1), duration: D, ease }, T); // net −1.4W, leaves first
@@ -59,7 +59,7 @@ tl.set("#s2", { opacity: 1 }, T);
 tl.fromTo("#s2", { boxShadow: "-32px 0 64px rgba(10, 37, 64, 0)" }, { boxShadow: "-32px 0 64px rgba(10, 37, 64, 0.1)", duration: 0.2, ease: "power2.in" }, T);
 tl.fromTo("#s2", { x: W }, { x: 0, duration: D, ease }, T);
 tl.fromTo("#s2 .bg", { x: -W * (1 - BG) }, { x: 0, duration: D, ease }, T);
-tl.fromTo("#s2 .fg", { x: W * (FG - 1) }, { x: 0, duration: D, ease }, T + LAG); // off-frame until ~f10 anyway
+tl.fromTo("#s2 .fg", { x: W * (FG - 1) }, { x: 0, duration: D, ease }, T + LAG); // off-frame until ~f20 anyway
 tl.set("#s1", { visibility: "hidden" }, T + D);
 
 // Blur tracks speed. Each half of a quartic inOut has speed ∝ u³: power2.in (cubic) up, power2.out down.
@@ -77,18 +77,18 @@ The full working composition is in [demo.html](demo.html).
 ## Tuning
 
 - **Speed ratios.** Use `BG` 0.3–0.6 and `FG` 1.2–1.6. Below 1.2 the foreground looks glued to the card. Above 1.6 the chips drift so far from their card that they read as flying off rather than sitting nearer the camera.
-- **Duration.** 0.5–0.7s. A quartic inOut spends roughly 4f at each end nearly still, so the readable move is about 10f. Under 0.5s it turns into a whip pan.
-- **`LAG`.** 0–6f. At 0 everything lands on f18 and the stagger is gone. Past 6f the chips arrive as a separate beat, after the UI has settled. The lag delays only the 0.4W overshoot, not the panel the chips ride on, so even 6f adds at most a few hundred px of trail (about 720px from rest at f13, against 475px at 4f).
-- **Blur.** 6–12px on the UI, multiplied by each layer's speed ratio. Keep the background at 0: a sharp, slow background is half of the depth cue.
+- **Duration.** 0.5–0.7s. A quartic inOut spends roughly 8f at each end nearly still, so the readable move is about 20f. Under 0.5s it turns into a whip pan.
+- **`LAG`.** 0–12f. At 0 everything lands on f36 and the stagger is gone. Past 12f the chips arrive as a separate beat, after the UI has settled. The lag delays only the 0.4W overshoot, not the panel the chips ride on, so even 12f adds at most a few hundred px of trail (about 720px from rest at f26, against 475px at 8f).
+- **Blur.** 3–6px on the UI, multiplied by each layer's speed ratio. Keep the background at 0: a sharp, slow background is half of the depth cue.
 - **Seam.** A light tint difference plus an edge shadow gives a clear push. With an identical background on B, the seam shows only as a break in the grid. That's fine for a calmer cut.
 
 ## Pitfalls
 
-- **GSAP's `powerN` is exponent N+1.** `power3` is a quartic. The first blur envelope assumed a cubic. A quartic puts the seam at 1730px on f6 (the render measured 1724px, edge shadow included), where a cubic predicts 1636px. Anything derived from the ease (blur envelopes, speed matching, inverse timing) has to use the real exponent.
+- **GSAP's `powerN` is exponent N+1.** `power3` is a quartic. The first blur envelope assumed a cubic. A quartic puts the seam at 1730px on f12 (the 60fps render measures the tint edge at 1730px), where a cubic predicts 1636px. Anything derived from the ease (blur envelopes, speed matching, inverse timing) has to use the real exponent.
 - **One filter on the panel.** A blur on the moving `.scene` blurs all three planes by the same amount and flattens the depth. Give each plane its own filter. Two planes can share one only if their timing is identical, which is why B's lagged foreground has its own.
-- **Pale floats vanish at peak blur.** A white chip on A's white card all but vanished from f8 to f10, so the midpoint frames showed no foreground at all. Put the dark toast on the corner that is still on screen at mid-push (the right side for a leftward push).
+- **Pale floats vanish at peak blur.** A white chip on A's white card all but vanished from f16 to f20, so the midpoint frames showed no foreground at all. Put the dark toast on the corner that is still on screen at mid-push (the right side for a leftward push).
 - **Background layer.** It slides ±960px inside its clipped panel, so extend it 960px past both edges or a bare strip slides in behind the UI. A uniform grid repeats every cell, so its 0.5x motion is invisible in any single frame: add one large landmark per scene (here a 440px outlined step numeral) so the lag shows.
-- **Edge shadow switched on with opacity.** A static `-32px 0 64px` shadow on B appears at f0, when B is still at x = 1920, and bleeds about 90px into frame as a grey smudge. Tween its alpha from 0 over the first 6f.
+- **Edge shadow switched on with opacity.** A static `-32px 0 64px` shadow on B appears at f0, when B is still at x = 1920, and bleeds about 90px into frame as a grey smudge. Tween its alpha from 0 over the first 12f.
 - **Delaying A's foreground.** Starting A's chips late makes them sit still while the card leaves. That reads as drag, the opposite of depth. Only the incoming foreground should lag.
 
 ## Variants
@@ -100,4 +100,4 @@ The full working composition is in [demo.html](demo.html).
 
 ## Sound
 
-A soft click on the Continue press (f−4), an air whoosh panned right to left peaking at f9, and a light tick as B's chips lock (about f19).
+A soft click on the Continue press (f−8), an air whoosh panned right to left peaking at f18, and a light tick as B's chips lock (about f38).
