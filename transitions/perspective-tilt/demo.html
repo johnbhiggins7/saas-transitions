@@ -144,13 +144,13 @@
 
       // ---- Perspective Tilt & Extrusion ----
       const T = 1.5; // transition start
-      const D = 0.8; // move duration (24f @ 30fps)
+      const D = 0.8; // move duration (48f @ 60fps)
       const TILT_A = { rotationX: 25, rotationY: -15 }; // top falls back, face turns left: bottom + right edges show
       const TILT_B = { rotationX: 25, rotationY: 15 }; // mirrored yaw so B's extruded side faces the centre
       const AWAY = { x: -700, z: -2200 }; // deep enough that A's tilted footprint sits inside B's landed frame
       const ENTRY = { x: 3000, z: -1600 }; // off-frame right even counting the yawed near corner, which swings toward camera
 
-      // Telegraph: a 6f lean toward camera before the window falls back.
+      // Telegraph: a 12f lean toward camera before the window falls back.
       tl.fromTo("#slab-a", { rotationX: 0 }, { rotationX: -5, duration: 0.2, ease: "power2.out" }, T - 0.2);
 
       // A: tilt leads (full tilt at 55% of the move), so the extrusion is already showing while it recedes.
