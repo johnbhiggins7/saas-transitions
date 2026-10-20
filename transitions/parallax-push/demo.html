@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.6" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Each scene is a 1920px panel that moves at 1x. Inside it, .bg counter-moves (net 0.5x) and .fg over-moves (net 1.4x). */
+      #s2 { background: #f3f2ff; z-index: 2; box-shadow: -32px 0 64px rgba(10, 37, 64, 0.1); } /* tint + edge shadow make the push seam read */
+      .bg, .ui, .fg { position: absolute; inset: 0; }
+      .ui { filter: url(#mb-ui); } /* horizontal motion blur per layer, scaled to that layer's speed */
+      #s1 .fg { filter: url(#mb-fga); }
+      #s2 .fg { filter: url(#mb-fgb); }
+      .grid { position: absolute; top: 0; bottom: 0; left: -960px; right: -960px; /* bg slides ±960px inside its panel, so it overhangs */
+        background-image: linear-gradient(to right, rgba(10, 37, 64, 0.055) 1px, transparent 1px), linear-gradient(to bottom, rgba(10, 37, 64, 0.055) 1px, transparent 1px);
+        background-size: 120px 120px; }
+      .numeral { position: absolute; font-size: 440px; font-weight: 800; letter-spacing: -0.06em; line-height: 1; color: transparent; -webkit-text-stroke: 3px rgba(99, 91, 255, 0.28); }
+
+      .copy { position: absolute; left: 140px; top: 290px; width: 520px; }
+      .copy .h1 { margin-top: 18px; }
+      .copy .body { margin-top: 22px; width: 470px; }
+      .steps { display: flex; gap: 10px; margin-top: 40px; }
+      .steps i { width: 56px; height: 6px; border-radius: 3px; background: #d5dce6; }
+      .steps i.on { background: var(--accent); }
+
+      .panel { position: absolute; left: 740px; top: 160px; width: 1040px; height: 760px; padding: 36px 40px; border-radius: 20px; box-shadow: var(--shadow-lg); }
+      .panel-head { display: flex; align-items: center; justify-content: space-between; }
+      .panel-foot { position: absolute; left: 40px; right: 40px; bottom: 32px; display: flex; align-items: center; justify-content: space-between; }
+      .row { display: flex; align-items: center; gap: 20px; height: 112px; border-bottom: 1px solid var(--border); }
+      .row:last-child { border-bottom: 0; }
+      .logo { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex: none; }
+      .logo svg { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+      .row .name { font-size: 21px; font-weight: 600; }
+      .row .desc { font-size: 16px; color: var(--muted); margin-top: 4px; }
+      .row .pill, .row .btn { margin-left: auto; }
+      .row .btn { height: 40px; font-size: 16px; }
+      .list { margin-top: 18px; }
+      #next { position: relative; }
+      #next-ring { position: absolute; inset: 0; border-radius: 10px; box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.45); opacity: 0; }
+
+      .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 28px; }
+      .kpi-row .card { padding: 20px 22px; box-shadow: none; background: var(--surface-2); border: 0; }
+      .kpi-row .card-value { font-size: 34px; }
+      .panel .bars { height: 430px; margin-top: 36px; gap: 16px; }
+
+      /* Foreground: bigger, softer shadows than the panel so they read as nearer the camera. */
+      .float { position: absolute; box-shadow: 0 4px 8px rgba(10, 37, 64, 0.1), 0 32px 72px rgba(10, 37, 64, 0.24); }
+      .chip { display: inline-flex; align-items: center; gap: 12px; height: 60px; padding: 0 24px 0 20px; border-radius: 30px; background: var(--surface); border: 1px solid var(--border); font-size: 18px; font-weight: 600; white-space: nowrap; }
+      .chip .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.18); }
+      .chip .spark { width: 22px; height: 22px; }
+      .toast { font-size: 18px; white-space: nowrap; }
+      .toast b { font-weight: 600; }
+      .toast .muted { color: rgba(255, 255, 255, 0.6); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4.2" data-width="1920" data-height="1080">
+      <!-- Horizontal-only motion blur; stdDeviation "X 0" is animated by the timeline. Both .ui layers move at the same speed, so they share one. -->
+      <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+        <filter id="mb-ui" x="-10%" y="0" width="120%" height="100%" color-interpolation-filters="sRGB"><feGaussianBlur id="blur-ui" stdDeviation="0 0" /></filter>
+        <filter id="mb-fga" x="-10%" y="0" width="120%" height="100%" color-interpolation-filters="sRGB"><feGaussianBlur id="blur-fga" stdDeviation="0 0" /></filter>
+        <filter id="mb-fgb" x="-10%" y="0" width="120%" height="100%" color-interpolation-filters="sRGB"><feGaussianBlur id="blur-fgb" stdDeviation="0 0" /></filter>
+      </svg>
+
+      <!-- Scene A: onboarding step 1, connect sources -->
+      <div id="s1" class="scene">
+        <div class="bg">
+          <div class="grid"></div>
+          <div class="numeral" style="left: 96px; top: 640px">01</div>
+        </div>
+        <div class="ui">
+          <div class="copy a-in">
+            <div class="eyebrow">Step 1 of 3</div>
+            <div class="h1">Connect your sources</div>
+            <div class="body">Northwind syncs billing, CRM and warehouse data in a few minutes.</div>
+            <div class="steps"><i class="on"></i><i></i><i></i></div>
+          </div>
+          <div class="card panel a-in">
+            <div class="panel-head" style="justify-content: flex-start; gap: 14px">
+              <div class="h3">Data sources</div>
+              <span class="pill green">3 of 5 connected</span>
+            </div>
+            <div class="list">
+              <div class="row"><div class="logo" style="background: var(--accent)"><svg viewBox="0 0 32 32"><path d="M8 6h16v20H8zM12 12h8M12 17h8M12 22h5" /></svg></div><div><div class="name">Ledger</div><div class="desc">Invoices, plans and payments</div></div><span class="pill green">Connected</span></div>
+              <div class="row"><div class="logo" style="background: var(--pink)"><svg viewBox="0 0 32 32"><circle cx="16" cy="12" r="5" /><path d="M7 27a9 9 0 0 1 18 0" /></svg></div><div><div class="name">Hubline</div><div class="desc">Accounts, deals and owners</div></div><span class="pill green">Connected</span></div>
+              <div class="row"><div class="logo" style="background: var(--ink)"><svg viewBox="0 0 32 32"><ellipse cx="16" cy="9" rx="9" ry="3.5" /><path d="M7 9v14c0 2 4 3.5 9 3.5s9-1.5 9-3.5V9M7 16c0 2 4 3.5 9 3.5s9-1.5 9-3.5" /></svg></div><div><div class="name">Vault</div><div class="desc">Product events from your warehouse</div></div><span class="pill green">Connected</span></div>
+              <div class="row"><div class="logo" style="background: var(--amber)"><svg viewBox="0 0 32 32"><path d="M4 17h6l3-8 6 15 3-7h6" /></svg></div><div><div class="name">Pulse</div><div class="desc">Support tickets and CSAT</div></div><div class="btn">Connect</div></div>
+              <div class="row"><div class="logo" style="background: var(--sky)"><svg viewBox="0 0 32 32"><path d="M6 8h20v13H14l-6 5v-5H6z" /></svg></div><div><div class="name">Relay</div><div class="desc">Team channels and alerts</div></div><div class="btn">Connect</div></div>
+            </div>
+            <div class="panel-foot">
+              <span class="small">You can add more sources later</span>
+              <div id="next" class="btn btn-primary">Continue<div id="next-ring"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="fg">
+          <div class="float chip a-pop" style="left: 590px; top: 890px"><span class="dot"></span>Live sync on</div>
+          <div class="float toast a-pop" style="left: 1480px; top: 128px"><i></i><b>Ledger connected</b><span class="muted">2.4M rows</span></div>
+        </div>
+      </div>
+
+      <!-- Scene B: onboarding step 2, build the dashboard -->
+      <div id="s2" class="scene next">
+        <div class="bg">
+          <div class="grid"></div>
+          <div class="numeral" style="left: 96px; top: 640px">02</div>
+        </div>
+        <div class="ui">
+          <div class="copy">
+            <div class="eyebrow">Step 2 of 3</div>
+            <div class="h1">Build your dashboard</div>
+            <div class="body">Pick the metrics you care about. Northwind drafts the charts.</div>
+            <div class="steps"><i class="on"></i><i class="on"></i><i></i></div>
+          </div>
+          <div class="card panel">
+            <div class="panel-head">
+              <div class="h3">Revenue dashboard</div>
+              <span class="pill indigo">Draft</span>
+            </div>
+            <div class="kpi-row">
+              <div class="card"><div class="card-label">Revenue</div><div class="card-value">$128.4k</div></div>
+              <div class="card"><div class="card-label">Active users</div><div class="card-value">8,421</div></div>
+              <div class="card"><div class="card-label">Churn</div><div class="card-value">1.8%</div></div>
+            </div>
+            <div class="bars">
+              <div class="bar soft" style="height: 34%"></div><div class="bar soft" style="height: 42%"></div><div class="bar soft" style="height: 39%"></div>
+              <div class="bar soft" style="height: 51%"></div><div class="bar soft" style="height: 48%"></div><div class="bar soft" style="height: 60%"></div>
+              <div class="bar" style="height: 64%"></div><div class="bar" style="height: 72%"></div><div class="bar" style="height: 69%"></div>
+              <div class="bar" style="height: 81%"></div><div class="bar" style="height: 88%"></div><div class="bar" style="height: 100%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fg">
+          <div class="float chip" style="left: 1160px; top: 128px"><svg class="spark" viewBox="0 0 24 24"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z" fill="#635bff" /></svg>4 metrics suggested</div>
+          <div class="float toast" style="left: 560px; top: 884px"><i style="background: var(--accent)"></i><b>Drafted from 3 sources</b><span class="muted">just now</span></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance: main layer first, foreground floats in last ----
+      tl.fromTo("#s1 .a-in", { y: 28, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, stagger: 0.08, ease: "power3.out" }, 0);
+      tl.fromTo("#s1 .row", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.05, ease: "power3.out" }, 0.18);
+      tl.fromTo("#s1 .a-pop", { y: 36, scale: 0.94, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.5, stagger: 0.1, ease: "back.out(1.4)" }, 0.45);
+
+      // ---- Layered Parallax Push ----
+      const T = 1.6; // push start (frame 48)
+      const D = 0.6; // 18f @ 30fps
+      const W = 1920; // the main layer travels one frame width
+      const BG = 0.5, FG = 1.4; // layer speeds relative to the main UI
+      const LAG = 4 / 30; // B's foreground lands 4f after its UI
+      const BLUR = 8; // peak horizontal blur on the 1x layer, px
+      const ease = "power3.inOut";
+
+      // Telegraph: the Continue button pulses and presses on the side B arrives from.
+      tl.fromTo("#next-ring", { opacity: 0.9, scale: 1 }, { opacity: 0, scale: 1.3, duration: 0.5, ease: "power2.out" }, T - 0.5);
+      tl.to("#next", { scale: 0.95, duration: 0.1, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.24);
+
+      // Nested tweens with one ease and one duration add linearly, so the net speeds are exactly 0.5x / 1x / 1.4x,
+      // except B's lagged foreground, which trails by up to ~0.25W (about 490px, f11) mid-push.
+      tl.to("#s1", { x: -W, duration: D, ease }, T);
+      tl.to("#s1 .bg", { x: W * (1 - BG), duration: D, ease }, T); // net −0.5W: lags behind, clipped by the seam
+      tl.to("#s1 .fg", { x: -W * (FG - 1), duration: D, ease }, T); // net −1.4W: leaves first
+
+      tl.set("#s2", { opacity: 1 }, T);
+      // B's edge shadow ramps in with the panel: at full strength from f0 it smudges the right edge while B is still off-frame.
+      tl.fromTo("#s2", { boxShadow: "-32px 0 64px rgba(10, 37, 64, 0)" }, { boxShadow: "-32px 0 64px rgba(10, 37, 64, 0.1)", duration: 0.2, ease: "power2.in" }, T);
+      tl.fromTo("#s2", { x: W }, { x: 0, duration: D, ease }, T);
+      tl.fromTo("#s2 .bg", { x: -W * (1 - BG) }, { x: 0, duration: D, ease }, T); // arrives first
+      // B's foreground is off-frame for the first half anyway, so starting it 4f late costs nothing
+      // and makes it land last: bg, then UI, then chips.
+      tl.fromTo("#s2 .fg", { x: W * (FG - 1) }, { x: 0, duration: D, ease }, T + LAG);
+      tl.set("#s1", { visibility: "hidden" }, T + D);
+
+      // Motion blur tracks speed. GSAP's power3 is a quartic, so each half of power3.inOut has speed ∝ u³:
+      // that is power2.in (cubic) up to the midpoint and power2.out back down.
+      const blur = (id, px, at) => {
+        tl.fromTo(id, { attr: { stdDeviation: "0 0" } }, { attr: { stdDeviation: `${px} 0` }, duration: D / 2, ease: "power2.in" }, at);
+        tl.to(id, { attr: { stdDeviation: "0 0" }, duration: D / 2, ease: "power2.out" }, at + D / 2);
+      };
+      blur("#blur-ui", BLUR, T);
+      blur("#blur-fga", BLUR * FG, T);
+      blur("#blur-fgb", BLUR * FG, T + LAG); // the bg stays sharp: it is the slowest layer
+
+      // ---- Scene B settles: the chart fills in as the push lands ----
+      tl.fromTo("#s2 .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.6, stagger: 0.035, ease: "power3.out" }, T + D - 0.12);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
