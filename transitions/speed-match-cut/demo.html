@@ -140,26 +140,26 @@
 
     <script>
       const tl = gsap.timeline({ paused: true });
-      const F = 1 / 30; // one frame; every transition time below is a whole frame so the cut lands on the grid
+      const F = 1 / 60; // one 60fps frame; every transition time below is a whole frame so the cut lands on the grid
 
       // ---- Scene A entrance ----
       tl.fromTo("#s1 .a-in", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.07, ease: "power3.out" }, 0);
       tl.fromTo("#cardA", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.21);
 
       // ---- Speed Match Cut ----
-      const T = 48 * F;   // launch (frame 48)
-      const H = 8 * F;    // each half: 8f out, 8f in
-      const CUT = T + H;  // hard cut at peak velocity (frame 56)
+      const T = 96 * F;   // launch (frame 96)
+      const H = 16 * F;   // each half: 16f out, 16f in
+      const CUT = T + H;  // hard cut at peak velocity (frame 112)
       const W = 560;      // hero card width (both cards)
       const REST_A = 1188, REST_B = 680; // card left edges at rest, scene px (match CSS)
       const WIND = 16;    // anticipation, px
 
-      // Telegraph: the cursor clicks "Send invoice" at f-14, then the card braces against its direction of travel (f-8 to f0).
-      tl.fromTo(".cursor", { x: 1760, y: 1100 }, { x: 1632, y: 586, duration: 0.55, ease: "power3.inOut" }, T - 31 * F);
-      tl.to("#send", { scale: 0.94, duration: 0.08, ease: "power2.out", yoyo: true, repeat: 1 }, T - 14 * F);
-      tl.set(".ripple", { scale: 0.4, opacity: 0.9 }, T - 14 * F); // a fromTo here would render the ripple from frame 0
-      tl.to(".ripple", { scale: 2.4, opacity: 0, duration: 0.45, ease: "power2.out" }, T - 14 * F);
-      tl.to("#cardA", { x: -WIND, duration: 8 * F, ease: "sine.inOut" }, T - 8 * F);
+      // Telegraph: the cursor clicks "Send invoice" at f-28, then the card braces against its direction of travel (f-16 to f0).
+      tl.fromTo(".cursor", { x: 1760, y: 1100 }, { x: 1632, y: 586, duration: 0.55, ease: "power3.inOut" }, T - 62 * F);
+      tl.to("#send", { scale: 0.94, duration: 0.08, ease: "power2.out", yoyo: true, repeat: 1 }, T - 28 * F);
+      tl.set(".ripple", { scale: 0.4, opacity: 0.9 }, T - 28 * F); // a fromTo here would render the ripple from frame 0
+      tl.to(".ripple", { scale: 2.4, opacity: 0, duration: 0.45, ease: "power2.out" }, T - 28 * F);
+      tl.to("#cardA", { x: -WIND, duration: 16 * F, ease: "sine.inOut" }, T - 16 * F);
 
       // One curve for the whole move, split at its midpoint: A plays the accelerating half,
       // B the decelerating half. Same curve, so speed at the seam is identical by construction.
@@ -171,12 +171,12 @@
       // Travel such that A's card, wrapped by one screen + one card width, sits exactly where B's starts:
       // position carries across the edge, not just speed. (2166 - 2480 = -314 = REST_B - XB.)
       const TRAVEL = 1920 + W + REST_B - REST_A + WIND;     // 1988px
-      const XA = TRAVEL * M, XB = TRAVEL * (1 - M);         // 994 / 994; peak 3·994/8 ≈ 373 px per frame
+      const XA = TRAVEL * M, XB = TRAVEL * (1 - M);         // 994 / 994; peak 3·994/16 ≈ 186 px per frame
 
       // Blur follows speed: the ease's slope, normalised to its value at the seam.
       const slope = (p) => (E(p + 1e-4) - E(p - 1e-4)) / 2e-4;
       const S = slope(0.5);
-      const BLUR = 44;
+      const BLUR = 22;  // peak stdDeviation at the seam: 44 was tuned at 30fps; each 60fps frame covers half the travel
 
       tl.to("#cardA", { x: -WIND + XA, duration: H, ease: easeA }, T);
       tl.fromTo("#blurA", { attr: { stdDeviation: "0 0" } }, { attr: { stdDeviation: `${BLUR} 0` }, duration: H, ease: (p) => slope(p * 0.5) / S }, T);
@@ -188,10 +188,10 @@
       tl.fromTo("#blurB", { attr: { stdDeviation: `${BLUR} 0` } }, { attr: { stdDeviation: "0 0" }, duration: H, ease: (p) => 1 - slope(0.5 + p * 0.5) / S }, CUT);
 
       // ---- Scene B lands around the card: copy drifts in the same direction, the rail completes on touchdown ----
-      tl.fromTo("#s2 .copy", { x: -60, opacity: 0 }, { x: 0, opacity: 1, duration: 0.7, ease: "expo.out" }, CUT + 3 * F);
-      tl.fromTo(".rail", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, CUT + 5 * F);
-      tl.fromTo(".rail-fill", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.5, ease: "power3.inOut" }, CUT + 8 * F);
-      tl.fromTo(".step.now b", { scale: 0.6 }, { scale: 1, duration: 0.4, ease: "back.out(2)" }, CUT + 20 * F);
+      tl.fromTo("#s2 .copy", { x: -60, opacity: 0 }, { x: 0, opacity: 1, duration: 0.7, ease: "expo.out" }, CUT + 6 * F);
+      tl.fromTo(".rail", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, CUT + 10 * F);
+      tl.fromTo(".rail-fill", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.5, ease: "power3.inOut" }, CUT + 16 * F);
+      tl.fromTo(".step.now b", { scale: 0.6 }, { scale: 1, duration: 0.4, ease: "back.out(2)" }, CUT + 40 * F);
 
       window.__timelines["main"] = tl;
       tl.seek(0);
