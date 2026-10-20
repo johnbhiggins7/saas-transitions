@@ -2,7 +2,7 @@
 name: ui-component-morph
 title: UI-to-UI Component Morph
 category: morphing
-duration: 0.65s (20f @ 30fps)
+duration: 0.65s (39f @ 60fps)
 energy: medium
 description: One functional element's container stretches and re-rounds into another component, such as a compact search bar opening into a full analytics panel, with the surface never cut or crossfaded.
 ---
@@ -22,15 +22,15 @@ One component's box changes position, width, height and corner radius until it b
 
 Avoid it when the object keeps its identity and only moves or resizes. That is a [shared-element](../shared-element/SKILL.md). Avoid it when the two surfaces differ in colour or material: the continuous shell gives the trick away. For organic or icon-shaped sources, use [icon-to-scene-morph](../icon-to-scene-morph/SKILL.md) or [liquid-blob-morph](../liquid-blob-morph/SKILL.md). Use [container-mask-expand](../container-mask-expand/SKILL.md) when the frame should *reveal* content that already exists.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −8 → 0 | The Enter key chip lights up in indigo, then the bar takes a 6f press (scale 0.985 yoyo). |
-| Clear | 0 → 5 | The search contents (icon, query, key chip) fade out while the shell has barely moved. power4.inOut covers under 2% of the distance in its first 25% of time. From frame 2 to 9 the headline and suggestion chips slide 28px away and fade as the shell's edges approach. |
-| Stretch | 0 → 20 | The shell's real box morphs from 960×96 r48 to 1600×880 r28. Width and x run 20f on `power4.inOut`. Height, y and radius start 3f later and land on the same frame, so mid-move it is a wide, flat bar (about 1175×175 at frame 9) and not a scaled-up pill. |
-| Gate | 13 | Height is 80% settled (`SETTLED`). The middle of the panel is clear of the moving edges. Width is about 91% settled, so the sides are about 28px short, but the top and bottom edges are still about 80px short. |
-| Fill | 13 → 42 | Centre out. The dot map fades up and the region rows stagger in from frame 13. Title and total rise in (`expo.out`) at frame 15, once the top edge has room. Then the rule draws, bubbles pop (`back.out(1.6)`), bar fills grow, and the legend comes in last. |
+| Telegraph | −16 → 0 | The Enter key chip lights up in indigo, then the bar takes a 12f press (scale 0.985 yoyo). |
+| Clear | 0 → 10 | The search contents (icon, query, key chip) fade out while the shell has barely moved. power4.inOut covers under 2% of the distance in its first 25% of time. From frame 4 to 17 the headline and suggestion chips slide 28px away and fade as the shell's edges approach. |
+| Stretch | 0 → 39 | The shell's real box morphs from 960×96 r48 to 1600×880 r28. Width and x run 39f on `power4.inOut`. Height, y and radius start 6f later and land on the same frame, so mid-move it is a wide, flat bar (about 1175×175 at frame 18) and not a scaled-up pill. |
+| Gate | 25 | Height is 80% settled (`SETTLED`). The middle of the panel is clear of the moving edges. Width is about 91% settled, so the sides are about 28px short, but the top and bottom edges are still about 80px short. |
+| Fill | 25 → 84 | Centre out. The dot map fades up and the region rows stagger in from frame 25. Title and total rise in (`expo.out`) at frame 29, once the top edge has room. Then the rule draws, bubbles pop (`back.out(1.6)`), bar fills grow, and the legend comes in last. |
 
 ## Build it
 
@@ -41,7 +41,7 @@ const T = 1.7, D = 0.65;
 const BAR = { left: 480, top: 484, width: 960, height: 96, borderRadius: 48 };    // = #shell CSS; hard-coded, not measured
 const PANEL = { left: 160, top: 100, width: 1600, height: 880, borderRadius: 28 }; // the target component's box
 const EASE = "power4.inOut";
-const LAG = 0.1;                                        // height trails width by 3f: the bar stretches open, it doesn't zoom
+const LAG = 0.1;                                        // height trails width by 6f: the bar stretches open, it doesn't zoom
 const SETTLED = T + LAG + (D - LAG) * 0.583;            // power4.inOut reaches 80% at t = 0.583
 
 tl.to("#kbd", { backgroundColor: "#eeedff", borderColor: "#635bff", color: "#4b44d6", duration: 0.1, ease: "power2.out" }, T - 0.26);
@@ -56,7 +56,7 @@ tl.to(".q", { opacity: 0, duration: D * 0.25, ease: "power1.out" }, T);         
 tl.to(".ask", { y: -28, opacity: 0, duration: D * 0.35, ease: "power2.in" }, T + 0.06);        // neighbours give way
 tl.to(".chips", { y: 28, opacity: 0, duration: D * 0.35, ease: "power2.in" }, T + 0.06);
 
-// Incoming content only after the shape is ~80% settled, centre out: edge content waits 2f for the edges.
+// Incoming content only after the shape is ~80% settled, centre out: edge content waits 4f for the edges.
 tl.fromTo("#land", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, SETTLED);
 tl.fromTo(".rows > *", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.04, ease: "expo.out" }, SETTLED + 0.02);
 tl.fromTo(".p-head, .p-stat", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.04, ease: "expo.out" }, SETTLED + 0.06);
@@ -78,11 +78,11 @@ The full working composition is in [demo.html](demo.html).
 
 ## Pitfalls
 
-- **Uniform growth reads as a scale-up.** The first build tweened every property on one curve, from a centred bar to a centred panel. The middle frames were just a bigger white rectangle. The 3f height lag is what makes it a stretch.
+- **Uniform growth reads as a scale-up.** The first build tweened every property on one curve, from a centred bar to a centred panel. The middle frames were just a bigger white rectangle. The 6f height lag is what makes it a stretch.
 - **`left`/`top` fail strict lint.** `gsap_non_transform_motion` rejects them: they snap to whole pixels and stutter on the slow tail. Move position with `x`/`y` and keep only width, height and radius as layout tweens. Lint missed the problem when the props came through a spread (`{ ...PANEL }`), so don't rely on lint to catch it.
 - **The dead start of inOut eases.** power4.inOut covers under 4% of the distance in its first 30% of time. Fade the outgoing content inside that window and don't add a hold before `T`, or the empty pill reads as a stall.
-- **Neighbours sliced mid-word.** The growing top edge cut through the headline for a frame. Push neighbours out (frames 2–9) instead of letting the shell's edge wipe across text.
-- **Edge content at the gate.** At 80% the top and bottom edges are still ~80px short. With the title first at `SETTLED`, its eyebrow (48px from the panel top) appeared pressed against the still-moving top edge. Start middle content at the gate and anything within ~80px of an edge 2f later.
+- **Neighbours sliced mid-word.** The growing top edge cut through the headline for a couple of frames. Push neighbours out (frames 4–17) instead of letting the shell's edge wipe across text.
+- **Edge content at the gate.** At 80% the top and bottom edges are still ~80px short. With the title first at `SETTLED`, its eyebrow (48px from the panel top) appeared pressed against the still-moving top edge. Start middle content at the gate and anything within ~80px of an edge 4f later.
 - **Content anchored to the corner drifts.** Children positioned from the shell's top-left ride the edge for the last few frames. Pin a fixed-size inner layer to the shell's centre with negative margins (not `translate(-50%)`, which conflicts with GSAP transforms).
 - **Crossfading two boxes.** Swapping a bar element for a panel element shows a double border and shadow. Animate one element the whole way.
 
@@ -94,4 +94,4 @@ The full working composition is in [demo.html](demo.html).
 
 ## Sound
 
-A soft synth swell rising through the stretch, peaking on frame 13 when the content starts filling, plus a crisp key click on the press at frame −7.
+A soft synth swell rising through the stretch, peaking on frame 25 when the content starts filling, plus a crisp key click on the press at frame −13.

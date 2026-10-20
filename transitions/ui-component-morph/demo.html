@@ -125,15 +125,15 @@
 
       // ---- UI-to-UI Component Morph ----
       const T = 1.7;  // transition start
-      const D = 0.65; // shell morph duration (~20f @ 30fps)
+      const D = 0.65; // shell morph duration (39f @ 60fps)
       const BAR = { left: 480, top: 484, width: 960, height: 96, borderRadius: 48 };    // = #shell CSS
       const PANEL = { left: 160, top: 100, width: 1600, height: 880, borderRadius: 28 }; // scene B box
       const EASE = "power4.inOut";
-      const LAG = 0.1; // height trails width by 3f, so the bar visibly stretches instead of scaling up
+      const LAG = 0.1; // height trails width by 6f, so the bar visibly stretches instead of scaling up
       // Shape progress hits 80% at 58% of a power4.inOut tween: (2(1-t))^5 / 2 = 0.2 -> t = 0.583.
       const SETTLED = T + LAG + (D - LAG) * 0.583;
 
-      // Telegraph: Enter lights up, the bar takes a 6f press (3f down, 3f up). The eye is on the bar before it moves.
+      // Telegraph: Enter lights up, the bar takes a 12f press (6f down, 6f up). The eye is on the bar before it moves.
       tl.to("#kbd", { backgroundColor: "#eeedff", borderColor: "#635bff", color: "#4b44d6", duration: 0.1, ease: "power2.out" }, T - 0.26);
       tl.to("#shell", { scale: 0.985, duration: 0.1, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.22);
 
@@ -149,7 +149,7 @@
 
       // ---- Scene B contents: only once the shape is ~80% settled, centre out ----
       // At SETTLED the edges are still ~60px short, so the middle (map, rows) goes first and the
-      // edge content (header, total) waits 2f, or it appears pressed against the moving top edge.
+      // edge content (header, total) waits 4f, or it appears pressed against the moving top edge.
       tl.fromTo("#land", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, SETTLED);
       tl.fromTo(".rows > *", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.04, ease: "expo.out" }, SETTLED + 0.02);
       tl.fromTo(".p-head, .p-stat", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.04, ease: "expo.out" }, SETTLED + 0.06);
