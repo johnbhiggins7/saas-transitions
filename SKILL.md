@@ -96,6 +96,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Geometric & Brand Ribbon Wipe](transitions/geometric-ribbon-wipe/SKILL.md) | Masking | 0.6s | Staggered diagonal brand ribbons cover the frame for the swap, then trail off |
 | [X-Ray Scanline](transitions/xray-scanline/SKILL.md) | Masking | 0.8s | A glowing scanline strips the UI's skin to reveal the same layout as wireframes and data |
 | [Split-Screen Takeover](transitions/split-screen-takeover/SKILL.md) | Masking | 0.6s | The divider of an old-vs-new split is dragged across, and the winning panel takes the frame |
+| [Geometric Match Cut](transitions/graphic-match-cut/SKILL.md) | Match Cuts | 0.4s | A pulsing donut hard-cuts on its peak frame to a round clock at the same position and size |
 <!-- index:end -->
 
 ## Adding or changing a transition

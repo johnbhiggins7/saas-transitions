@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.4" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* The match: one center and one diameter, shared by #donut (scene A) and #clock (scene B).
+         Both are direct children of their .scene, so these are scene px with no parent offset. */
+      #root { --mx: 1426px; --my: 590px; --md: 440px; }
+      .match { position: absolute; left: calc(var(--mx) - var(--md) / 2); top: calc(var(--my) - var(--md) / 2); width: var(--md); height: var(--md); z-index: 3; }
+      .match svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+
+      /* Scene A: reports dashboard. Cards are in .app coords; the donut card frames the shared circle. */
+      .list-card { position: absolute; left: 280px; top: 108px; width: 660px; height: 779px; }
+      .donut-card { position: absolute; left: 964px; top: 108px; width: 682px; height: 779px; }
+      .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+      .list-card .tr { grid-template-columns: 2.2fr 1fr 0.8fr 1.3fr; height: 79px; }
+      .list-card .tr.row:last-child { border-bottom: 0; }
+      .donut-card .legend { position: absolute; left: 0; right: 0; bottom: 40px; justify-content: center; gap: 40px; font-size: 17px; color: var(--ink-2); }
+      .donut-card .legend i { width: 12px; height: 12px; }
+      .donut-card .legend b { color: var(--ink); margin-left: 6px; }
+      #donut-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      #donut-label .card-value { font-size: 72px; margin: 0; line-height: 1; }
+      #donut-label .small { font-size: 18px; margin-top: 8px; }
+
+      /* Scene B: dark feature slide. Same circle, different object. */
+      #s2 { background: #0a2540; z-index: 2; }
+      #s2 .copy { position: absolute; left: 160px; top: 300px; width: 860px; color: #fff; }
+      #s2 .eyebrow { color: #a5a0ff; }
+      #s2 .h1 { font-size: 80px; margin-top: 20px; }
+      #s2 .body { color: rgba(255, 255, 255, 0.7); margin-top: 28px; width: 640px; }
+      /* Dark glass, not white: a white card fading in over navy passes through grey. */
+      #s2 .rule { position: absolute; left: 160px; top: 752px; display: flex; align-items: center; gap: 18px; width: 640px; padding: 20px 24px; background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); box-shadow: none; color: #fff; }
+      #s2 .rule .h3 { font-size: 20px; }
+      #s2 .rule .small { margin-top: 4px; color: rgba(255, 255, 255, 0.55); }
+      #s2 .rule .toggle { margin-left: auto; background: rgba(255, 255, 255, 0.18); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: reports dashboard with a donut -->
+      <div id="s1" class="scene dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item"><span class="nav-icon"></span>Analytics</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Reports</div>
+            <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Reports</div>
+              <div class="search">Search</div>
+              <div class="avatar sky">JL</div>
+            </div>
+          </div>
+          <div class="card list-card">
+            <div class="card-head"><div class="h3">Recurring reports</div><span class="pill">8 reports</span></div>
+            <div class="table">
+              <div class="tr head"><span>Report</span><span>Cadence</span><span>Owner</span><span>Delivery</span></div>
+              <div class="tr row"><span class="cell-main">Revenue summary</span><span>Monthly</span><span><span class="avatar pink">MC</span></span><span class="pill green">Automated</span></div>
+              <div class="tr row"><span class="cell-main">Churn watch</span><span>Weekly</span><span><span class="avatar teal">RK</span></span><span class="pill green">Automated</span></div>
+              <div class="tr row"><span class="cell-main">Board pack</span><span>Quarterly</span><span><span class="avatar amber">AS</span></span><span class="pill green">Automated</span></div>
+              <div class="tr row"><span class="cell-main">Pipeline report</span><span>Weekly</span><span><span class="avatar sky">JL</span></span><span class="pill amber">Manual</span></div>
+              <div class="tr row"><span class="cell-main">Usage digest</span><span>Daily</span><span><span class="avatar">DP</span></span><span class="pill green">Automated</span></div>
+              <div class="tr row"><span class="cell-main">Invoice aging</span><span>Weekly</span><span><span class="avatar pink">MC</span></span><span class="pill green">Automated</span></div>
+              <div class="tr row"><span class="cell-main">Ad spend recap</span><span>Monthly</span><span><span class="avatar teal">RK</span></span><span class="pill amber">Manual</span></div>
+              <div class="tr row"><span class="cell-main">NPS responses</span><span>Weekly</span><span><span class="avatar amber">AS</span></span><span class="pill green">Automated</span></div>
+            </div>
+          </div>
+          <div class="card donut-card">
+            <div class="card-head"><div class="h3">Delivery mode</div><span class="pill indigo">This quarter</span></div>
+            <div class="legend"><span><i></i>Automated<b>75%</b></span><span><i style="background: #c9c6ff"></i>Manual<b>25%</b></span></div>
+          </div>
+        </div>
+
+        <!-- Match object A. Ring: outer r 220, inner r 164. Segment gaps sit at 12 and 9 o'clock. -->
+        <div id="donut" class="match">
+          <svg viewBox="0 0 440 440">
+            <g transform="rotate(-90 220 220)" fill="none" stroke-width="56">
+              <circle id="arc-auto" cx="220" cy="220" r="192" pathLength="100" stroke="#635bff" stroke-dasharray="74.4 25.6" stroke-dashoffset="-0.3" />
+              <circle id="arc-manual" cx="220" cy="220" r="192" pathLength="100" stroke="#c9c6ff" stroke-dasharray="24.4 75.6" stroke-dashoffset="-75.3" />
+            </g>
+          </svg>
+          <div id="donut-label"><div class="card-value">75%</div><div class="small">automated</div></div>
+        </div>
+      </div>
+
+      <!-- Scene B: scheduling slide. Match object B: same ring, the white hole becomes a clock face. -->
+      <div id="s2" class="scene next">
+        <div class="copy">
+          <div class="eyebrow">Scheduled reports</div>
+          <div class="h1">Every Monday,<br />9:00 AM.</div>
+          <div class="body">The pipeline report lands in your team's inbox before standup. Nobody has to remember.</div>
+        </div>
+        <div class="card rule">
+          <div class="avatar sky">JL</div>
+          <div><div class="h3">Pipeline report</div><div class="small">Weekly · Mon 9:00 · #sales</div></div>
+          <div class="toggle"><span class="knob"></span></div>
+        </div>
+
+        <div id="clock" class="match">
+          <svg viewBox="0 0 440 440">
+            <circle cx="220" cy="220" r="192" fill="none" stroke="#635bff" stroke-width="56" />
+            <circle cx="220" cy="220" r="164" fill="#fff" />
+            <g stroke="#0a2540" stroke-linecap="round">
+              <g stroke-width="8">
+                <line x1="220" y1="82" x2="220" y2="104" /><line x1="220" y1="82" x2="220" y2="104" transform="rotate(90 220 220)" />
+                <line x1="220" y1="82" x2="220" y2="104" transform="rotate(180 220 220)" /><line x1="220" y1="82" x2="220" y2="104" transform="rotate(270 220 220)" />
+              </g>
+              <g stroke-width="4" stroke="#8898aa">
+                <line x1="220" y1="84" x2="220" y2="96" transform="rotate(30 220 220)" /><line x1="220" y1="84" x2="220" y2="96" transform="rotate(60 220 220)" />
+                <line x1="220" y1="84" x2="220" y2="96" transform="rotate(120 220 220)" /><line x1="220" y1="84" x2="220" y2="96" transform="rotate(150 220 220)" />
+                <line x1="220" y1="84" x2="220" y2="96" transform="rotate(210 220 220)" /><line x1="220" y1="84" x2="220" y2="96" transform="rotate(240 220 220)" />
+                <line x1="220" y1="84" x2="220" y2="96" transform="rotate(300 220 220)" /><line x1="220" y1="84" x2="220" y2="96" transform="rotate(330 220 220)" />
+              </g>
+              <!-- 9:00: the hands point where the donut's segment gaps were (12 and 9 o'clock) -->
+              <line id="hand-min" x1="220" y1="220" x2="220" y2="120" stroke-width="10" />
+              <line id="hand-hour" x1="220" y1="220" x2="138" y2="220" stroke-width="14" />
+            </g>
+            <circle cx="220" cy="220" r="14" fill="#635bff" />
+            <circle cx="220" cy="220" r="5" fill="#fff" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".list-card, .donut-card", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, ease: "power3.out" }, 0);
+      tl.fromTo(".list-card .tr.row", { x: -16, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: "power3.out" }, 0.2);
+      tl.fromTo("#arc-auto", { strokeDasharray: "0 100" }, { strokeDasharray: "74.4 25.6", duration: 0.8, ease: "power2.inOut" }, 0.25);
+      tl.fromTo("#arc-manual", { strokeDasharray: "0 100" }, { strokeDasharray: "24.4 75.6", duration: 0.4, ease: "power2.out" }, 0.85);
+      tl.fromTo("#donut-label", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 0.6);
+
+      // ---- Graphic Match Cut ----
+      const T = 1.6;          // pulse starts (frame 48)
+      const D = 0.4;          // pulse window, 12f: 6f up in scene A, 6f settle in scene B
+      const CUT = T + D / 2;  // 1.8s = frame 54, the first frame of scene B
+      const PEAK = 1.1;       // both objects hit this scale on the cut, around the same center
+
+      tl.to("#donut", { scale: PEAK, duration: D / 2, ease: "power2.out" }, T);
+      // The hard cut: two sets on the same frame, no fade, no overlap. Frame 53 is the last donut frame.
+      tl.set("#s2", { opacity: 1 }, CUT);
+      tl.set("#s1", { visibility: "hidden" }, CUT);
+      // inOut, not out: velocity is ~0 on both sides of the cut, so frames 53 and 54 are the same size.
+      tl.fromTo("#clock", { scale: PEAK }, { scale: 1, duration: D / 2, ease: "power2.inOut" }, CUT);
+
+      // ---- Scene B builds around the clock after the cut ----
+      tl.fromTo("#s2 .copy > *", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, stagger: 0.06, ease: "expo.out" }, CUT + 0.1);
+      tl.fromTo("#s2 .rule", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "expo.out" }, CUT + 0.28);
+      tl.to("#s2 .toggle", { backgroundColor: "#635bff", duration: 0.25, ease: "power2.out" }, CUT + 0.9);
+      tl.to("#s2 .toggle .knob", { x: 28, duration: 0.3, ease: "back.out(1.6)" }, CUT + 0.9);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
