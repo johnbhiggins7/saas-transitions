@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.8" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Scene A copy sits under the glyph. */
+      #s1 .copy { position: absolute; left: 0; right: 0; top: 752px; text-align: center; }
+      #s1 .h1 { margin-top: 14px; }
+
+      /* Morph layer: the three glyph bars live above both scenes and survive the cut.
+         Start boxes are mirrored in FROM, end boxes in TO (script). */
+      #morph { position: absolute; inset: 0; z-index: 3; filter: drop-shadow(0px 28px 36px rgba(99, 91, 255, 0.34)); } /* lift shadow, on the unscaled layer */
+      #glyph { position: absolute; inset: 0; } /* carries the telegraph squash */
+      /* Each bar is a fixed 132×500 box; its visible shape is a clip-path inset anchored bottom-left. */
+      .gbar { position: absolute; width: 132px; height: 500px; background: linear-gradient(180deg, #8079ff, #635bff 60%, #554de8); }
+      #g0 { left: 726px; bottom: 380px; }
+      #g1 { left: 894px; bottom: 420px; }
+      #g2 { left: 1062px; bottom: 460px; }
+
+      /* Scene B is transparent: #s1's dot canvas stays underneath as the shared background. */
+      #s2 { background: transparent; z-index: 2; }
+      /* Frame is clipped while it grows, so its hairline and shadow come from drop-shadows on an unclipped wrapper. */
+      #frame-wrap { position: absolute; inset: 0; filter: drop-shadow(0 0 0.75px rgba(10, 37, 64, 0.22)) drop-shadow(0 24px 40px rgba(10, 37, 64, 0.10)); }
+      /* Full-scene white layer: its clip-path (scene px, see frameClip) is the card, and it also clips the chart inside it. */
+      #frame { position: absolute; inset: 0; background: var(--surface); }
+      #s2 .head { position: absolute; left: 268px; top: 152px; }
+      #s2 .value-row { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
+      #s2 .value-row .card-value { margin-top: 0; }
+      #s2 .value-row .delta { margin-top: 0; }
+      #s2 .legend { position: absolute; right: 268px; top: 168px; font-size: 15px; }
+      #s2 .legend .soft { background: #c9c6ff; }
+
+      /* Plot: x 340..1644, baseline y 880, 560px tall, bar 72 + gap 40 (slot 112). */
+      .grid { position: absolute; left: 340px; width: 1304px; height: 1px; background: var(--border); }
+      .grid.base { background: #cfd6e0; }
+      .ylab { position: absolute; left: 252px; width: 72px; text-align: right; font: 500 13px var(--mono); color: var(--muted); }
+      #s2 .bars { position: absolute; left: 340px; top: 320px; width: 968px; height: 560px; gap: 40px; }
+      #s2 .bar { flex: 0 0 72px; }
+      .months { position: absolute; left: 340px; top: 896px; width: 1304px; display: flex; gap: 40px; }
+      .months span { width: 72px; text-align: center; font-size: 14px; font-weight: 500; color: var(--muted); }
+      .months .q4 { color: var(--ink); font-weight: 650; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4.5" data-width="1920" data-height="1080">
+      <!-- Scene A: brand glyph + value prop (the glyph itself lives in #morph) -->
+      <div id="s1" class="scene dots">
+        <div class="copy">
+          <div class="eyebrow">Northwind</div>
+          <div class="h1">See revenue the moment it moves</div>
+        </div>
+      </div>
+
+      <!-- Scene B: dashboard card that assembles around the glyph bars -->
+      <div id="s2" class="scene next">
+        <div id="frame-wrap"><div id="frame">
+        <div class="grid" style="top: 320px"></div>
+        <div class="grid" style="top: 460px"></div>
+        <div class="grid" style="top: 600px"></div>
+        <div class="grid" style="top: 740px"></div>
+        <div class="grid base" style="top: 880px"></div>
+        <div class="ylab" style="top: 311px">$200k</div>
+        <div class="ylab" style="top: 451px">$150k</div>
+        <div class="ylab" style="top: 591px">$100k</div>
+        <div class="ylab" style="top: 731px">$50k</div>
+        <div class="ylab" style="top: 871px">$0</div>
+        <div class="head">
+          <div class="card-label">Monthly revenue</div>
+          <div class="value-row"><div class="card-value">$1.42M</div><span class="delta up">+31% QoQ</span></div>
+        </div>
+        <div class="legend"><span><i></i>Q4 2026</span><span><i class="soft"></i>Earlier</span></div>
+        <!-- Jan–Sep. Oct–Dec are the morphed glyph bars. -->
+        <div class="bars">
+          <div class="bar soft" style="height: 190px"></div><div class="bar soft" style="height: 230px"></div><div class="bar soft" style="height: 210px"></div>
+          <div class="bar soft" style="height: 260px"></div><div class="bar soft" style="height: 245px"></div><div class="bar soft" style="height: 290px"></div>
+          <div class="bar soft" style="height: 280px"></div><div class="bar soft" style="height: 320px"></div><div class="bar soft" style="height: 305px"></div>
+        </div>
+        <div class="months">
+          <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+          <span>Jul</span><span>Aug</span><span>Sep</span><span class="q4">Oct</span><span class="q4">Nov</span><span class="q4">Dec</span>
+        </div>
+        </div></div>
+      </div>
+
+      <div id="morph">
+        <div id="glyph">
+          <div id="g0" class="gbar"></div>
+          <div id="g1" class="gbar"></div>
+          <div id="g2" class="gbar"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Icon-to-Scene Morph: geometry (scene px, mirrors the CSS) ----
+      const T = 1.6; // transition start
+      const D = 0.8; // whole morph incl. stagger (24f @ 30fps)
+      const STAG = 2 / 30; // 2f between bars so each one reads as its own object
+      const DB = D - 2 * STAG; // per-bar morph (20f)
+      // Visible boxes: floating pills (offset baselines) -> grounded chart bars (one baseline, y 880).
+      const FROM = [
+        { left: 726, bottom: 380, w: 132, h: 250 },
+        { left: 894, bottom: 420, w: 132, h: 330 },
+        { left: 1062, bottom: 460, w: 132, h: 410 },
+      ];
+      const TO = [
+        { left: 1348, bottom: 200, w: 72, h: 360 }, // Oct: plot x 340 + slot 9 × 112
+        { left: 1460, bottom: 200, w: 72, h: 430 }, // Nov
+        { left: 1572, bottom: 200, w: 72, h: 500 }, // Dec
+      ];
+      const BOX = { w: 132, h: 500 }; // each .gbar's fixed box; the visible bar is a clip-path inset of it
+      // Same 4-value "round" in both strings so GSAP interpolates every corner.
+      const shape = (w, h, r) => `inset(${BOX.h - h}px ${BOX.w - w}px 0px 0px round ${r})`;
+      const PILL = "66px 66px 66px 66px", BAR = "8px 8px 3px 3px";
+      const CARD = { left: 220, top: 110, w: 1480, h: 860 };
+      const GLYPH = { left: 690, top: 174, w: 540, h: 562 }; // glyph bbox + 36px, the frame's start
+      // #frame covers the scene, so the clip is just the box in scene px.
+      const frameClip = (b, r) => `inset(${b.top}px ${1920 - b.left - b.w}px ${1080 - b.top - b.h}px ${b.left}px round ${r}px)`;
+
+      // Accelerate off rest, peak speed at ~27% of the move, then a long expo settle.
+      // An inOut ease reads as a slide; plain expo.out teleports the bars on frame 1.
+      const expoOut = gsap.parseEase("expo.out");
+      const glide = (p) => expoOut(p * p);
+      const drop = (p) => expoOut(p * p * p); // y lags x: bars arc across, then drop onto the baseline
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".gbar", { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: "power3.out" }, 0.05);
+      tl.fromTo("#s1 .copy > *", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: "power3.out" }, 0.3);
+
+      // Telegraph: the glyph takes a breath (0.97 and back, 7f) right before it moves.
+      tl.set("#glyph", { transformOrigin: "960px 700px" }, 0);
+      tl.to("#glyph", { scale: 0.97, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.24);
+
+      // ---- The morph: the front bar (Dec) leads, so the gaps open in flight instead of closing ----
+      FROM.forEach((f, i) => {
+        const to = TO[i], at = T + (2 - i) * STAG, el = `#g${i}`;
+        tl.fromTo(el, { x: 0, clipPath: shape(f.w, f.h, PILL) },
+          { x: to.left - f.left, clipPath: shape(to.w, to.h, BAR), duration: DB, ease: glide }, at);
+        tl.fromTo(el, { y: 0 }, { y: f.bottom - to.bottom, duration: DB, ease: drop }, at);
+      });
+      // Floating -> grounded: the glyph's lift shadow collapses as the bars land.
+      tl.to("#morph", { filter: "drop-shadow(0px 0px 0px rgba(99, 91, 255, 0))", duration: DB, ease: glide }, T);
+      tl.to("#s1 .copy", { y: 20, opacity: 0, duration: 0.15, ease: "power1.out" }, T); // gone before the frame's edge crosses it
+
+      // ---- Scene B materialises around the bars ----
+      tl.set("#s2", { opacity: 1 }, T);
+      // The frame unfolds from the glyph's footprint on the lead bar's ease, so it always contains the bars.
+      tl.fromTo("#frame", { clipPath: frameClip(GLYPH, 48) }, { clipPath: frameClip(CARD, 16), duration: DB, ease: glide }, T);
+      // Fade the filtered wrapper, not the frame: a translucent frame lets its own shadow show through as a grey tile.
+      tl.fromTo("#frame-wrap", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "power1.out" }, T);
+      // Chart scaffolding lives inside #frame, so the opening clip trims it: it can draw while the bars are still in flight.
+      tl.fromTo("#s2 .grid", { scaleX: 0, transformOrigin: "100% 50%" }, { scaleX: 1, duration: 0.5, stagger: { each: 0.04, from: "end" }, ease: "expo.out" }, T + 0.2); // baseline first, so the bars have a floor to drop onto
+      tl.fromTo("#s2 .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.5, stagger: { each: 0.035, from: "end" }, ease: "power3.out" }, T + 0.55); // Sep waits until Oct has cleared its slot
+      tl.fromTo("#s2 .ylab", { opacity: 0, x: 8 }, { opacity: 1, x: 0, duration: 0.4, stagger: { each: 0.03, from: "end" }, ease: "power2.out" }, T + 0.38);
+      tl.fromTo(".months span", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, stagger: { each: 0.025, from: "end" }, ease: "power2.out" }, T + 0.45);
+      tl.fromTo("#s2 .head, #s2 .legend", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.06, ease: "expo.out" }, T + 0.4); // frame's left edge is at x 259 by now: earlier, the clip crops the header mid-fade
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
