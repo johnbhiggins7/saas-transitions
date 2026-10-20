@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.8;duration=0.5" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Camera/content layers are always frame-sized, even inside the small #s2 box. */
+      .cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+
+      /* ---- Scene A: automations list ---- */
+      .kpi { height: 160px; } /* fixed so the list header, and the button in it, sit at known scene px */
+      #btn { position: absolute; left: 1530px; top: 398px; width: 212px; padding: 0; } /* = BTN: right end of the list header */
+      #btn svg, .ghost svg { width: 18px; height: 18px; }
+      .list-head { display: flex; align-items: center; gap: 14px; height: 48px; margin-bottom: 12px; }
+      .list .tr { height: 64px; grid-template-columns: 2.2fr 1.4fr 1fr 0.8fr; }
+      .ic { width: 30px; height: 30px; border-radius: 8px; flex: none; }
+      .scrim { position: absolute; inset: 0; background: #0a2540; opacity: 0; }
+      .cursor { width: 60px; height: 60px; left: -12px; top: -6px; transform-origin: 12px 6px; } /* tip (8,4) of the 40-unit viewBox at 1.5x: x/y = tip, presses scale about the tip */
+      /* White fill reads on the indigo button, the ring reads on the white card around it. */
+      .ripple { width: 56px; height: 56px; margin: -28px 0 0 -28px; left: 1625px; top: 424px; background: rgba(255, 255, 255, 0.5); box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.6); } /* = CLICK */
+
+      /* ---- Scene B: the modal surface that becomes the automation builder ---- */
+      /* The shadow is a drop-shadow on the unclipped scene: clip-path on .sheet would cut a box-shadow off. */
+      #s2 { z-index: 2; background: none; filter: drop-shadow(0 30px 50px rgba(10, 37, 64, 0.35)); }
+      .sheet { position: absolute; inset: 0; background: var(--bg); clip-path: inset(398px 178px 634px 1530px round 10px); } /* = BTN */
+      .fill { position: absolute; inset: 0; background: #635bff; } /* = the button fill, fades to reveal the builder */
+      .ghost { position: absolute; left: 1530px; top: 398px; width: 212px; padding: 0; box-shadow: none; }
+      .b-top { position: absolute; left: 0; top: 0; width: 1920px; height: 88px; padding: 0 48px; display: flex; align-items: center; gap: 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
+      .icon-btn { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
+      .saved { margin-left: auto; margin-right: 8px; }
+      .node { position: absolute; top: 509px; width: 360px; height: 150px; display: flex; gap: 18px; align-items: flex-start; }
+      .node-ic { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; }
+      .node-ic svg { width: 24px; height: 24px; }
+      .node-k { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+      .node-t { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; margin-top: 6px; }
+      .node-s { font-size: 15px; color: var(--muted); margin-top: 6px; }
+      .link { position: absolute; top: 583px; width: 100px; height: 2px; background: #c3cad6; }
+      .link::before, .link::after { content: ""; position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 2px solid #c3cad6; }
+      .link::before { left: -5px; } .link::after { right: -5px; }
+      #add { position: absolute; left: 1540px; top: 509px; width: 220px; height: 150px; border-radius: 16px; border: 2px dashed #c3cad6; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 18px; font-weight: 600; color: var(--ink-2); }
+      .zoom { position: absolute; right: 48px; bottom: 40px; display: flex; align-items: center; gap: 18px; height: 44px; padding: 0 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); font-size: 15px; font-weight: 600; color: var(--ink-2); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4.5" data-width="1920" data-height="1080">
+      <!-- Scene A: automations list with the "New automation" button -->
+      <div id="s1" class="scene dots">
+        <div class="cam">
+          <div class="app">
+            <aside class="app-sidebar">
+              <div class="brand"><span class="brand-mark"></span>Northwind</div>
+              <div class="nav-item"><span class="nav-icon"></span>Home</div>
+              <div class="nav-item active"><span class="nav-icon"></span>Automations</div>
+              <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+              <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+              <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+            </aside>
+            <div class="app-body">
+              <div class="app-topbar">
+                <div class="page-title">Automations</div>
+                <div class="search">Search automations</div>
+                <div class="avatar sky">JL</div>
+              </div>
+              <div class="app-content">
+                <div class="grid-3">
+                  <div class="card kpi"><div class="card-label">Active automations</div><div class="card-value">12</div><span class="delta up">+3 this month</span></div>
+                  <div class="card kpi"><div class="card-label">Runs this week</div><div class="card-value">18,240</div><span class="delta up">+9.4%</span></div>
+                  <div class="card kpi"><div class="card-label">Hours saved</div><div class="card-value">214h</div><span class="delta up">+18%</span></div>
+                </div>
+                <div class="card list">
+                  <div class="list-head"><div class="h3">All automations</div><span class="pill green">12 active</span></div>
+                  <div class="table">
+                    <div class="tr head"><div>Name</div><div>Trigger</div><div>Runs (7d)</div><div>Status</div></div>
+                    <div class="tr"><div class="cell-main"><span class="ic" style="background: #c9c6ff"></span>Welcome new trial users</div><div>Signup</div><div>4,210</div><div><span class="pill green">Active</span></div></div>
+                    <div class="tr"><div class="cell-main"><span class="ic" style="background: #fde2b8"></span>Escalate overdue invoices</div><div>Invoice overdue</div><div>312</div><div><span class="pill green">Active</span></div></div>
+                    <div class="tr"><div class="cell-main"><span class="ic" style="background: #bfe9e3"></span>Sync Stripe to CRM</div><div>Webhook</div><div>7,906</div><div><span class="pill green">Active</span></div></div>
+                    <div class="tr"><div class="cell-main"><span class="ic" style="background: #fbd0e6"></span>Weekly churn digest</div><div>Every Monday</div><div>52</div><div><span class="pill amber">Paused</span></div></div>
+                    <div class="tr"><div class="cell-main"><span class="ic" style="background: #bfe3f8"></span>Win back cancelled plans</div><div>Plan cancelled</div><div>128</div><div><span class="pill green">Active</span></div></div>
+                    <div class="tr"><div class="cell-main"><span class="ic" style="background: #d5dce6"></span>Route enterprise leads</div><div>Form submitted</div><div>—</div><div><span class="pill">Draft</span></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="btn" class="btn btn-primary">
+            <svg viewBox="0 0 18 18"><path d="M9 3v12M3 9h12" stroke="#fff" stroke-width="2.4" stroke-linecap="round" /></svg>New automation
+          </div>
+        </div>
+        <div class="scrim"></div>
+      </div>
+
+      <!-- Scene B: grows out of the button as a modal, then fills the frame as the automation builder -->
+      <div id="s2" class="scene next">
+        <div class="sheet">
+          <div class="content cam dots">
+            <div class="b-top">
+              <div class="icon-btn"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M11 4 L6 9 L11 14" fill="none" stroke="#425466" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+              <div class="h3">Untitled automation</div>
+              <span class="pill amber">Draft</span>
+              <div class="small saved">Saved just now</div>
+              <div class="btn">Test run</div>
+              <div class="btn btn-primary">Publish</div>
+            </div>
+
+            <div class="node card" style="left: 160px">
+              <div class="node-ic" style="background: #fff4e0"><svg viewBox="0 0 24 24"><path d="M13 2 L5 13 H11 L10 22 L19 10 H13 Z" fill="#f59e0b" /></svg></div>
+              <div><div class="node-k">Trigger</div><div class="node-t">Customer signs up</div><div class="node-s">Stripe · checkout completed</div></div>
+            </div>
+            <div class="link" style="left: 520px"></div>
+            <div class="node card" style="left: 620px">
+              <div class="node-ic" style="background: #e0f2fe"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="#0ea5e9" stroke-width="2.4" /><path d="M12 7.5 V12 L15 14" fill="none" stroke="#0ea5e9" stroke-width="2.4" stroke-linecap="round" /></svg></div>
+              <div><div class="node-k">Wait</div><div class="node-t">1 day</div><div class="node-s">Then continue</div></div>
+            </div>
+            <div class="link" style="left: 980px"></div>
+            <div class="node card" style="left: 1080px">
+              <div class="node-ic" style="background: var(--accent-soft)"><svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5" fill="none" stroke="#635bff" stroke-width="2.2" /><path d="M4 7 L12 13 L20 7" fill="none" stroke="#635bff" stroke-width="2.2" stroke-linejoin="round" /></svg></div>
+              <div><div class="node-k">Action</div><div class="node-t">Send welcome email</div><div class="node-s">Template · Trial day 1</div></div>
+            </div>
+            <div class="link" style="left: 1440px"></div>
+            <div id="add"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M9 3v12M3 9h12" stroke="#425466" stroke-width="2.2" stroke-linecap="round" /></svg>Add step</div>
+
+            <div class="zoom"><span>−</span><span>100%</span><span>+</span></div>
+          </div>
+          <!-- The button's own fill and label, on top of the builder: the growing shape starts as the button. -->
+          <div class="fill">
+            <div class="ghost btn btn-primary">
+              <svg viewBox="0 0 18 18"><path d="M9 3v12M3 9h12" stroke="#fff" stroke-width="2.4" stroke-linecap="round" /></svg>New automation
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pointer overlay spans both scenes -->
+      <div id="ripple" class="ripple"></div>
+      <svg id="cursor" class="cursor" viewBox="0 0 40 40"><path d="M8 4 L8 32 L15 25 L20 36 L25 34 L20 23 L30 23 Z" fill="#0a2540" stroke="#fff" stroke-width="2.5" stroke-linejoin="round" /></svg>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Geometry (scene px, mirrors the CSS) ----
+      const BTN = { x: 1530, y: 398, w: 212, h: 48 }; // #btn box
+      const CLICK = { x: 1625, y: 424 }; // cursor tip on the label; also the ripple and the scale origins
+      const REST = { x: 880, y: 720 }; // cursor resting over the table
+      const ADD = { x: 1710, y: 598 }; // scene B: cursor rests below-right of the "Add step" label, inside the box
+
+      // Quadratic Bezier as a per-axis ease: x and y share the parameter s, so together they trace one curve.
+      const glide = gsap.parseEase("power3.inOut");
+      const arc = (a, c, b) => (p) => {
+        const s = glide(p);
+        return (2 * s * (1 - s) * (c - a) + s * s * (b - a)) / (b - a);
+      };
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
+      tl.fromTo([".list", "#btn"], { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.12);
+      tl.fromTo(".list .tr:not(.head)", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, stagger: 0.04, ease: "power2.out" }, 0.24);
+      tl.fromTo("#cursor", { x: REST.x, y: REST.y + 24, opacity: 0 }, { x: REST.x, y: REST.y, opacity: 1, duration: 0.4, ease: "power3.out" }, 0.4);
+
+      // ---- Cursor-Triggered Expansion ----
+      const T = 1.8; // transition start = release frame, modal starts growing (f54)
+      const D = 0.5; // expansion (15f @ 30fps)
+      const EXPAND = "power2.out"; // GSAP power2 = cubic, ~19% of the travel on f1; power3 (quartic) puts ~24% there and reads as a pop
+
+      // Pre-roll: the cursor arcs up and over to the button (18f), so the eye is on the button before anything grows.
+      const C1 = { x: 1060, y: 360 };
+      tl.fromTo("#cursor", { x: REST.x }, { x: CLICK.x, duration: 0.6, ease: arc(REST.x, C1.x, CLICK.x), immediateRender: false }, T - 0.9);
+      tl.fromTo("#cursor", { y: REST.y }, { y: CLICK.y, duration: 0.6, ease: arc(REST.y, C1.y, CLICK.y), immediateRender: false }, T - 0.9);
+
+      // Press (3f down) and release (3f up). The ripple fires at the bottom of the press.
+      tl.to("#btn", { scale: 0.96, duration: 0.1, ease: "power2.out" }, T - 0.2);
+      tl.to("#cursor", { scale: 0.9, duration: 0.1, ease: "power2.out" }, T - 0.2);
+      tl.to(["#btn", "#cursor"], { scale: 1, duration: 0.1, ease: "power2.out" }, T - 0.1);
+      tl.fromTo("#ripple", { scale: 0.3, opacity: 1 }, { scale: 3.2, opacity: 0, duration: 0.3, ease: "power2.out", immediateRender: false }, T - 0.1); // 0.4s leaves a grey ring on the white sheet
+
+      // Expansion: a clip-path rect grows from the button box to past the frame edges.
+      // Ending at -OVER (not 0) means the edges clear the frame by ~f11 instead of creeping in on the ease-out tail,
+      // and the 28px corners finish outside the frame, so one tween can open the radius 10 -> 28 like a modal card.
+      const OVER = 40;
+      const inset = (t, r, b, l, rad) => `inset(${t}px ${r}px ${b}px ${l}px round ${rad}px)`;
+      tl.set("#s2", { opacity: 1 }, T);
+      tl.fromTo("#s2 .sheet",
+        { clipPath: inset(BTN.y, 1920 - BTN.x - BTN.w, 1080 - BTN.y - BTN.h, BTN.x, 10) },
+        { clipPath: inset(-OVER, -OVER, -OVER, -OVER, 28), duration: D, ease: EXPAND }, T);
+      // The shape starts as the button (indigo + label) and becomes the builder's surface.
+      tl.fromTo("#s2 .ghost", { opacity: 1 }, { opacity: 0, duration: 0.1, ease: "power1.in" }, T);
+      // Solid for the first growth frame so it reads as the button itself, then gone by f57: a slower fade parks a big lavender card on screen.
+      tl.fromTo("#s2 .fill", { opacity: 1 }, { opacity: 0, duration: 0.1, ease: "power1.out", immediateRender: false }, T + 1 / 30);
+      // Content grows with the box from the click column instead of sitting still behind a mask. Origin y=0 pins the top bar under the card's top edge.
+      tl.fromTo("#s2 .content", { scale: 0.94, transformOrigin: `${CLICK.x}px 0px` }, { scale: 1, duration: D, ease: EXPAND }, T);
+
+      // Scene A recedes behind the modal: a backdrop scrim and a small push back from the click point.
+      tl.fromTo("#s1 .cam", { scale: 1, transformOrigin: `${CLICK.x}px ${CLICK.y}px` }, { scale: 0.95, duration: D, ease: EXPAND }, T);
+      tl.fromTo("#s1 .scrim", { opacity: 0 }, { opacity: 0.45, duration: D * 0.6, ease: "power2.out" }, T);
+      tl.set("#s1", { visibility: "hidden" }, T + D);
+      tl.set("#s2", { filter: "none" }, T + D);
+
+      // ---- Scene B landing: the flow builds outward from the click, so the growing card already shows the builder ----
+      // Right to left: "Add step" sits under the cursor and inside the card from f2; the trigger node at x=160 is only uncovered late.
+      tl.fromTo("#add", { opacity: 0.3, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" }, T);
+      tl.fromTo("#s2 .node", { y: 30, scale: 0.96, opacity: 0.3 }, { y: 0, scale: 1, opacity: 1, duration: 0.45, stagger: { each: 0.06, from: "end" }, ease: "back.out(1.2)" }, T + 0.03);
+      tl.fromTo("#s2 .link", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.3, stagger: { each: 0.06, from: "end" }, ease: "power3.out" }, T + 0.1);
+
+      // The cursor carries on to the next affordance, so the UX keeps teaching after the cut.
+      const C2 = { x: 1720, y: 470 };
+      tl.fromTo("#cursor", { x: CLICK.x }, { x: ADD.x, duration: 0.6, ease: arc(CLICK.x, C2.x, ADD.x), immediateRender: false }, T + 1.0);
+      tl.fromTo("#cursor", { y: CLICK.y }, { y: ADD.y, duration: 0.6, ease: arc(CLICK.y, C2.y, ADD.y), immediateRender: false }, T + 1.0);
+      tl.to("#add", { borderColor: "#635bff", backgroundColor: "#eeedff", color: "#4b44d6", duration: 0.15, ease: "power1.out" }, T + 1.5);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
