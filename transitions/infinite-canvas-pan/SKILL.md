@@ -2,7 +2,7 @@
 name: infinite-canvas-pan
 title: Infinite Canvas Pan
 category: camera-spatial
-duration: 1s (30f @ 30fps)
+duration: 1s (60f @ 60fps)
 energy: medium
 description: The camera glides diagonally across one continuous dot-grid canvas from one node cluster to another, zooming out slightly mid-pan, so both scenes read as parts of one large workspace.
 ---
@@ -22,15 +22,15 @@ Scene A and scene B are two camera positions on one oversized world, like a Figm
 
 Avoid it when the two scenes aren't spatially related. A pan claims they sit side by side, so a pan from billing settings to a marketing headline reads as a mistake. Use [shared-element](../shared-element/SKILL.md) or [cross-dissolve](../cross-dissolve/SKILL.md) instead.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −9 → 0 | At −9 the ingest node's out port turns indigo and pings a ring, and its sync bar finishes filling at −8. At −3 a glowing packet leaves along the connector, so the eye is already moving down and to the right. |
-| Pan | 0 → 30 | `#world` translates (2360, 1100) world px on `power3.inOut`. Peak speed is about 230 screen px/frame at frame 15 (3 × 2,604 / 30 × 0.88). The minimap viewport moves with the same tween. |
-| Breath | 0 → 30 | `#cam` scales 1 → 0.88 → 1 around the frame center with `sin²(πp)`. The scale is lowest at frame 15, where the speed peaks. Mid-pan, the frame shows the ingest node, the Transform node, a branch node, a sticky note and the dashboard's edge all at once. |
-| Lead | −3 → 25 | The packet leads the frame center until about frame 16 and dips under the Transform card. Then the camera overtakes it, and it enters the dashboard port from the left third, lighting the connector behind it. |
-| Land | 25 → 57 | The packet reaches the dashboard port at 25.5, as the camera finishes settling (≈98% of the way at 25). The port pings, an "Updated just now" pill pops on `back.out(1.7)` at 27, the chart line draws 25 → 52 and the area fills 42 → 57. |
+| Telegraph | −18 → 0 | At −18 the ingest node's out port turns indigo and pings a ring, and its sync bar finishes filling at −15. At −6 a glowing packet leaves along the connector, so the eye is already moving down and to the right. |
+| Pan | 0 → 60 | `#world` translates (2360, 1100) world px on `power3.inOut`. Peak speed is about 115 screen px/frame at frame 30 (3 × 2,604 / 60 × 0.88). The minimap viewport moves with the same tween. |
+| Breath | 0 → 60 | `#cam` scales 1 → 0.88 → 1 around the frame center with `sin²(πp)`. The scale is lowest at frame 30, where the speed peaks. Mid-pan, the frame shows the ingest node, the Transform node, a branch node, a sticky note and the dashboard's edge all at once. |
+| Lead | −6 → 51 | The packet leads the frame center until about frame 32 and dips under the Transform card. Then the camera overtakes it, and it enters the dashboard port from the left third, lighting the connector behind it. |
+| Land | 51 → 114 | The packet reaches the dashboard port at 51, as the camera finishes settling (≈98% of the way at 50). The port pings, an "Updated just now" pill pops on `back.out(1.7)` at 54, the chart line draws 51 → 105 and the area fills 84 → 114. |
 
 ## Build it
 
@@ -69,7 +69,7 @@ The full working composition is in [demo.html](demo.html).
 
 ## Tuning
 
-- **Duration vs distance.** 0.9–1.1s for about 2,600 world px. With `power3.inOut` the peak speed is 3× the average, so keep the peak under about 250 screen px/frame. Past roughly 1.5 screen-diagonals, use [whip-pan](../whip-pan/SKILL.md) and its blur.
+- **Duration vs distance.** 0.9–1.1s for about 2,600 world px. With `power3.inOut` the peak speed is 3× the average, so keep the peak under about 125 screen px/frame. Past roughly 1.5 screen-diagonals, use [whip-pan](../whip-pan/SKILL.md) and its blur.
 - **Breath (`BREATH`).** 0.85–0.92. Below 0.8 it reads as a pullback, not a pan. Above 0.95 it disappears and the move reads as a slide.
 - **Direction.** A diagonal reads as "canvas". A purely horizontal pan reads as a carousel or [parallax-push](../parallax-push/SKILL.md). Keep at least 20° of vertical travel.
 - **Ease.** `power3.inOut` by default. `power2.inOut` is calmer for long, slow tours. `expo.inOut` drifts toward a whip and needs blur.
@@ -86,11 +86,11 @@ The full working composition is in [demo.html](demo.html).
 
 ## Variants
 
-- **Hand-tool drag.** A hand cursor grabs the canvas at frame −6 and drags against the direction of travel. Same timing, and it teaches the gesture.
+- **Hand-tool drag.** A hand cursor grabs the canvas at frame −12 and drags against the direction of travel. Same timing, and it teaches the gesture.
 - **Pan to fit.** End at a different scale (1 → 0.75) to frame a bigger cluster. The breath becomes a one-way zoom-out on the second half.
 - **Canvas tour.** Chain 2–3 pans with 0.6–0.8s holds on the same ease. Use [whip-pan](../whip-pan/SKILL.md) for the one long hop.
 - **Horizontal flow.** For a strictly left-to-right pipeline, pan along the flow with a 10–15% vertical drift, so it still reads as canvas.
 
 ## Sound
 
-Soft low-mid air whoosh, without high hiss, peaking at frame 15 with the breath trough. Add a light tick on the packet landing at frame 25.
+Soft low-mid air whoosh, without high hiss, peaking at frame 30 with the breath trough. Add a light tick on the packet landing at frame 51.
