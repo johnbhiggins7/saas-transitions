@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.533" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* The two hero cards share one box (560×208, top 424) so only x changes across the cut. Mirrored as W / Y / REST_A / REST_B in the script. */
+      .hero { position: absolute; top: 424px; width: 560px; height: 208px; padding: 24px; box-shadow: var(--shadow-lg); z-index: 5; }
+      #cardA { left: 1188px; filter: url(#mbA); }
+      #cardB { left: 680px; filter: url(#mbB); }
+      .hero-top { display: flex; align-items: center; gap: 14px; }
+      .hero-top .avatar, .hero-top .icon { width: 48px; height: 48px; }
+      .hero-name { font-size: 22px; font-weight: 650; letter-spacing: -0.015em; }
+      .hero-sub { font-size: 15px; color: var(--muted); margin-top: 2px; }
+      .hero-top .pill { margin-left: auto; align-self: flex-start; }
+      .hero-value { position: absolute; left: 24px; bottom: 22px; font-size: 44px; font-weight: 700; letter-spacing: -0.035em; }
+      .hero .btn { position: absolute; right: 24px; bottom: 24px; height: 44px; padding: 0 18px; font-size: 16px; }
+      .icon { border-radius: 12px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; flex: none; }
+      .icon svg { width: 24px; height: 24px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+      /* ---- Scene A: Pipeline board ---- */
+      .board { position: absolute; left: 280px; top: 108px; width: 1368px; height: 780px; display: grid; grid-template-columns: 360px 360px 600px; gap: 24px; }
+      .board .col { height: 100%; }
+      .ticket { height: 170px; align-content: space-between; }
+      .t-row { display: flex; justify-content: space-between; align-items: center; }
+      .t-amt { font-family: var(--mono); font-size: 16px; color: var(--ink-2); }
+      .t-sub { font-size: 15px; color: var(--muted); font-weight: 400; }
+      .t-row .avatar { width: 30px; height: 30px; font-size: 12px; }
+      .slot { height: 208px; margin: 0 4px; border-radius: var(--radius); border: 2px dashed #d5dce6; } /* where #cardA rests; shows once it leaves */
+      .ripple { left: 1640px; top: 590px; background: rgba(255, 255, 255, 0.6); } /* the kit's indigo ripple vanishes on an indigo button */
+      .cursor { left: 0; top: 0; }
+
+      /* ---- Scene B: Billing, a dark stage so the hard cut is unmistakable ---- */
+      #s2 { background: var(--ink); z-index: 2; }
+      .dots-dark { position: absolute; inset: 0; background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1.5px, rgba(255, 255, 255, 0) 1.5px); background-size: 32px 32px; }
+      #s2 .copy { position: absolute; left: 0; right: 0; top: 196px; text-align: center; color: #fff; }
+      #s2 .eyebrow { color: #b4b0ff; }
+      #s2 .h1 { margin-top: 14px; }
+      .rail { position: absolute; left: 480px; top: 760px; width: 960px; height: 120px; }
+      .rail-line { position: absolute; left: 0; right: 0; top: 17px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); }
+      .rail-fill { position: absolute; left: 0; width: 480px; top: 17px; height: 4px; border-radius: 2px; background: var(--accent); }
+      .step { position: absolute; top: 0; width: 200px; margin-left: -100px; text-align: center; color: rgba(255, 255, 255, 0.55); font-size: 17px; font-weight: 500; }
+      .step b { display: block; width: 38px; height: 38px; margin: 0 auto 14px; border-radius: 50%; background: var(--ink); border: 3px solid rgba(255, 255, 255, 0.22); }
+      .step.done b { background: var(--green); border-color: var(--green); }
+      .step.now { color: #fff; }
+      .step.now b { background: var(--accent); border-color: #b4b0ff; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Horizontal-only motion blur for each hero card; stdDeviation "X 0" is driven by the timeline. Wide region so the smear isn't clipped. -->
+      <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+        <filter id="mbA" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur id="blurA" stdDeviation="0 0" /></filter>
+        <filter id="mbB" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur id="blurB" stdDeviation="0 0" /></filter>
+      </svg>
+
+      <!-- Scene A: Pipeline. The Acme deal is won and gets dispatched to billing. -->
+      <div id="s1" class="scene dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Pipeline</div>
+            <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+            <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Pipeline</div>
+              <div class="search">Search deals</div>
+              <div class="avatar sky">JL</div>
+            </div>
+          </div>
+          <div class="board">
+            <div class="col a-in">
+              <div class="col-title">Proposal · 3</div>
+              <div class="ticket"><div class="t-row">Hooli<span class="t-amt">$18,500</span></div><div class="t-sub">Team plan · 30 seats</div><div class="t-row"><span class="avatar pink">MR</span><span class="pill">4d</span></div></div>
+              <div class="ticket"><div class="t-row">Umbrella<span class="t-amt">$9,200</span></div><div class="t-sub">Starter · 12 seats</div><div class="t-row"><span class="avatar amber">TS</span><span class="pill">6d</span></div></div>
+              <div class="ticket"><div class="t-row">Stark Labs<span class="t-amt">$31,000</span></div><div class="t-sub">Growth · 60 seats</div><div class="t-row"><span class="avatar teal">AK</span><span class="pill">1d</span></div></div>
+            </div>
+            <div class="col a-in">
+              <div class="col-title">Negotiation · 3</div>
+              <div class="ticket"><div class="t-row">Initech<span class="t-amt">$22,750</span></div><div class="t-sub">Growth · 45 seats</div><div class="t-row"><span class="avatar sky">JL</span><span class="pill amber">Legal</span></div></div>
+              <div class="ticket"><div class="t-row">Wayne Co<span class="t-amt">$64,000</span></div><div class="t-sub">Enterprise · 200 seats</div><div class="t-row"><span class="avatar pink">MR</span><span class="pill">2d</span></div></div>
+              <div class="ticket"><div class="t-row">Soylent<span class="t-amt">$7,800</span></div><div class="t-sub">Starter · 10 seats</div><div class="t-row"><span class="avatar amber">TS</span><span class="pill">3d</span></div></div>
+            </div>
+            <div class="col a-in">
+              <div class="col-title">Closed won · 2</div>
+              <div class="ticket"><div class="t-row">Globex<span class="t-amt">$12,400</span></div><div class="t-sub">Team plan · 20 seats · invoiced</div><div class="t-row"><span class="avatar teal">AK</span><span class="pill green">Paid</span></div></div>
+              <div class="slot"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="cardA" class="card hero">
+          <div class="hero-top">
+            <span class="avatar teal">AC</span>
+            <div><div class="hero-name">Acme Corp</div><div class="hero-sub">Annual · 120 seats</div></div>
+            <span class="pill green">Closed won</span>
+          </div>
+          <div class="hero-value">$48,000</div>
+          <div id="send" class="btn btn-primary">Send invoice</div>
+        </div>
+
+        <div class="ripple"></div>
+        <svg class="cursor" viewBox="0 0 40 40"><path d="M8 4 L8 32 L15 25 L20 36 L25 34 L20 23 L30 23 Z" fill="#0a2540" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>
+      </div>
+
+      <!-- Scene B: Billing. A new card, the invoice, enters from the left at the speed the deal left. -->
+      <div id="s2" class="scene next">
+        <div class="dots-dark"></div>
+        <div class="copy">
+          <div class="eyebrow">Billing · automated</div>
+          <div class="h1">Invoice sent to Acme Corp</div>
+        </div>
+
+        <div id="cardB" class="card hero">
+          <div class="hero-top">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5" /><path d="M10 13h6M10 17h4" /></svg></span>
+            <div><div class="hero-name mono">INV-1042</div><div class="hero-sub">Acme Corp · due Nov 19</div></div>
+            <span class="pill indigo">Sent</span>
+          </div>
+          <div class="hero-value">$48,000.00</div>
+          <div class="btn">View invoice</div>
+        </div>
+
+        <div class="rail">
+          <div class="rail-line"></div>
+          <div class="rail-fill"></div>
+          <div class="step done" style="left: 0"><b></b>Deal won</div>
+          <div class="step now" style="left: 480px"><b></b>Invoice sent</div>
+          <div class="step" style="left: 960px"><b></b>Paid</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const F = 1 / 30; // one frame; every transition time below is a whole frame so the cut lands on the grid
+
+      // ---- Scene A entrance ----
+      tl.fromTo("#s1 .a-in", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.07, ease: "power3.out" }, 0);
+      tl.fromTo("#cardA", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.21);
+
+      // ---- Speed Match Cut ----
+      const T = 48 * F;   // launch (frame 48)
+      const H = 8 * F;    // each half: 8f out, 8f in
+      const CUT = T + H;  // hard cut at peak velocity (frame 56)
+      const W = 560;      // hero card width (both cards)
+      const REST_A = 1188, REST_B = 680; // card left edges at rest, scene px (match CSS)
+      const WIND = 16;    // anticipation, px
+
+      // Telegraph: the cursor clicks "Send invoice" at f-14, then the card braces against its direction of travel (f-8 to f0).
+      tl.fromTo(".cursor", { x: 1760, y: 1100 }, { x: 1632, y: 586, duration: 0.55, ease: "power3.inOut" }, T - 31 * F);
+      tl.to("#send", { scale: 0.94, duration: 0.08, ease: "power2.out", yoyo: true, repeat: 1 }, T - 14 * F);
+      tl.set(".ripple", { scale: 0.4, opacity: 0.9 }, T - 14 * F); // a fromTo here would render the ripple from frame 0
+      tl.to(".ripple", { scale: 2.4, opacity: 0, duration: 0.45, ease: "power2.out" }, T - 14 * F);
+      tl.to("#cardA", { x: -WIND, duration: 8 * F, ease: "sine.inOut" }, T - 8 * F);
+
+      // One curve for the whole move, split at its midpoint: A plays the accelerating half,
+      // B the decelerating half. Same curve, so speed at the seam is identical by construction.
+      const E = gsap.parseEase("power2.inOut");
+      const M = E(0.5);                                     // share of travel done at the cut (0.5 for symmetric eases)
+      const easeA = (p) => E(p * 0.5) / M;
+      const easeB = (p) => (E(0.5 + p * 0.5) - M) / (1 - M);
+
+      // Travel such that A's card, wrapped by one screen + one card width, sits exactly where B's starts:
+      // position carries across the edge, not just speed. (2166 - 2480 = -314 = REST_B - XB.)
+      const TRAVEL = 1920 + W + REST_B - REST_A + WIND;     // 1988px
+      const XA = TRAVEL * M, XB = TRAVEL * (1 - M);         // 994 / 994; peak 3·994/8 ≈ 373 px per frame
+
+      // Blur follows speed: the ease's slope, normalised to its value at the seam.
+      const slope = (p) => (E(p + 1e-4) - E(p - 1e-4)) / 2e-4;
+      const S = slope(0.5);
+      const BLUR = 44;
+
+      tl.to("#cardA", { x: -WIND + XA, duration: H, ease: easeA }, T);
+      tl.fromTo("#blurA", { attr: { stdDeviation: "0 0" } }, { attr: { stdDeviation: `${BLUR} 0` }, duration: H, ease: (p) => slope(p * 0.5) / S }, T);
+
+      tl.set("#s1", { visibility: "hidden" }, CUT);
+      tl.set("#s2", { opacity: 1 }, CUT);
+
+      tl.fromTo("#cardB", { x: -XB }, { x: 0, duration: H, ease: easeB }, CUT);
+      tl.fromTo("#blurB", { attr: { stdDeviation: `${BLUR} 0` } }, { attr: { stdDeviation: "0 0" }, duration: H, ease: (p) => 1 - slope(0.5 + p * 0.5) / S }, CUT);
+
+      // ---- Scene B lands around the card: copy drifts in the same direction, the rail completes on touchdown ----
+      tl.fromTo("#s2 .copy", { x: -60, opacity: 0 }, { x: 0, opacity: 1, duration: 0.7, ease: "expo.out" }, CUT + 3 * F);
+      tl.fromTo(".rail", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, CUT + 5 * F);
+      tl.fromTo(".rail-fill", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.5, ease: "power3.inOut" }, CUT + 8 * F);
+      tl.fromTo(".step.now b", { scale: 0.6 }, { scale: 1, duration: 0.4, ease: "back.out(2)" }, CUT + 20 * F);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
