@@ -164,14 +164,15 @@
       tl.fromTo("#s1 .row", { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.4, stagger: 0.04, ease: "power2.out" }, 0.3);
 
       // ---- Whip Pan ----
-      const T = 1.6;        // whip start (frame 48)
-      const DA = 6 / 30;    // scene A out: 6f, power4.in
-      const DB = 7 / 30;    // scene B in: 7f, expo.out
-      const CUT = T + DA;   // hard cut at peak velocity (frame 54)
+      const T = 1.6;        // whip start (frame 96)
+      const DA = 12 / 60;   // scene A out: 12f, power4.in
+      const DB = 14 / 60;   // scene B in: 14f, expo.out
+      const CUT = T + DA;   // hard cut at peak velocity (frame 108)
       const XA = 1400;      // scene A travel, px
       const V = (4 * XA) / DA;                // exit speed of power4.in: x'(1) = 4·XA/DA = 28000 px/s
       const XB = (V * DB) / (10 * Math.LN2);  // expo.out enters at 10·ln2·XB/DB, so solve for the same speed (~943px)
-      const BLUR = 180;     // peak horizontal stdDeviation, px
+      const FPS = 60;       // render frame rate
+      const BLUR = 180 * 30 / FPS; // peak horizontal stdDeviation: 180px was tuned at 30fps; each 60fps frame covers half the travel
 
       // Telegraph: a 20px wind-up against the direction of travel, ending at rest.
       tl.to("#s1 .cam", { x: 20, duration: 0.3, ease: "sine.inOut" }, T - 0.3);
