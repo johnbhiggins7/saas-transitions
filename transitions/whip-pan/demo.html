@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.433" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      .cam { position: absolute; inset: 0; } /* camera layer: x goes here, the blur filter on the unscaled scene */
+      .world-dots { position: absolute; top: 0; bottom: 0; left: -2400px; right: -2400px; } /* canvas extends past the frame so the pan never runs out of grid */
+      #s1 { filter: url(#whipA); }
+      #s2 { filter: url(#whipB); z-index: 2; }
+
+      /* ---- Scene A: Billing ---- */
+      .plan { position: absolute; left: 280px; top: 108px; width: 660px; height: 250px; padding: 32px; color: #fff; border: 0;
+        background: linear-gradient(135deg, #7a73ff, #635bff 55%, #4b44d6); box-shadow: 0 12px 32px rgba(99, 91, 255, 0.35); }
+      .plan .eyebrow { color: rgba(255, 255, 255, 0.75); }
+      .plan .name { font-size: 52px; font-weight: 700; letter-spacing: -0.035em; margin-top: 10px; }
+      .plan .price { font-size: 22px; font-weight: 500; opacity: 0.9; margin-top: 6px; }
+      .plan .btn { position: absolute; right: 32px; bottom: 32px; color: var(--accent-ink); border-color: #fff; }
+      .usage { position: absolute; left: 964px; top: 108px; width: 684px; height: 250px; padding: 32px; }
+      .meter { margin-top: 30px; }
+      .meter-row { display: flex; justify-content: space-between; font-size: 17px; font-weight: 500; color: var(--ink-2); margin-bottom: 14px; }
+      .meter-row b { color: var(--ink); font-weight: 600; }
+      .invoices { position: absolute; left: 280px; top: 382px; width: 1368px; height: 506px; padding: 24px 32px; }
+      .inv-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+      .invoices .mono { font-size: 15px; }
+
+      /* ---- Scene B: Integrations ---- */
+      .filters { position: absolute; left: 280px; top: 108px; display: flex; gap: 12px; }
+      .filters .pill { height: 40px; padding: 0 18px; font-size: 16px; border-radius: 20px; }
+      .tiles { position: absolute; left: 280px; top: 176px; width: 1368px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+      .tile { height: 340px; padding: 28px; display: flex; flex-direction: column; }
+      .tile-top { display: flex; justify-content: space-between; align-items: flex-start; }
+      .logo { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+      .logo svg { width: 34px; height: 34px; fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+      .tile .h3 { margin-top: 26px; }
+      .tile .desc { font-size: 16px; line-height: 1.5; color: var(--muted); margin-top: 8px; }
+      .tile .pill { margin-top: auto; }
+
+      /* Off-frame modules: only seen as streaks while the camera is at speed. */
+      .ghost { position: absolute; }
+      .ghost .bars { height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Horizontal-only motion blur. stdDeviation "X 0" is animated by the timeline. -->
+      <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+        <filter id="whipA" x="-10%" y="0" width="120%" height="100%" color-interpolation-filters="sRGB"><feGaussianBlur id="blurA" stdDeviation="0 0" /></filter>
+        <filter id="whipB" x="-10%" y="0" width="120%" height="100%" color-interpolation-filters="sRGB"><feGaussianBlur id="blurB" stdDeviation="0 0" /></filter>
+      </svg>
+
+      <!-- Scene A: Billing -->
+      <div id="s1" class="scene">
+        <div class="cam">
+          <div class="world-dots dots"></div>
+          <div class="app">
+            <aside class="app-sidebar">
+              <div class="brand"><span class="brand-mark"></span>Northwind</div>
+              <div class="nav-item"><span class="nav-icon"></span>Home</div>
+              <div class="nav-item"><span class="nav-icon"></span>Analytics</div>
+              <div class="nav-item active"><span class="nav-icon"></span>Billing</div>
+              <div class="nav-item"><span class="nav-icon"></span>Integrations</div>
+              <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+            </aside>
+            <div class="app-body">
+              <div class="app-topbar">
+                <div class="page-title">Billing</div>
+                <div class="search">Search</div>
+                <div class="avatar sky">JL</div>
+              </div>
+            </div>
+            <div class="card plan a-in">
+              <div class="eyebrow">Current plan</div>
+              <div class="name">Growth</div>
+              <div class="price">$480 / month · renews Nov 1</div>
+              <div class="btn">Change plan</div>
+            </div>
+            <div class="card usage a-in">
+              <div class="h3">Usage this cycle</div>
+              <div class="meter">
+                <div class="meter-row"><span>Seats</span><b>42 / 50</b></div>
+                <div class="slider"><div class="fill" style="width: 84%"></div></div>
+              </div>
+              <div class="meter">
+                <div class="meter-row"><span>API calls</span><b>1.2M / 2M</b></div>
+                <div class="slider"><div class="fill" style="width: 60%; background: var(--teal)"></div></div>
+              </div>
+            </div>
+            <div class="card invoices a-in">
+              <div class="inv-head"><div class="h3">Invoices</div><div class="btn">Download all</div></div>
+              <div class="table">
+                <div class="tr head"><span>Invoice</span><span>Date</span><span>Amount</span><span>Status</span></div>
+                <div class="tr row"><span class="cell-main mono">INV-2041</span><span>Oct 1, 2026</span><span>$480.00</span><span class="pill amber">Due</span></div>
+                <div class="tr row"><span class="cell-main mono">INV-1987</span><span>Sep 1, 2026</span><span>$480.00</span><span class="pill green">Paid</span></div>
+                <div class="tr row"><span class="cell-main mono">INV-1932</span><span>Aug 1, 2026</span><span>$430.00</span><span class="pill green">Paid</span></div>
+                <div class="tr row"><span class="cell-main mono">INV-1876</span><span>Jul 1, 2026</span><span>$430.00</span><span class="pill green">Paid</span></div>
+                <div class="tr row"><span class="cell-main mono">INV-1820</span><span>Jun 1, 2026</span><span>$430.00</span><span class="pill green">Paid</span></div>
+                <div class="tr row" style="border-bottom: 0"><span class="cell-main mono">INV-1764</span><span>May 1, 2026</span><span>$390.00</span><span class="pill green">Paid</span></div>
+              </div>
+            </div>
+          </div>
+          <!-- Modules to the right of Billing, off-frame until the camera is at speed -->
+          <div class="card ghost" style="left: 2000px; top: 150px; width: 560px; height: 340px">
+            <div class="bars"><div class="bar" style="height: 40%; background: var(--amber)"></div><div class="bar" style="height: 70%; background: var(--amber)"></div><div class="bar" style="height: 55%; background: var(--amber)"></div><div class="bar" style="height: 90%; background: var(--amber)"></div></div>
+          </div>
+          <div class="card ghost" style="left: 2080px; top: 560px; width: 620px; height: 360px">
+            <div class="bars"><div class="bar" style="height: 80%; background: var(--pink)"></div><div class="bar soft" style="height: 50%"></div><div class="bar" style="height: 65%; background: var(--sky)"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B: Integrations -->
+      <div id="s2" class="scene next">
+        <div class="cam">
+          <div class="world-dots dots"></div>
+          <!-- Modules to the left of Integrations: same colors and rows as scene A's, so the streaks carry across the cut -->
+          <div class="card ghost" style="left: -470px; top: 150px; width: 400px; height: 340px">
+            <div class="bars"><div class="bar" style="height: 40%; background: var(--amber)"></div><div class="bar" style="height: 70%; background: var(--amber)"></div><div class="bar" style="height: 55%; background: var(--amber)"></div><div class="bar" style="height: 90%; background: var(--amber)"></div></div>
+          </div>
+          <div class="card ghost" style="left: -490px; top: 560px; width: 420px; height: 360px">
+            <div class="bars"><div class="bar" style="height: 80%; background: var(--pink)"></div><div class="bar soft" style="height: 50%"></div><div class="bar" style="height: 65%; background: var(--sky)"></div></div>
+          </div>
+          <div class="app">
+            <aside class="app-sidebar">
+              <div class="brand"><span class="brand-mark"></span>Northwind</div>
+              <div class="nav-item"><span class="nav-icon"></span>Home</div>
+              <div class="nav-item"><span class="nav-icon"></span>Analytics</div>
+              <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+              <div class="nav-item active"><span class="nav-icon"></span>Integrations</div>
+              <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+            </aside>
+            <div class="app-body">
+              <div class="app-topbar">
+                <div class="page-title">Integrations</div>
+                <div class="search">Search apps</div>
+                <div class="avatar sky">JL</div>
+              </div>
+            </div>
+            <div class="filters"><span class="pill indigo">All · 24</span><span class="pill">Connected · 5</span><span class="pill">Finance</span><span class="pill">Messaging</span></div>
+            <div class="tiles">
+              <div class="card tile"><div class="tile-top"><div class="logo" style="background: var(--sky)"><svg viewBox="0 0 32 32"><path d="M6 8h20v13H14l-6 5v-5H6z" /></svg></div><div class="toggle on"><div class="knob"></div></div></div><div class="h3">Relay</div><div class="desc">Post billing alerts to team channels.</div><span class="pill">Messaging</span></div>
+              <div class="card tile"><div class="tile-top"><div class="logo" style="background: var(--green)"><svg viewBox="0 0 32 32"><path d="M8 6h16v20H8zM12 12h8M12 17h8M12 22h5" /></svg></div><div class="toggle on"><div class="knob"></div></div></div><div class="h3">Ledger</div><div class="desc">Sync invoices to your accounting books.</div><span class="pill green">Finance</span></div>
+              <div class="card tile"><div class="tile-top"><div class="logo" style="background: var(--amber)"><svg viewBox="0 0 32 32"><path d="M10 22V14a6 6 0 0 1 12 0v8l2 2H8zM14 27h4" /></svg></div><div class="toggle"><div class="knob"></div></div></div><div class="h3">Beacon</div><div class="desc">Page on-call when a payment fails.</div><span class="pill amber">Alerts</span></div>
+              <div class="card tile"><div class="tile-top"><div class="logo" style="background: var(--pink)"><svg viewBox="0 0 32 32"><circle cx="16" cy="12" r="5" /><path d="M7 27a9 9 0 0 1 18 0" /></svg></div><div class="toggle on"><div class="knob"></div></div></div><div class="h3">Hubline</div><div class="desc">Enrich accounts with plan and seat data.</div><span class="pill pink">CRM</span></div>
+              <div class="card tile"><div class="tile-top"><div class="logo" style="background: var(--ink)"><svg viewBox="0 0 32 32"><ellipse cx="16" cy="9" rx="9" ry="3.5" /><path d="M7 9v14c0 2 4 3.5 9 3.5s9-1.5 9-3.5V9M7 16c0 2 4 3.5 9 3.5s9-1.5 9-3.5" /></svg></div><div class="toggle"><div class="knob"></div></div></div><div class="h3">Vault</div><div class="desc">Stream usage events to your warehouse.</div><span class="pill">Data</span></div>
+              <div class="card tile"><div class="tile-top"><div class="logo" style="background: var(--accent)"><svg viewBox="0 0 32 32"><path d="M4 17h6l3-8 6 15 3-7h6" /></svg></div><div class="toggle on"><div class="knob"></div></div></div><div class="h3">Pulse</div><div class="desc">Product analytics on every seat.</div><span class="pill indigo">Analytics</span></div>
+              <div class="card tile"><div class="tile-top"><div class="logo" style="background: var(--teal)"><svg viewBox="0 0 32 32"><path d="M5 9h22v15H5zM5 10l11 8 11-8" /></svg></div><div class="toggle on"><div class="knob"></div></div></div><div class="h3">Sendwave</div><div class="desc">Email receipts the moment they post.</div><span class="pill">Email</span></div>
+              <div class="card tile"><div class="tile-top"><div class="logo" style="background: var(--red)"><svg viewBox="0 0 32 32"><path d="M6 6h20v20H6zM6 13h20M6 20h20M13 6v20" /></svg></div><div class="toggle"><div class="knob"></div></div></div><div class="h3">Gridbase</div><div class="desc">Export plans and seats to a sheet.</div><span class="pill green">Finance</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo("#s1 .a-in", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.07, ease: "power3.out" }, 0);
+      tl.fromTo("#s1 .fill", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.7, stagger: 0.1, ease: "power3.out" }, 0.35);
+      tl.fromTo("#s1 .row", { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.4, stagger: 0.04, ease: "power2.out" }, 0.3);
+
+      // ---- Whip Pan ----
+      const T = 1.6;        // whip start (frame 48)
+      const DA = 6 / 30;    // scene A out: 6f, power4.in
+      const DB = 7 / 30;    // scene B in: 7f, expo.out
+      const CUT = T + DA;   // hard cut at peak velocity (frame 54)
+      const XA = 1400;      // scene A travel, px
+      const V = (4 * XA) / DA;                // exit speed of power4.in: x'(1) = 4·XA/DA = 28000 px/s
+      const XB = (V * DB) / (10 * Math.LN2);  // expo.out enters at 10·ln2·XB/DB, so solve for the same speed (~943px)
+      const BLUR = 180;     // peak horizontal stdDeviation, px
+
+      // Telegraph: a 20px wind-up against the direction of travel, ending at rest.
+      tl.to("#s1 .cam", { x: 20, duration: 0.3, ease: "sine.inOut" }, T - 0.3);
+      tl.to("#s1 .cam", { x: 20 - XA, duration: DA, ease: "power4.in" }, T);
+      // Blur tracks speed. d/dp of power4.in is 4p³, so power3.in on the blur keeps it proportional.
+      tl.fromTo("#blurA", { attr: { stdDeviation: "0 0" } }, { attr: { stdDeviation: `${BLUR} 0` }, duration: DA, ease: "power3.in" }, T);
+
+      tl.set("#s1", { visibility: "hidden" }, CUT);
+      tl.set("#s2", { opacity: 1 }, CUT);
+
+      tl.fromTo("#s2 .cam", { x: XB }, { x: 0, duration: DB, ease: "expo.out" }, CUT);
+      // expo.out's speed decays as 2^(-10p), the same shape as 1 - expo.out, so the blur tween uses expo.out too.
+      tl.fromTo("#blurB", { attr: { stdDeviation: `${BLUR} 0` } }, { attr: { stdDeviation: "0 0" }, duration: DB, ease: "expo.out" }, CUT);
+      // Columns drag behind the camera and settle a beat later, right column last.
+      tl.fromTo("#s2 .tile", { x: (i) => 40 + (i % 4) * 40 }, { x: 0, duration: 0.6, ease: "expo.out" }, CUT);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
