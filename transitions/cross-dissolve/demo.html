@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.8" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      .cam { position: absolute; inset: 0; } /* scale drift goes here; opacity stays on the scene div */
+
+      /* ---- Scene A: customer quote, warm backdrop ---- */
+      #s1 .cam { background: linear-gradient(135deg, #fff3e8 0%, #fcf0f8 55%, #eeedff 100%); }
+      .quote { position: absolute; left: 200px; top: 250px; width: 1520px; height: 576px; padding: 0; border-radius: 32px; box-shadow: var(--shadow-lg); }
+      .qmark { position: absolute; left: 96px; top: 104px; width: 76px; height: 60px; } /* hanging punctuation */
+      /* Line 1 (scene x 400, y 346) sits just under scene B's "2.1 days" (x 432, y 250–338): the eye doesn't travel during the blend. */
+      .qtext { position: absolute; left: 200px; top: 96px; width: 980px; font-size: 66px; font-weight: 650; letter-spacing: -0.032em; line-height: 1.14; }
+      .qtext .ln { display: block; }
+      .hl { position: relative; display: inline-block; }
+      .hl i { position: absolute; left: -8px; right: -8px; top: 10%; bottom: 2%; border-radius: 10px; background: rgba(99, 91, 255, 0.16); z-index: -1; }
+      .rule { position: absolute; left: 200px; top: 380px; width: 812px; height: 1px; background: var(--border); }
+      .attrib { position: absolute; left: 200px; top: 412px; display: flex; align-items: center; gap: 20px; }
+      .co-mark { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, #34d399, #14b8a6); display: flex; align-items: center; justify-content: center; }
+      .who .name { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+      .who .role { font-size: 21px; color: var(--ink-2); margin-top: 2px; }
+      .stars { position: absolute; left: 848px; top: 426px; display: flex; gap: 6px; }
+      .portrait { position: absolute; left: 1104px; top: 128px; width: 320px; height: 320px; border-radius: 50%; box-shadow: 0 0 0 10px #fff, 0 0 0 11px var(--border), var(--shadow-lg); }
+
+      /* ---- Scene B: the product the quote is about ---- */
+      #s2 { z-index: 2; } /* B fades in OVER an opaque A (an over-fade), never a symmetric crossfade */
+      .hero { position: absolute; left: 280px; top: 108px; width: 872px; height: 248px; padding: 32px; }
+      .hero .card-value { font-size: 88px; line-height: 1; margin-top: 12px; letter-spacing: -0.04em; }
+      .hero .card-value span { font-size: 44px; color: var(--ink-2); letter-spacing: -0.02em; }
+      .hero .bars { position: absolute; right: 32px; bottom: 32px; width: 360px; height: 168px; gap: 10px; }
+      .recon { position: absolute; left: 1176px; top: 108px; width: 472px; height: 248px; padding: 32px; }
+      .recon .slider { margin-top: 26px; }
+      .recon .fill { width: 100%; background: var(--green); }
+      .recon .small { margin-top: 14px; }
+      .checklist { position: absolute; left: 280px; top: 380px; width: 1368px; height: 508px; padding: 32px; }
+      .check-head { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+      .check-head .pill { margin-left: auto; }
+      .checklist .avatar { width: 32px; height: 32px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: customer quote -->
+      <div id="s1" class="scene">
+        <div class="cam">
+          <div class="card quote">
+            <svg class="qmark" viewBox="0 0 76 60"><path d="M0 60V36C0 14 10 3 30 0l3 9C22 13 17 20 17 30h15v30H0zm44 0V36c0-22 10-33 30-36l2 9c-11 4-16 11-16 21h16v30H44z" fill="#635bff" /></svg>
+            <div class="qtext">
+              <span class="ln">From <span class="hl"><i id="hl-mark"></i>nine days to two.</span></span>
+              <span class="ln">Northwind gave our finance</span>
+              <span class="ln">team its weekends back.”</span>
+            </div>
+            <div class="rule"></div>
+            <div class="attrib">
+              <div class="co-mark"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="none" stroke="#fff" stroke-width="4" /><circle cx="14" cy="14" r="3.5" fill="#fff" /></svg></div>
+              <div class="who">
+                <div class="name">Priya Raman</div>
+                <div class="role">VP Finance, Lumen Health</div>
+              </div>
+            </div>
+            <div class="stars">
+              <svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2l3 6.6 7.2.7-5.4 4.8 1.6 7.1L12 17.6 5.6 21.2l1.6-7.1L1.8 9.3 9 8.6z" fill="#f59e0b" /></svg>
+              <svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2l3 6.6 7.2.7-5.4 4.8 1.6 7.1L12 17.6 5.6 21.2l1.6-7.1L1.8 9.3 9 8.6z" fill="#f59e0b" /></svg>
+              <svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2l3 6.6 7.2.7-5.4 4.8 1.6 7.1L12 17.6 5.6 21.2l1.6-7.1L1.8 9.3 9 8.6z" fill="#f59e0b" /></svg>
+              <svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2l3 6.6 7.2.7-5.4 4.8 1.6 7.1L12 17.6 5.6 21.2l1.6-7.1L1.8 9.3 9 8.6z" fill="#f59e0b" /></svg>
+              <svg width="28" height="28" viewBox="0 0 24 24"><path d="M12 2l3 6.6 7.2.7-5.4 4.8 1.6 7.1L12 17.6 5.6 21.2l1.6-7.1L1.8 9.3 9 8.6z" fill="#f59e0b" /></svg>
+            </div>
+            <svg class="portrait" viewBox="0 0 320 320">
+              <defs>
+                <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd9b8" /><stop offset="1" stop-color="#f7a8cf" /></linearGradient>
+                <clipPath id="pc"><circle cx="160" cy="160" r="160" /></clipPath>
+              </defs>
+              <g clip-path="url(#pc)">
+                <rect width="320" height="320" fill="url(#pg)" />
+                <path d="M86 150C86 78 120 52 160 52s76 28 76 96l6 96H80z" fill="#3a2621" />
+                <path d="M44 330c4-74 54-100 116-100s112 26 116 100z" fill="#0a2540" />
+                <rect x="139" y="190" width="42" height="52" rx="18" fill="#c4825f" />
+                <ellipse cx="160" cy="146" rx="50" ry="60" fill="#d99673" />
+                <path d="M108 140c2-46 28-66 54-66 30 0 52 22 50 60-24-16-62-26-104 6z" fill="#3a2621" />
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B: month-end close in the app -->
+      <div id="s2" class="scene next">
+        <div class="cam dots">
+          <div class="app">
+            <aside class="app-sidebar">
+              <div class="brand"><span class="brand-mark"></span>Northwind</div>
+              <div class="nav-item"><span class="nav-icon"></span>Home</div>
+              <div class="nav-item active"><span class="nav-icon"></span>Close</div>
+              <div class="nav-item"><span class="nav-icon"></span>Reconcile</div>
+              <div class="nav-item"><span class="nav-icon"></span>Reports</div>
+              <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+            </aside>
+            <div class="app-body">
+              <div class="app-topbar">
+                <div class="page-title">Month-end close</div>
+                <div class="search">Search</div>
+                <div class="avatar pink">PR</div>
+              </div>
+            </div>
+            <div class="card hero">
+              <div class="card-label">Days to close · September</div>
+              <div class="card-value">2.1 <span>days</span></div>
+              <span class="delta up">−6.9 days since January</span>
+              <div class="bars">
+                <div class="bar soft" style="height: 100%"></div><div class="bar soft" style="height: 96%"></div><div class="bar soft" style="height: 90%"></div>
+                <div class="bar soft" style="height: 81%"></div><div class="bar soft" style="height: 70%"></div><div class="bar soft" style="height: 58%"></div>
+                <div class="bar soft" style="height: 47%"></div><div class="bar soft" style="height: 38%"></div><div class="bar" style="height: 23%"></div>
+              </div>
+            </div>
+            <div class="card recon">
+              <div class="card-label">Accounts reconciled</div>
+              <div class="card-value">1,284 / 1,284</div>
+              <div class="slider"><div class="fill"></div></div>
+              <div class="small">100% auto-matched</div>
+            </div>
+            <div class="card checklist">
+              <div class="check-head"><div class="h3">Close checklist</div><span class="pill green">6 of 6 done</span></div>
+              <div class="table">
+                <div class="tr head"><span>Task</span><span>Owner</span><span>Finished</span><span>Status</span></div>
+                <div class="tr"><span class="cell-main">Bank reconciliation</span><span class="cell-main"><span class="avatar pink">PR</span>Priya</span><span>Sep 30</span><span class="pill green">Done</span></div>
+                <div class="tr"><span class="cell-main">Accruals and prepaids</span><span class="cell-main"><span class="avatar teal">MK</span>Marcus</span><span>Oct 1</span><span class="pill green">Done</span></div>
+                <div class="tr"><span class="cell-main">Intercompany eliminations</span><span class="cell-main"><span class="avatar sky">JL</span>Jamie</span><span>Oct 1</span><span class="pill green">Done</span></div>
+                <div class="tr"><span class="cell-main">Revenue recognition</span><span class="cell-main"><span class="avatar pink">PR</span>Priya</span><span>Oct 2</span><span class="pill green">Done</span></div>
+                <div class="tr"><span class="cell-main">Flux analysis</span><span class="cell-main"><span class="avatar amber">DO</span>Dana</span><span>Oct 2</span><span class="pill green">Done</span></div>
+                <div class="tr"><span class="cell-main">Close sign-off</span><span class="cell-main"><span class="avatar pink">PR</span>Priya</span><span>Oct 2</span><span class="pill green">Done</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".quote", { y: 28, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 0);
+      tl.fromTo(".portrait", { scale: 0.9, opacity: 0, transformOrigin: "50% 50%" }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.4)" }, 0.1);
+      tl.fromTo(".qtext .ln", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.07, ease: "power3.out" }, 0.15);
+      tl.fromTo(".rule, .attrib, .stars", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.out" }, 0.4);
+
+      // ---- Cross-Dissolve ----
+      const T = 1.6; // transition start
+      const D = 0.8; // dissolve duration (24f @ 30fps)
+      const DRIFT = 1.02; // opposite scale drift: A grows into it, B settles out of it
+
+      // Telegraph: mark the phrase scene B's headline number lands on.
+      tl.fromTo("#hl-mark", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.4, ease: "power3.out" }, T - 0.55);
+
+      // Over-fade: only B's opacity moves. A stays at 1 underneath, so every frame is
+      // a*B + (1-a)*A with weights summing to 1. Fading A out as well lets the backdrop
+      // show through (25% at the midpoint) and the frame washes out.
+      tl.fromTo("#s2", { opacity: 0 }, { opacity: 1, duration: D, ease: "sine.inOut" }, T);
+      tl.fromTo("#s1 .cam", { scale: 1 }, { scale: DRIFT, duration: D, ease: "sine.inOut" }, T);
+      tl.fromTo("#s2 .cam", { scale: DRIFT }, { scale: 1, duration: D, ease: "sine.inOut" }, T);
+      tl.set("#s1", { visibility: "hidden" }, T + D); // fully covered now; stop painting it
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

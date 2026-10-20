@@ -100,6 +100,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Directional Momentum (Speed Match Cut)](transitions/speed-match-cut/SKILL.md) | Match Cuts | 0.53s | A card exits right at full speed, and after a hard cut the next enters left at the same speed |
 | [Path & Stroke Leading](transitions/path-stroke-leading/SKILL.md) | Match Cuts | 0.9s | A glowing data packet draws a wire across the frame, and the next scene builds behind its head |
 | [Layered Parallax Push](transitions/parallax-push/SKILL.md) | Match Cuts | 0.6s | The next screen pushes the old one out with background, UI and foreground at staggered speeds |
+| [Cross-Dissolve](transitions/cross-dissolve/SKILL.md) | Soft | 0.8s | The next scene fades in over an opaque scene A with opposite scale drift, so luminance never dips |
 <!-- index:end -->
 
 ## Adding or changing a transition
