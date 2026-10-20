@@ -2,7 +2,7 @@
 name: z-space-push
 title: Z-Space Push
 category: camera-spatial
-duration: 0.8s (24f @ 30fps)
+duration: 0.8s (48f @ 60fps)
 energy: medium-high
 description: UI layers sit at different depths; the camera flies straight through the foreground cards, which blur and part past the frame edges, and lands sharp on the panel that was deep behind them.
 ---
@@ -21,16 +21,16 @@ Scene A is a stack of UI planes at different `translateZ`: sharp modals and noti
 
 Avoid it when scene A is one flat full-screen UI with nothing in front to fly through. Use [ui-deep-zoom](../ui-deep-zoom/SKILL.md) to dive into one element, or [infinite-canvas-pan](../infinite-canvas-pan/SKILL.md) when the scenes sit side by side.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −10 → 4 | A ring pulses off "Open analytics" (from −10.5), then the button presses (scale 0.96, 0.12s yoyo from −3.6). It bottoms out on frame 0, so the click becomes the push, and releases by f3.6 while the planes barely move. |
-| Push off | 0 → 7 | Every plane gets `z += 1800` on one `power3.inOut`, which is one camera. It leaves rest gently: foreground 1 → 1.17×. |
-| Foreground pass | 7 → 13 | Foreground 1.17× → 4× (f12), parting left, right and down. Blur 2 → 36px (proportional to scale − 1). It's mostly off-frame at f12 and gone at f13, with `visibility: hidden` set at f12.6 (6.7×, z = 0.85 × perspective). |
-| Mid pass | 10 → 14 | Mid cards 0.81× → 1.66×, hugging the destination's edges and then leaving them. They hold their 4.8px rest blur up to about 1.4×, then soften (about 8px at f14) as they exit, so they never snap sharp. The plane stops at 6× (z = 1000, short of the hide depth) and is hidden at f24. |
-| Arrival | 12 → 24 | Destination 0.57× → 1×, blur 5.1 → 0px, so it's sharp just as it fills the frame. f18 → 24 covers only 0.91 → 1×: the settle. |
-| Land | 19 → 40 | Scene B's annotation arrives on the settle: guide line (`expo.out`), spike dot (`back.out(2)`), tooltip (`expo.out`). |
+| Telegraph | −21 → 7 | A ring pulses off "Open analytics" (from −21), then the button presses (scale 0.96, 0.12s yoyo from −7.2). It bottoms out on frame 0, so the click becomes the push, and releases by f7.2 while the planes barely move. |
+| Push off | 0 → 14 | Every plane gets `z += 1800` on one `power3.inOut`, which is one camera. It leaves rest gently: foreground 1 → 1.17×. |
+| Foreground pass | 14 → 26 | Foreground 1.17× → 4× (f24), parting left, right and down. Blur 2 → 36px (proportional to scale − 1). It's mostly off-frame at f24 and gone at f26, with `visibility: hidden` set at f25.2 (6.7×, z = 0.85 × perspective). |
+| Mid pass | 20 → 28 | Mid cards 0.81× → 1.66×, hugging the destination's edges and then leaving them. They hold their 4.8px rest blur up to about 1.4×, then soften (about 8px at f28) as they exit, so they never snap sharp. The plane stops at 6× (z = 1000, short of the hide depth) and is hidden at f48. |
+| Arrival | 24 → 48 | Destination 0.57× → 1×, blur 5.1 → 0px, so it's sharp just as it fills the frame. f36 → 48 covers only 0.91 → 1×: the settle. |
+| Land | 37 → 81 | Scene B's annotation arrives on the settle: guide line (`expo.out`), spike dot (`back.out(2)`), tooltip (`expo.out`). |
 
 ## Build it
 
@@ -74,16 +74,16 @@ The full working composition is in [demo.html](demo.html).
 
 ## Tuning
 
-- **Duration.** 0.7–0.9s (21–27f). Under 0.6s each plane's pass shrinks to ~3 frames of smear. Over 0.9s the pass floats.
+- **Duration.** 0.7–0.9s (42–54f). Under 0.6s each plane's pass shrinks to ~6 frames of smear. Over 0.9s the pass floats.
 - **Depth.** The destination's rest scale is `P / (P + PUSH)`. Keep it in 0.35–0.45. Lower reads deeper, but the destination becomes an unreadable smudge at rest and the foreground clears earlier in the move.
-- **Spacing.** Put the mid plane at a rest scale of about 0.6. Give mid cards inner edges that hug the destination's rest box, so they exit around 1.6× (f14). The planes then peel off in order: foreground (f12), mid (f14), land (f24).
+- **Spacing.** Put the mid plane at a rest scale of about 0.6. Give mid cards inner edges that hug the destination's rest box, so they exit around 1.6× (f28). The planes then peel off in order: foreground (f24), mid (f28), land (f48).
 - **Aperture.** 8–14. The destination's rest blur is `APERTURE × (1 − s)` (7.2px here). Above ~8px it stops reading as a dashboard.
-- **Ease.** Use `power3.inOut`. `power2.inOut` spreads the pass over more frames and feels calmer. `expo.inOut` crams the foreground pass into ~3 frames.
+- **Ease.** Use `power3.inOut`. `power2.inOut` spreads the pass over more frames and feels calmer. `expo.inOut` crams the foreground pass into ~6 frames.
 
 ## Pitfalls
 
 - **Blur on the 3D plane.** A filter is applied before the transform, so `blur()` on a `translateZ` plane is multiplied by its projected scale: 6px reads as 2.4px at 0.4×, and as 36px at 6×. A filter on a shared `preserve-3d` world flattens the world. Give each plane its own unscaled wrapper that owns both `perspective` and `filter`.
-- **The mid layer snapped into focus.** With a fixed focal plane, which is what you get in AE when the focus distance rides with the camera, every plane is perfectly sharp as it crosses z = 0. In the first build that happened to the mid cards at f12, crisp at the frame edges, and it pulled the eye off the destination. Clamp passing planes to their rest blur (the `Math.max` in `blurAt`).
+- **The mid layer snapped into focus.** With a fixed focal plane, which is what you get in AE when the focus distance rides with the camera, every plane is perfectly sharp as it crosses z = 0. In the first build that happened to the mid cards at f24, crisp at the frame edges, and it pulled the eye off the destination. Clamp passing planes to their rest blur (the `Math.max` in `blurAt`).
 - **Planes reaching the lens.** As z → P the scale goes to infinity, and past P the plane is behind the lens. Hide each passing plane at 0.85P, when it's already off-frame, or at the end of the push if it never gets that close. Compute that time from the ease (`pAtTravel`) instead of eyeballing a frame.
 - **Cards on the camera axis.** A centered foreground card can't drift out. It fills the frame with a 36px white wash for several frames. Keep foreground inner edges ≥300px off center so the cards part like curtains, with the destination visible in the gap.
 - **Floor edges.** A full-frame background on the deep plane shows its edges at 0.4×. Oversize it by 1/s (5920×3280 here). The dot grid then reads as density and sharpens as you arrive.
@@ -97,4 +97,4 @@ The full working composition is in [demo.html](demo.html).
 
 ## Sound
 
-A deep air whoosh peaking at f12, as the foreground passes the lens, plus a soft low thump on the f24 settle and a tick when the tooltip lands.
+A deep air whoosh peaking at f24, as the foreground passes the lens, plus a soft low thump on the f48 settle and a tick when the tooltip lands.
