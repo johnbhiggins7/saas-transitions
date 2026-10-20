@@ -2,7 +2,7 @@
 name: isometric-stack-explosion
 title: Isometric Stack Explosion
 category: camera-spatial
-duration: 1.6s (48f @ 30fps)
+duration: 1.6s (96f @ 60fps)
 energy: medium
 description: A flat app screen tips into an isometric view, splits into labelled layers (interface, security, data), then the camera isolates one layer and flattens it into the next full-screen scene.
 ---
@@ -21,21 +21,21 @@ The front-facing screen tips back to a 55° / −45° isometric angle and turns 
 
 Avoid it when the layered model adds nothing. A plain drill into one feature is [ui-deep-zoom](../ui-deep-zoom/SKILL.md), and front versus back of one thing is [card-flip-3d](../card-flip-3d/SKILL.md).
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −15 → 0 | A ring pulses off the "SOC 2 · Secured" badge (growing mostly vertically, clear of the Search field), so the eye is on security before anything moves. |
-| Tip | 0 → 12 | `.tilt` rotationX 0 → 55, `.spin` rotation 0 → −45, `.cam` scale 1 → 0.4 and x −170 (to make room for labels), all `power3.inOut`. The lower plates sit flush behind the top one, so mid-tilt the screen reads as one thick slab. |
-| Explode | 7 → 23 | The plates spring apart along the stack axis with `back.out(1.5)` over 13.5f, staggered 0.9f: Interface z → +600 (f7–20), Security −26 → 0, Data → −600 (f9–23). About 197px apart on screen. |
-| Label | 10 → 20 | Flat screen-space tags slide in 16px from each plate's right corner, staggered 1.2f. |
-| Hold | 20 → 29 | All three tags are fully on screen for about 9f, and the plates are still from f23. |
-| Pick | 23 → 26 | The Security tag fills indigo, showing which layer the camera is about to take. Interface and Data tags fade over f29–34. The picked tag holds at full strength until f32 and is gone by f37. |
-| Part | 28 → 39 | Data drops out the bottom (z −4600, f28–35, `power2.in`) while the stack is still tilted, and is hidden once off-frame at f35. Interface flies up the axis (z +3200, f28–39, `power2.in`) and out the top, and its faces fade over f35–38. |
-| Flatten | 31 → 48 | Tilt and spin return to 0 while `.cam` scales 0.4 → 1.25 and recentres (`power3.inOut`). The security plane covers the frame from f44. |
-| Land | 45 → 62 | Scene B's toggles switch on, staggered 2.4f, and a "Workspace protected" pill pops in at f50. |
+| Telegraph | −30 → 0 | A ring pulses off the "SOC 2 · Secured" badge (growing mostly vertically, clear of the Search field), so the eye is on security before anything moves. |
+| Tip | 0 → 24 | `.tilt` rotationX 0 → 55, `.spin` rotation 0 → −45, `.cam` scale 1 → 0.4 and x −170 (to make room for labels), all `power3.inOut`. The lower plates sit flush behind the top one, so mid-tilt the screen reads as one thick slab. |
+| Explode | 14 → 45 | The plates spring apart along the stack axis with `back.out(1.5)` over 27f, staggered 1.8f: Interface z → +600 (f14–41), Security −26 → 0, Data → −600 (f18–45). About 197px apart on screen. |
+| Label | 20 → 40 | Flat screen-space tags slide in 16px from each plate's right corner, staggered 2.4f. |
+| Hold | 40 → 59 | All three tags are fully on screen for about 18f, and the plates are still from f45. |
+| Pick | 47 → 53 | The Security tag fills indigo, showing which layer the camera is about to take. Interface and Data tags fade over f59–68. The picked tag holds at full strength until f65 and is gone by f74. |
+| Part | 55 → 77 | Data drops out the bottom (z −4600, f55–70, `power2.in`) while the stack is still tilted, and is hidden once off-frame at f70. Interface flies up the axis (z +3200, f57–77, `power2.in`) and out the top, and its faces fade over f70–77. |
+| Flatten | 63 → 96 | Tilt and spin return to 0 while `.cam` scales 0.4 → 1.25 and recentres (`power3.inOut`). The security plane covers the frame from f88. |
+| Land | 90 → 123 | Scene B's toggles switch on, staggered 4.8f, and a "Workspace protected" pill pops in at f99. |
 
-The whole move is 48f, which is past the house 10–20f. Each sub-move stays inside it (12f, 14f, 17f), and the stack only works with a short exploded hold where the labels can be read: about 0.3s fully labelled and 0.2s on the picked tag. The 0.4s tip is what buys that hold inside 1.6s.
+The whole move is 96f, which is past the house 20–40f. Each sub-move stays inside it (24f, 27f, 33f), and the stack only works with a short exploded hold where the labels can be read: about 0.3s fully labelled and 0.2s on the picked tag. The 0.4s tip is what buys that hold inside 1.6s.
 
 ## Build it
 
@@ -105,4 +105,4 @@ Scene B is the middle plate itself, so nothing gets swapped. Build its content f
 
 ## Sound
 
-A low air whoosh on the tip, three soft staggered plate clicks on each overshoot (f15–17), and a rising whoosh that peaks where the security plane covers the frame (f44). Then crisp toggle clicks on landing.
+A low air whoosh on the tip, three soft staggered plate clicks on each overshoot (f31–34), and a rising whoosh that peaks where the security plane covers the frame (f88). Then crisp toggle clicks on landing.
