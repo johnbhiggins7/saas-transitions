@@ -2,7 +2,7 @@
 name: light-sweep
 title: Light & Glow Sweep
 category: soft
-duration: 0.7s (21f @ 30fps)
+duration: 0.7s (42f @ 60fps)
 energy: calm
 description: A soft diagonal band of white light with an indigo falloff sweeps across the lens, the frame flares toward overexposure as it passes, and scene B is revealed under the band's near-opaque core.
 ---
@@ -22,15 +22,15 @@ A wide, edgeless band of light crosses the frame on a diagonal. It blows out wha
 
 Avoid it when scene B continues scene A's space, which needs a camera move such as [ui-deep-zoom](../ui-deep-zoom/SKILL.md) or [infinite-canvas-pan](../infinite-canvas-pan/SKILL.md). Avoid it too when the line itself should reveal something, which is [xray-scanline](../xray-scanline/SKILL.md). Use it once or twice per video at most.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | 0 → 6 | A lavender light leak (oversized radial, centred on the top-left corner) fades in where the band will enter. It drifts and fades out by f20. |
-| Enter | 0 → 5 | The band fades in (0 → 1 over 3.6f) while its core is still off the top-left corner. Scene B is switched on but fully masked. Exposure starts climbing toward `brightness(1.22) contrast(0.9) saturate(0.85)` (`power2.in`). |
-| Sweep | 5 → 16 | The core crosses the frame from f4.6 to f16.4 on `power1.inOut` and passes centre at f10.5, where exposure peaks: ink lifts and greys, and page white drops to ~242, so the white core (255) is the brightest thing in frame. Scene B shows wherever the core has passed and scene A wherever it hasn't. The seam is a ±2.5% feather under a 0.985-opaque core, so you never see it. The copy is revealed f7–11 and the card f10–15, each drifting x −48 → 0 on `expo.out` (from f4 and f8) in the sweep's direction. |
-| Exit | 17 → 21 | The band fades over the last 3.6f as the core leaves the bottom-right corner. Scene A is hidden at f21. |
-| Land | 21 → 38 | Exposure is back to unfiltered by f26; the forecast card's surface and shadow re-emerge over f13–20 as it falls. The forecast line draws from f21, the confidence pill pops at f27, and the drift settles by f38. |
+| Telegraph | 0 → 12 | A lavender light leak (oversized radial, centred on the top-left corner) fades in where the band will enter. It drifts and fades out by f39. |
+| Enter | 0 → 10 | The band fades in (0 → 1 over 7.2f) while its core is still off the top-left corner. Scene B is switched on but fully masked. Exposure starts climbing toward `brightness(1.22) contrast(0.9) saturate(0.85)` (`power2.in`). |
+| Sweep | 10 → 32 | The core crosses the frame from f9.2 to f32.8 on `power1.inOut` and passes centre at f21, where exposure peaks: ink lifts and greys, and page white drops to ~242, so the white core (255) is the brightest thing in frame. Scene B shows wherever the core has passed and scene A wherever it hasn't. The seam is a ±2.5% feather under a 0.985-opaque core, so you never see it. The copy is revealed f14–22 and the card f20–30, each drifting x −48 → 0 on `expo.out` (from f7 and f17) in the sweep's direction. |
+| Exit | 34 → 42 | The band fades over the last 7.2f as the core leaves the bottom-right corner. Scene A is hidden at f42. |
+| Land | 42 → 77 | Exposure is back to unfiltered by f51; the forecast card's surface and shadow re-emerge over f26–40 as it falls. The forecast line draws from f42, the confidence pill pops at f54, and the drift settles by f77. |
 
 ## Build it
 
@@ -84,7 +84,7 @@ Ship both `mask-image` and `-webkit-mask-image`. The full working composition is
 
 ## Tuning
 
-- **Duration and curve.** 0.6–0.8s. On `power1.inOut` the core takes about 12f to cross the frame. GSAP's `power2` is cubic, so `power2.inOut` peaks at 3× average speed and crosses in about 9f (power1 takes about 12f), which is a whip, not a sweep. `sine.inOut` is the calmest.
+- **Duration and curve.** 0.6–0.8s. On `power1.inOut` the core takes about 24f to cross the frame. GSAP's `power2` is cubic, so `power2.inOut` peaks at 3× average speed and crosses in about 18f (power1 takes about 24f), which is a whip, not a sweep. `sine.inOut` is the calmest.
 - **Band width.** The falloff reaches ±27% of the gradient line (1% ≈ 22px at 1920×1080 and 115°; the line is |W·sin θ| + |H·cos θ| long). Safe range is ±18–30%. Under about ±15% it reads as a stripe.
 - **Core opacity and seam.** The core is white at 0.97–0.99 on light UI. Keep the seam feather (±2–3%) inside the stops where alpha is at least 0.95. Falloff alpha can be anything, as long as alpha × (255 − R) stays under ~6.
 - **Exposure.** `brightness` 1.15–1.25, `contrast` 0.88–0.92, `saturate` 0.8–0.9. A brightness of 1.15 alone is invisible on light UI; 1.22 with contrast 0.9 (the demo) is the light-UI equivalent. Brightness alone does little on light UI, because the kit's `#f6f8fb` and white both clip to white. The contrast drop is what gives the band something to outshine: each 0.1 takes ~13 levels off white, so go further and the page reads grey, not lit. On dark UI drop the contrast term; the lift is the main effect.
@@ -93,10 +93,10 @@ Ship both `mask-image` and `-webkit-mask-image`. The full working composition is
 ## Pitfalls
 
 - **White cards vanish at peak.** At peak exposure the card white and the kit's `#f6f8fb` page clip to the same value, so a card's surface and shadow disappear until exposure falls. Give key cards a darker edge (`--shadow-lg` or a 1px `rgba(10,37,64,0.12)` border) if they must stay readable.
-- **A band darker than the page.** Light can't darken a frame. The first build had saturated lavender fringes (`rgba(190,186,255,0.48)`) that read as two parallel bars. The second tinted the core instead (`rgba(228,226,255,0.985)`): with `brightness` clipping the page to pure white, it rendered `#e0dfff`, the darkest large area in frame, and read as a lavender film wiping across. The fix has three parts: a white core, every stop's alpha × (255 − R) under ~6, and `contrast(0.9)` so the page sits below the core. Check it by sampling a pixel: at f9 the core is 255 against a 247 page. Keep the indigo in the falloff and in `#leak`.
-- **Ghosting at the seam.** With a ±6% feather under a 0.94 core, scene A's indigo bars showed through scene B's card at f12, and the B headline overlapped "Weekly revenue". Even 6% of a saturated element shows through a 94% veil. The fix was a 0.985 core and a ±2.5% feather.
+- **A band darker than the page.** Light can't darken a frame. The first build had saturated lavender fringes (`rgba(190,186,255,0.48)`) that read as two parallel bars. The second tinted the core instead (`rgba(228,226,255,0.985)`): with `brightness` clipping the page to pure white, it rendered `#e0dfff`, the darkest large area in frame, and read as a lavender film wiping across. The fix has three parts: a white core, every stop's alpha × (255 − R) under ~6, and `contrast(0.9)` so the page sits below the core. Check it by sampling a pixel: at f18 the core is 255 against a 247 page. Keep the indigo in the falloff and in `#leak`.
+- **Ghosting at the seam.** With a ±6% feather under a 0.94 core, scene A's indigo bars showed through scene B's card at f24, and the B headline overlapped "Weekly revenue". Even 6% of a saturated element shows through a 94% veil. The fix was a 0.985 core and a ±2.5% feather.
 - **Driving the band and the mask separately.** If you move an oversized band element with `x` and animate the mask on its own, the two drift apart wherever the ease, angle or box size differ. Put the band and the mask on boxes of the same size, use the same angle, and drive both from one `--p`.
-- **Hotspot mask too strong.** The radial mask that makes the band hotter mid-frame also thins the core at the frame edges, where the seam still passes. The first value (0.55 at the edge) cut the core to about half its opacity there. At 0.8, scene B's eyebrow and headline still ghosted over scene A's app shell at the left edge (f7). Keep it at 0.9 or more (0.92 here).
+- **Hotspot mask too strong.** The radial mask that makes the band hotter mid-frame also thins the core at the frame edges, where the seam still passes. The first value (0.55 at the edge) cut the core to about half its opacity there. At 0.8, scene B's eyebrow and headline still ghosted over scene A's app shell at the left edge (f14). Keep it at 0.9 or more (0.92 here).
 - **Leftover glow on scene B.** A 0.08-alpha radial glow on scene B's background (meant as the light's after-glow) banded into a visible arc at 8-bit once the band had gone. It was cut. Use a flat background, or a glow at 0.15 alpha or more.
 
 ## Variants
@@ -108,4 +108,4 @@ Ship both `mask-image` and `-webkit-mask-image`. The full working composition is
 
 ## Sound
 
-A soft airy shimmer swell (reverse-cymbal air, no transient) peaking on f10–11 as the core crosses frame centre, tailing off under scene B's landing.
+A soft airy shimmer swell (reverse-cymbal air, no transient) peaking on f20–22 as the core crosses frame centre, tailing off under scene B's landing.
