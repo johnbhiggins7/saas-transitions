@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.8;duration=0.6" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Split geometry is hard-coded so the divider and the clip edge share one number (see SPLIT in the script). */
+      .side-label { position: absolute; top: 40px; display: inline-flex; align-items: center; gap: 12px; height: 52px; padding: 0 22px 0 14px; border-radius: 26px; font-size: 20px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+      .side-label svg { width: 26px; height: 26px; flex: none; }
+
+      /* ---- Scene A, left half: the old way. Gray spreadsheet chaos, laid out in frame px. ---- */
+      #s1 { background: #e4e6ea; z-index: 1; }
+      .old-cam { position: absolute; inset: 0; } /* parallax layer: slides left under the incoming panel */
+      #old-label { left: 48px; background: #d3d6dc; color: #5b6370; }
+      .xl { position: absolute; background: #fbfbfc; border: 1px solid #cfd3d9; border-radius: 10px; box-shadow: 0 2px 6px rgba(30, 35, 45, 0.1), 0 14px 34px rgba(30, 35, 45, 0.12); overflow: hidden; font-family: var(--mono); color: #5b6370; }
+      .xl-bar { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: #eceef1; border-bottom: 1px solid #d9dce1; font-family: Inter, sans-serif; font-size: 15px; font-weight: 500; color: #6b7280; }
+      .xl-bar i { width: 11px; height: 11px; border-radius: 50%; background: #c4c8cf; }
+      .xl-bar span { margin-left: 10px; }
+      .xl-fx { height: 40px; display: flex; align-items: center; gap: 14px; padding: 0 14px; border-bottom: 1px solid #d9dce1; font-size: 15px; }
+      .xl-fx b { font-style: italic; font-weight: 600; color: #9aa1ab; }
+      .xl-fx .err { color: #b45252; }
+      .xl-row { display: grid; grid-template-columns: 40px 222px 104px 132px 138px 1fr; height: 40px; border-bottom: 1px solid #e3e5e9; font-size: 14px; }
+      .xl-row > * { display: flex; align-items: center; padding: 0 10px; border-right: 1px solid #e3e5e9; white-space: nowrap; overflow: hidden; }
+      .xl-row > :first-child { justify-content: center; padding: 0; background: #eceef1; color: #9aa1ab; font-size: 12px; }
+      .xl-row.head { height: 34px; background: #eceef1; color: #8a919c; font-size: 12px; font-weight: 600; }
+      .xl-row.hl { background: #eee6c6; }
+      .xl-row.dup { background: #ecdcdc; }
+      .xl-row.dead > :not(:first-child) { text-decoration: line-through; color: #a6acb5; }
+      .xl-row .err { color: #b45252; font-weight: 600; }
+      .xl-row .sel { box-shadow: inset 0 0 0 2px #7d8794; }
+      .xl-tabs { height: 42px; display: flex; align-items: center; gap: 4px; padding: 0 10px; background: #eceef1; font-family: Inter, sans-serif; font-size: 13px; color: #8a919c; }
+      .xl-tabs span { padding: 5px 12px; border-radius: 6px; }
+      .xl-tabs .on { background: #fbfbfc; color: #4b5563; font-weight: 600; }
+      #sheet-back { left: 132px; top: 112px; width: 760px; height: 520px; rotate: 2.5deg; opacity: 0.9; }
+      #sheet { left: 64px; top: 150px; width: 820px; height: 560px; rotate: -1.5deg; }
+      #sticky { position: absolute; left: 640px; top: 660px; width: 252px; height: 206px; padding: 26px 24px; rotate: 4deg; background: #e7e0bf; box-shadow: 0 10px 24px rgba(30, 35, 45, 0.18); font-size: 24px; font-weight: 600; line-height: 1.3; color: #5f5a44; font-style: italic; }
+      #mail { position: absolute; left: 56px; top: 744px; width: 548px; height: 186px; padding: 24px 28px; rotate: -2deg; background: #fbfbfc; border: 1px solid #cfd3d9; border-radius: 14px; box-shadow: 0 14px 34px rgba(30, 35, 45, 0.14); color: #6b7280; }
+      #mail .who { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 600; color: #4b5563; }
+      #mail .who .avatar { width: 36px; height: 36px; font-size: 14px; background: #9aa1ab; }
+      #mail .who em { margin-left: auto; font-style: normal; font-size: 13px; font-weight: 700; color: #fff; background: #b45252; border-radius: 11px; padding: 3px 10px; }
+      #mail .subj { margin-top: 18px; font-size: 19px; font-weight: 600; color: #4b5563; }
+      #mail .snip { margin-top: 8px; font-size: 16px; line-height: 1.45; }
+
+      /* ---- Scene B: the new way. Full frame from the start, clipped to the right half. ---- */
+      #s2 { z-index: 2; clip-path: inset(0px 0px 0px 960px); }
+      .new-enter { position: absolute; inset: 0; } /* entrance wrapper, so #app's x/y stay free for the re-layout */
+      #new-label { left: 1008px; background: var(--accent-soft); color: var(--accent-ink); }
+      /* COMPACT box: 800×824 at (1040,128), centered in the right half. The script tweens it to FULL (120,80) 1680×920. */
+      #app { left: 0; top: 0; transform: translate(1040px, 128px); width: 800px; height: 824px; display: flex; }
+      /* drawer: opens 0 → 248 during the takeover. flex-end pins the sidebar to the drawer's right edge, so it slides in instead of being wiped. */
+      #side { flex: none; width: 0; height: 100%; overflow: hidden; display: flex; justify-content: flex-end; }
+      #side .app-sidebar { flex: none; width: 248px; height: 100%; }
+      #app .app-body { flex: 1; }
+      #app .app-topbar { gap: 12px; }
+      #app .page-title { margin-right: 0; }
+      #app .search { margin-left: auto; }
+      .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-right: 8px; }
+      #app .app-content { display: flex; flex-direction: column; gap: 24px; min-height: 0; }
+      .kpis { flex: none; }
+      .kpis .card { height: 132px; padding: 20px 24px; }
+      .kpis .card-value { font-size: 36px; margin-top: 4px; }
+      .kpis .delta { margin-top: 6px; }
+      .chart-card { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+      .chart-head { display: flex; align-items: center; gap: 24px; }
+      .chart-head .legend { margin-left: auto; }
+      .legend i.soft { background: #c9c6ff; }
+      .chart-card .bars { flex: 1; height: auto; margin-top: 28px; } /* bars are flex:1, so they widen with the panel: real reflow, no stretch */
+
+      /* ---- The divider: its x and #s2's clip edge are tweened with the same values and ease ---- */
+      #divider { position: absolute; left: 0; top: 0; width: 0; height: 1080px; z-index: 5; transform: translateX(960px); }
+      #rule { position: absolute; left: -2px; top: 0; width: 4px; height: 1080px; background: #fff; box-shadow: 0 0 0 1px rgba(10, 37, 64, 0.06), -18px 0 48px rgba(10, 37, 64, 0.22); }
+      #grip, #grip-ring { position: absolute; left: -38px; top: 502px; width: 76px; height: 76px; border-radius: 50%; }
+      #grip { background: #fff; border: 2px solid var(--border); box-shadow: var(--shadow-lg); display: flex; align-items: center; justify-content: center; }
+      #grip svg { width: 40px; height: 40px; }
+      #grip-ring { box-shadow: 0 0 0 4px rgba(99, 91, 255, 0.5); opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4.2" data-width="1920" data-height="1080">
+      <!-- Scene A (left half): the old way -->
+      <div id="s1" class="scene">
+        <div class="old-cam">
+          <div id="sheet-back" class="xl old-item">
+            <div class="xl-bar"><i></i><i></i><i></i><span>pipeline_old_DONT_USE.xlsx</span></div>
+          </div>
+          <div id="sheet" class="xl old-item">
+            <div class="xl-bar"><i></i><i></i><i></i><span>Q3_pipeline_FINAL_v7 (2).xlsx</span></div>
+            <div class="xl-fx"><b>fx</b><span>=SUM(E2:E9)*rates!B4</span><span class="err">#REF!</span></div>
+            <div class="xl-row head"><span></span><span>A · Deal</span><span>B · Owner</span><span>C · Stage</span><span>D · Amount</span><span>E · Close</span></div>
+            <div class="xl-row"><span>1</span><span>Acme renewal</span><span>Dana</span><span>Negotiation</span><span>$84,000</span><span>9/30</span></div>
+            <div class="xl-row"><span>2</span><span>Globex expansion</span><span>??</span><span>Proposal</span><span class="err">#REF!</span><span>10/15</span></div>
+            <div class="xl-row hl"><span>3</span><span>Initech pilot</span><span>Sam</span><span>Won??</span><span>$12,500</span><span>8/31</span></div>
+            <div class="xl-row dup"><span>4</span><span>Acme renewal</span><span>Dana</span><span>Negotiation</span><span>$84,000</span><span>9/30</span></div>
+            <div class="xl-row"><span>5</span><span>Umbrella SSO</span><span>Lee</span><span>Closed</span><span>$46,200</span><span>—</span></div>
+            <div class="xl-row dead"><span>6</span><span>Hooli (old)</span><span>Priya</span><span>Lost</span><span>$0</span><span>7/12</span></div>
+            <div class="xl-row"><span>7</span><span>Stark data deal</span><span>Sam</span><span>Discovery</span><span class="err sel">#REF!</span><span>TBD</span></div>
+            <div class="xl-row hl"><span>8</span><span>Wayne analytics</span><span>—</span><span>Proposal</span><span>$63,900</span><span>11/02</span></div>
+            <div class="xl-row"><span>9</span><span>Total</span><span></span><span></span><span class="err">#VALUE!</span><span></span></div>
+            <div class="xl-row"><span>10</span><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="xl-tabs"><span class="on">Q3 (2)</span><span>Sheet1</span><span>DO NOT EDIT</span><span>Copy of Q3</span></div>
+          </div>
+          <div id="mail" class="old-item">
+            <div class="who"><span class="avatar">DK</span>Dana K.<em>12 unread</em></div>
+            <div class="subj">Re: Fwd: RE: updated numbers (v8)</div>
+            <div class="snip">Which tab is current? The one in Slack doesn't match the deck…</div>
+          </div>
+          <div id="sticky" class="old-item">who changed row 7?? ask Dana</div>
+          <div id="old-label" class="side-label">
+            <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#9aa1ab" /><path d="M7 7 L13 13 M13 7 L7 13" stroke="#fff" stroke-width="2.2" stroke-linecap="round" /></svg>
+            Old way
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B (right half, then full frame): the new way -->
+      <div id="s2" class="scene next dots">
+        <div class="new-enter">
+          <div id="app" class="app">
+            <div id="side">
+              <aside class="app-sidebar">
+                <div class="brand"><span class="brand-mark"></span>Northwind</div>
+                <div class="nav-item"><span class="nav-icon"></span>Home</div>
+                <div class="nav-item active"><span class="nav-icon"></span>Pipeline</div>
+                <div class="nav-item"><span class="nav-icon"></span>Accounts</div>
+                <div class="nav-item"><span class="nav-icon"></span>Forecast</div>
+                <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+              </aside>
+            </div>
+            <div class="app-body">
+              <div class="app-topbar">
+                <div class="page-title">Pipeline</div>
+                <span class="pill green live">Live</span>
+                <div class="search">Search deals</div>
+                <div class="avatar sky">JL</div>
+              </div>
+              <div class="app-content">
+                <div class="kpis grid-3">
+                  <div class="card"><div class="card-label">Open pipeline</div><div class="card-value">$2.4M</div><span class="delta up">+18%</span></div>
+                  <div class="card"><div class="card-label">Win rate</div><div class="card-value">38%</div><span class="delta up">+6.2%</span></div>
+                  <div class="card"><div class="card-label">Avg. cycle</div><div class="card-value">21 days</div><span class="delta up">−9 days</span></div>
+                </div>
+                <div class="card chart-card">
+                  <div class="chart-head">
+                    <div class="h3">Pipeline by week</div>
+                    <div class="legend"><span><i class="soft"></i>Forecast</span><span><i></i>Committed</span></div>
+                  </div>
+                  <div class="bars">
+                    <div class="bar soft" style="height: 30%"></div><div class="bar soft" style="height: 38%"></div><div class="bar soft" style="height: 35%"></div>
+                    <div class="bar soft" style="height: 47%"></div><div class="bar" style="height: 52%"></div><div class="bar" style="height: 49%"></div>
+                    <div class="bar" style="height: 61%"></div><div class="bar" style="height: 66%"></div><div class="bar" style="height: 72%"></div>
+                    <div class="bar" style="height: 80%"></div><div class="bar" style="height: 88%"></div><div class="bar" style="height: 100%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="new-label" class="side-label">
+          <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#635bff" /><path d="M6 10.5 L8.8 13 L14 7.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          New way
+        </div>
+      </div>
+
+      <!-- The divider sits above both scenes -->
+      <div id="divider">
+        <div id="rule"></div>
+        <div id="grip-ring"></div>
+        <div id="grip">
+          <svg viewBox="0 0 40 40"><path d="M16 13 L10 20 L16 27 M24 13 L30 20 L24 27" fill="none" stroke="#635bff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Split-screen geometry (frame px; mirrors the CSS) ----
+      const T = 1.8; // drag start
+      const D = 0.6; // drag duration (18f @ 30fps)
+      const SPLIT = 960; // divider x at rest
+      const WIND = 986; // wind-up: the handle gives a little toward the old side before it's dragged
+      const OUT = -80; // past the left edge, so the 76px grip and the rule's shadow fully leave frame
+      const clip = (x) => `inset(0px 0px 0px ${x}px)`; // a negative left inset is valid and keeps the clip glued to the rule
+      const COMPACT = { x: 1040, y: 128, width: 800, height: 824 }; // #app centered in the right half
+      const FULL = { x: 120, y: 80, width: 1680, height: 920 }; // #app as a full scene
+
+      // ---- Scene A entrance: both halves at once, so the comparison reads from the first second ----
+      tl.set("#s2", { opacity: 1 }, 0);
+      tl.fromTo("#rule", { scaleY: 0 }, { scaleY: 1, duration: 0.6, ease: "expo.out" }, 0);
+      tl.fromTo("#grip", { scale: 0 }, { scale: 1, duration: 0.45, ease: "back.out(1.6)" }, 0.3);
+      tl.fromTo(".old-item", { y: 28, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.07, ease: "power3.out" }, 0.05);
+      tl.fromTo(".new-enter", { y: 28, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.15);
+      tl.fromTo(".side-label", { y: -12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, stagger: 0.08, ease: "power3.out" }, 0.25);
+      tl.fromTo("#app .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.5, stagger: 0.025, ease: "power3.out" }, 0.3);
+
+      // ---- Telegraph: the grip pulses, is grabbed, and winds up toward the old side ----
+      // immediateRender:false, or the ring's from-state (opacity 0.9) is stamped at seek(0) and shows from frame 0.
+      tl.fromTo("#grip-ring", { scale: 1, opacity: 0.9 }, { scale: 1.7, opacity: 0, duration: 0.5, ease: "power2.out", immediateRender: false }, T - 0.6);
+      tl.fromTo("#grip", { scale: 1 }, { scale: 1.12, duration: 0.2, ease: "power2.out", immediateRender: false }, T - 0.2);
+      tl.fromTo("#divider", { x: SPLIT }, { x: WIND, duration: 0.2, ease: "power2.out" }, T - 0.2);
+      tl.fromTo("#s2", { clipPath: clip(SPLIT) }, { clipPath: clip(WIND), duration: 0.2, ease: "power2.out" }, T - 0.2);
+
+      // ---- Takeover: the rule and the clip edge share values and ease, so they never separate ----
+      // immediateRender:false so these don't stamp WIND over the wind-up's start state at seek(0).
+      tl.fromTo("#divider", { x: WIND }, { x: OUT, duration: D, ease: "power3.inOut", immediateRender: false }, T);
+      tl.fromTo("#s2", { clipPath: clip(WIND) }, { clipPath: clip(OUT), duration: D, ease: "power3.inOut", immediateRender: false }, T);
+      tl.to("#new-label", { opacity: 0, duration: 0.2, ease: "power1.in" }, T);
+
+      // The losing side slides out at ~25% of the rule's speed and dims, so the new panel reads as on top.
+      tl.fromTo(".old-cam", { x: 0 }, { x: -260, duration: D, ease: "power3.inOut" }, T);
+      tl.fromTo("#s1", { filter: "brightness(1)" }, { filter: "brightness(0.82)", duration: D, ease: "power2.in" }, T);
+
+      // Re-layout on the same clock: #app's left edge rides 54px → 200px inside the rule, never under the clip.
+      // Width/height tweens make the flex/grid children reflow (cards and bars widen); text never scales.
+      tl.fromTo("#app", COMPACT, { ...FULL, duration: D, ease: "power3.inOut" }, T);
+      tl.fromTo("#side", { width: 0 }, { width: 248, duration: D, ease: "power3.inOut" }, T + 0.1);
+
+      tl.set(["#s1", "#divider"], { visibility: "hidden" }, T + D);
+
+      // ---- Scene B landing: what the compact panel never showed ----
+      tl.fromTo("#side .nav-item", { x: -16, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, stagger: 0.04, ease: "expo.out" }, T + 0.32);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

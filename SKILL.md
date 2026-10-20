@@ -95,6 +95,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Text Split Reveal](transitions/text-split/SKILL.md) | Masking | 0.9s | A headline slams in, then the frame splits along the type and the halves slide apart |
 | [Geometric & Brand Ribbon Wipe](transitions/geometric-ribbon-wipe/SKILL.md) | Masking | 0.6s | Staggered diagonal brand ribbons cover the frame for the swap, then trail off |
 | [X-Ray Scanline](transitions/xray-scanline/SKILL.md) | Masking | 0.8s | A glowing scanline strips the UI's skin to reveal the same layout as wireframes and data |
+| [Split-Screen Takeover](transitions/split-screen-takeover/SKILL.md) | Masking | 0.6s | The divider of an old-vs-new split is dragged across, and the winning panel takes the frame |
 <!-- index:end -->
 
 ## Adding or changing a transition
