@@ -2,7 +2,7 @@
 name: contextual-pullback
 title: Contextual Pullback
 category: camera-spatial
-duration: 0.8s (24f @ 30fps)
+duration: 0.8s (48f @ 60fps)
 energy: medium-high
 description: The camera snaps back from a macro shot of one UI action and tilts into a 2.5D view, revealing the connected surfaces that action just updated.
 ---
@@ -21,16 +21,16 @@ It opens tight on a single control, such as a Publish, Deploy or Send button. Af
 
 Avoid it when there's nothing connected to reveal. A pullback onto empty canvas reads as a lost camera. To travel *between* surfaces, use [infinite-canvas-pan](../infinite-canvas-pan/SKILL.md). To show stacked layers of one system, use [isometric-stack-explosion](../isometric-stack-explosion/SKILL.md).
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −7 → 0 | The cursor is already on the button. It dips (scale 0.95, 2×0.08s yoyo), a ripple expands, and at −5 the label swaps to "Publishing" with a spinner. |
-| Snap back | 0 → 8 | `.cam` scales 2 → 0.54 in **log space** with `power4.out` on the exponent, so 80% of the zoom (in log terms) is done by frame 8. x/y use the same ease, so the button travels in a straight line. Screen-space blur ramps to 3px by frame 2 and clears by frame 11. |
-| Tilt | 0 → 24 | `rotationX` 0 → 22° on `.cam` and a −5° roll on the inner `.world`, both on `power3.out`. That ease is a little slower than the scale, so the 2.5D angle keeps arriving after the zoom has mostly settled. |
-| Origin lights | 8 | The button turns green with "Published", and a ring flashes around the editor. |
-| Wires carry it | 10 → 22 | Each wire draws on from the editor (`power2.in`, 7f), staggered by 3f. When a wire arrives (frames 16, 19, 22), its surface's ring flashes, a "Published" pill pops (`back.out(2)`) and its content updates: a new message, the Q3 bar, a push notification. |
-| Settle | 24 → 45 | The camera is at rest. Pills finish by frame 35 and the rings fade out by frame 45. |
+| Telegraph | −13 → 0 | The cursor is already on the button. It dips (scale 0.95, 2×0.08s yoyo), a ripple expands, and at −9 the label swaps to "Publishing" with a spinner. |
+| Snap back | 0 → 16 | `.cam` scales 2 → 0.54 in **log space** with `power4.out` on the exponent, so 80% of the zoom (in log terms) is done by frame 16. x/y use the same ease, so the button travels in a straight line. Screen-space blur ramps to 3px by frame 5 and clears by frame 23. |
+| Tilt | 0 → 48 | `rotationX` 0 → 22° on `.cam` and a −5° roll on the inner `.world`, both on `power3.out`. That ease is a little slower than the scale, so the 2.5D angle keeps arriving after the zoom has mostly settled. |
+| Origin lights | 17 | The button turns green with "Published", and a ring flashes around the editor. |
+| Wires carry it | 19 → 43 | Each wire draws on from the editor (`power2.in`, 14f), staggered by 5f. When a wire arrives (frames 32, 38, 43), its surface's ring flashes, a "Published" pill pops (`back.out(2)`) and its content updates: a new message, the Q3 bar, a push notification. |
+| Settle | 48 → 90 | The camera is at rest. Pills finish by frame 65 and the rings fade out by frame 90. |
 
 ## Build it
 
@@ -80,7 +80,7 @@ The full working composition is in [demo.html](demo.html).
 
 - **Duration.** 0.7–1.0s. Below 0.6s the tilt doesn't register and it reads as a plain zoom-out.
 - **Zoom ratio (`S0 / S1`).** 3–4×. This demo authors the world at about 1.85× the wide shot, so the macro frame renders at 2× and the wide shot at 0.54×.
-- **Curve.** `power4.out` on the exponent is a confident snap. `expo.out` is harder: its first frame covers a quarter of the zoom. `power3.out` is calmer.
+- **Curve.** `power4.out` on the exponent is a confident snap. `expo.out` is harder: its first 2 frames cover a quarter of the zoom. `power3.out` is calmer.
 - **Tilt and roll.** `rotationX` 18–24° with `perspective` 1200–1800px. Roll −3° to −7°. Steeper tilts foreshorten the far surfaces, so check that their text still reads in the wide shot.
 - **Stagger.** 0.08–0.12s between surfaces. The last one should light within about 0.1s of the camera coming to rest.
 
@@ -101,4 +101,4 @@ The full working composition is in [demo.html](demo.html).
 
 ## Sound
 
-A click on the press at −7, a reverse air whoosh peaking around frames 3–5, and three rising soft ticks on the surface lights at frames 16, 19 and 22.
+A click on the press at −13, a reverse air whoosh peaking around frames 6–10, and three rising soft ticks on the surface lights at frames 32, 38 and 43.
