@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.5;duration=1.6" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* One world: three 1680x920 planes stacked in .spin. Scene A = the top plane face-on, scene B = the middle plane face-on at 1.25x. */
+      #s1 { perspective: 5000px; }
+      .cam, .tilt, .spin { position: absolute; inset: 0; transform-style: preserve-3d; } /* tilt = rotationX, spin = rotation: nested so the order is Z first, then X */
+      .layer { position: absolute; left: 120px; top: 80px; width: 1680px; height: 920px; transform-style: preserve-3d; }
+      .face { position: absolute; inset: 0; border-radius: 20px; overflow: hidden; }
+      .edge { position: absolute; inset: 0; border-radius: 20px; transform: translateZ(-24px); } /* slab thickness, reads as a solid plate in iso */
+      #L-ui .app { left: 0; top: 0; }
+      #L-ui .edge { background: #c3ccd8; }
+
+      /* Scene A: analytics */
+      .kpis { position: absolute; left: 280px; top: 108px; width: 1368px; height: 168px; }
+      .kpis .card { height: 168px; }
+      .chart-card { position: absolute; left: 280px; top: 300px; width: 1368px; height: 588px; }
+      .chart-card .bars { height: 420px; margin-top: 40px; gap: 20px; }
+      .secure { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 18px; background: var(--accent-soft); color: var(--accent-ink); font-size: 15px; font-weight: 600; position: relative; }
+      .secure svg { width: 18px; height: 18px; }
+      #secure-ring { position: absolute; inset: 0; border-radius: 18px; box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.5); opacity: 0; }
+
+      /* Security plane = scene B. Lands at 1.25x, so only plane x 72..1608, y 28..892 is on screen at the end. */
+      #L-sec .face { background: #635bff; background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1.5px, rgba(255, 255, 255, 0) 1.5px); background-size: 28px 28px; color: #fff; }
+      #L-sec .edge { background: #3f38c4; }
+      .sec-copy { position: absolute; left: 150px; top: 240px; width: 560px; }
+      .sec-copy .shield { width: 84px; height: 84px; color: #fff; }
+      .sec-copy .eyebrow { color: rgba(255, 255, 255, 0.75); margin-top: 36px; }
+      .sec-copy .h1 { font-size: 54px; margin-top: 14px; }
+      .sec-copy .body { color: rgba(255, 255, 255, 0.82); font-size: 20px; margin-top: 22px; }
+      #protected { display: inline-flex; margin-top: 30px; height: 34px; padding: 0 16px; border-radius: 17px; background: #e7f8f1; color: #0b8f63; font-size: 16px; font-weight: 700; align-items: center; gap: 8px; }
+      #protected i { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+      .sec-card { position: absolute; left: 780px; top: 140px; width: 740px; height: 604px; color: var(--ink); padding: 30px 32px; }
+      .sec-card .small { margin-top: 4px; }
+      .srow { display: flex; align-items: center; justify-content: space-between; height: 98px; border-bottom: 1px solid var(--border); }
+      .srow:last-child { border-bottom: 0; }
+      .srow b { display: block; font-size: 19px; font-weight: 600; }
+      .srow span.sub { display: block; font-size: 15px; color: var(--muted); margin-top: 4px; }
+
+      /* Data plane */
+      #L-data .face { background: #0a2540; background-image: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 46px); color: #9fb3c8; font-family: var(--mono); }
+      #L-data .edge { background: #04121f; }
+      .db-head { position: absolute; left: 120px; top: 110px; font-size: 22px; color: #c9d6e3; }
+      .db-head span { color: #5f7a96; }
+      .dbs { position: absolute; left: 120px; top: 420px; display: flex; gap: 70px; }
+      .db { width: 150px; text-align: center; font-size: 18px; }
+      .db svg { width: 150px; height: 176px; display: block; margin-bottom: 14px; }
+
+      /* Screen-space labels for the exploded state */
+      .tag { position: absolute; height: 64px; display: flex; align-items: center; gap: 14px; padding: 0 20px 0 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); opacity: 0; }
+      .tag .sw { width: 22px; height: 22px; border-radius: 6px; flex: none; }
+      .tag-name { font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
+      .tag-sub { font-size: 14px; color: var(--muted); margin-top: 2px; }
+      .lead { position: absolute; top: 31px; height: 2px; background: #b9c3d0; right: 100%; }
+      .lead::before { content: ""; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #0a2540; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="5" data-width="1920" data-height="1080">
+      <div id="s1" class="scene dots">
+        <div class="cam">
+          <div class="tilt">
+            <div class="spin">
+              <!-- Data layer (bottom) -->
+              <div class="layer" id="L-data">
+                <div class="edge"></div>
+                <div class="face">
+                  <div class="db-head">northwind-prod <span>· postgres 16 · encrypted at rest</span></div>
+                  <div class="dbs">
+                    <div class="db"><svg viewBox="0 0 120 140"><path d="M8 22v96c0 9 23 16 52 16s52-7 52-16V22z" fill="#163a63" /><ellipse cx="60" cy="22" rx="52" ry="16" fill="#2a5d94" /><path d="M8 56c0 9 23 16 52 16s52-7 52-16M8 90c0 9 23 16 52 16s52-7 52-16" fill="none" stroke="#2a5d94" stroke-width="3" /></svg>users</div>
+                    <div class="db"><svg viewBox="0 0 120 140"><path d="M8 22v96c0 9 23 16 52 16s52-7 52-16V22z" fill="#163a63" /><ellipse cx="60" cy="22" rx="52" ry="16" fill="#2a5d94" /><path d="M8 56c0 9 23 16 52 16s52-7 52-16M8 90c0 9 23 16 52 16s52-7 52-16" fill="none" stroke="#2a5d94" stroke-width="3" /></svg>events</div>
+                    <div class="db"><svg viewBox="0 0 120 140"><path d="M8 22v96c0 9 23 16 52 16s52-7 52-16V22z" fill="#163a63" /><ellipse cx="60" cy="22" rx="52" ry="16" fill="#2a5d94" /><path d="M8 56c0 9 23 16 52 16s52-7 52-16M8 90c0 9 23 16 52 16s52-7 52-16" fill="none" stroke="#2a5d94" stroke-width="3" /></svg>invoices</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Security layer (middle) = scene B -->
+              <div class="layer" id="L-sec">
+                <div class="edge"></div>
+                <div class="face">
+                  <div class="sec-copy">
+                    <svg class="shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10v-6z" /><path d="m8.5 12 2.5 2.5 4.5-5" /></svg>
+                    <div class="eyebrow">Security &amp; auth</div>
+                    <div class="h1">Every request is verified</div>
+                    <div class="body">SSO, enforced two-factor and a full audit trail sit between your team and your data.</div>
+                    <div id="protected"><i></i>Workspace protected</div>
+                  </div>
+                  <div class="card sec-card">
+                    <div class="h3">Security settings</div>
+                    <div class="small">Northwind workspace · 214 members</div>
+                    <div style="margin-top: 14px">
+                      <div class="srow"><div><b>Single sign-on (SAML)</b><span class="sub">Identity provider connected</span></div><div class="toggle sw-t"><div class="knob"></div></div></div>
+                      <div class="srow"><div><b>Require two-factor auth</b><span class="sub">All members and admins</span></div><div class="toggle sw-t"><div class="knob"></div></div></div>
+                      <div class="srow"><div><b>Session timeout</b><span class="sub">Sign out idle sessions</span></div><span class="pill">30 min</span></div>
+                      <div class="srow"><div><b>IP allowlist</b><span class="sub">Office and VPN ranges</span></div><span class="pill indigo">3 ranges</span></div>
+                      <div class="srow"><div><b>Audit log streaming</b><span class="sub">Every admin action, exported</span></div><div class="toggle sw-t"><div class="knob"></div></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Interface layer (top) = scene A -->
+              <div class="layer" id="L-ui">
+                <div class="edge"></div>
+                <div class="app face">
+                  <aside class="app-sidebar">
+                    <div class="brand"><span class="brand-mark"></span>Northwind</div>
+                    <div class="nav-item"><span class="nav-icon"></span>Home</div>
+                    <div class="nav-item active"><span class="nav-icon"></span>Analytics</div>
+                    <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+                    <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+                    <div class="nav-item"><span class="nav-icon"></span>Security</div>
+                  </aside>
+                  <div class="app-body">
+                    <div class="app-topbar">
+                      <div class="page-title">Analytics</div>
+                      <div class="secure" id="secure"><div id="secure-ring"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10v-6z" /></svg>SOC 2 · Secured</div>
+                      <div class="search">Search</div>
+                      <div class="avatar sky">JL</div>
+                    </div>
+                  </div>
+                  <div class="kpis grid-3">
+                    <div class="card kpi"><div class="card-label">Revenue</div><div class="card-value">$128.4k</div><span class="delta up">+12.5%</span></div>
+                    <div class="card kpi"><div class="card-label">Active users</div><div class="card-value">8,421</div><span class="delta up">+4.1%</span></div>
+                    <div class="card kpi"><div class="card-label">Sign-ins today</div><div class="card-value">2,906</div><span class="delta up">+8.3%</span></div>
+                  </div>
+                  <div class="card chart-card">
+                    <div class="h3">Weekly active users</div>
+                    <div class="bars">
+                      <div class="bar soft" style="height: 38%"></div><div class="bar soft" style="height: 44%"></div><div class="bar soft" style="height: 41%"></div>
+                      <div class="bar soft" style="height: 53%"></div><div class="bar soft" style="height: 50%"></div><div class="bar soft" style="height: 61%"></div>
+                      <div class="bar" style="height: 66%"></div><div class="bar" style="height: 72%"></div><div class="bar" style="height: 70%"></div>
+                      <div class="bar" style="height: 82%"></div><div class="bar" style="height: 89%"></div><div class="bar" style="height: 100%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Labels live in screen space (outside .cam) so they stay flat and legible. Positions = each layer's right corner when exploded. -->
+        <div class="tag" id="tag-ui" style="left: 1250px; top: 223px"><i class="lead" style="width: 87px"></i><span class="sw" style="background: #fff; border: 2px solid #c3ccd8"></span><div><div class="tag-name">Interface</div><div class="tag-sub">Web app, dashboards, reports</div></div></div>
+        <div class="tag" id="tag-sec" style="left: 1250px; top: 430px"><i class="lead" style="width: 101px"></i><span class="sw" style="background: #635bff"></span><div><div class="tag-name">Security &amp; auth</div><div class="tag-sub">SSO, 2FA, audit log</div></div></div>
+        <div class="tag" id="tag-data" style="left: 1250px; top: 611px"><i class="lead" style="width: 112px"></i><span class="sw" style="background: #0a2540"></span><div><div class="tag-name">Data</div><div class="tag-sub">Postgres, encrypted at rest</div></div></div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
+      tl.fromTo(".chart-card", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.12);
+      tl.fromTo(".chart-card .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.6, stagger: 0.03, ease: "power3.out" }, 0.3);
+
+      // ---- Isometric Stack Explosion ----
+      const T = 1.5; // transition start
+      const D = 1.6; // whole move: tilt 0.4s, explode 0.45s, labelled hold ~0.3s, part + flatten 0.65s
+      const ISO = { rx: 55, rz: -45, scale: 0.4, x: -170, y: -20 }; // exploded camera; x shifts the stack left to make room for labels
+      const GAP = 600; // layer separation along the stack axis (local px); on screen ~ GAP * sin(55deg) * scale = 197px
+      const LAND = 1.25; // middle plane scale that covers 1920x1080 with its rounded corners off-frame (1680x920 * 1.25)
+
+      // Telegraph: the shield badge pulses, so the eye is on "security" before the screen tips.
+      // immediateRender: false, or the from-state shows a static ring from frame 0. Mostly vertical growth keeps it clear of the Search field.
+      tl.fromTo("#secure-ring", { opacity: 0.9, scaleX: 1, scaleY: 1 }, { opacity: 0, scaleX: 1.12, scaleY: 1.4, duration: 0.5, ease: "power2.out", immediateRender: false }, T - 0.5);
+
+      // Flush stack: planes sit 26px apart (edge is 24px), hidden behind the top plane while it faces the camera.
+      tl.set("#L-sec", { z: -26 }, 0);
+      tl.set("#L-data", { z: -52 }, 0);
+
+      // 1. Tip into isometric. Nested wrappers: GSAP always composes rotation (Z) after rotationX on one element.
+      tl.to(".tilt", { rotationX: ISO.rx, duration: 0.4, ease: "power3.inOut" }, T);
+      tl.to(".spin", { rotation: ISO.rz, duration: 0.4, ease: "power3.inOut" }, T);
+      tl.to(".cam", { scale: ISO.scale, x: ISO.x, y: ISO.y, duration: 0.4, ease: "power3.inOut" }, T);
+
+      // 2. Explode along the stack axis with a staggered spring. +z is "up" once tilted.
+      tl.to("#L-ui", { z: GAP, duration: 0.45, ease: "back.out(1.5)" }, T + 0.24);
+      tl.to("#L-sec", { z: 0, duration: 0.45, ease: "back.out(1.5)" }, T + 0.27);
+      tl.to("#L-data", { z: -GAP, duration: 0.45, ease: "back.out(1.5)" }, T + 0.3);
+      tl.fromTo(".tag", { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.25, stagger: 0.04, ease: "power3.out" }, T + 0.34);
+
+      // 3. Hold the labelled stack (~0.3s), pick the security layer, send the others off the stack axis, flatten it to full frame.
+      tl.to("#tag-sec", { backgroundColor: "#635bff", borderColor: "#635bff", color: "#ffffff", duration: 0.1, ease: "power1.out" }, T + 0.78);
+      tl.to("#tag-sec .tag-sub", { color: "rgba(255,255,255,0.8)", duration: 0.1, ease: "power1.out" }, T + 0.78);
+      tl.to("#tag-ui, #tag-data", { opacity: 0, duration: 0.15, ease: "power1.in" }, T + 0.98);
+      tl.to("#tag-sec", { opacity: 0, duration: 0.15, ease: "power1.in" }, T + 1.08); // picked tag leaves last
+      tl.to("#L-ui", { z: GAP + 2600, duration: 0.34, ease: "power2.in" }, T + 0.95); // top plate lifts out of frame
+      tl.to("#L-data", { z: -GAP - 4000, duration: 0.24, ease: "power2.in" }, T + 0.92); // bottom plate drops out the bottom while -z still points down-screen
+      tl.set("#L-data", { visibility: "hidden" }, T + 1.16); // off-frame by now; once the tilt drops it would recede into the centre instead
+      tl.to("#L-ui > *", { opacity: 0, duration: 0.12, ease: "power1.in" }, T + 1.16); // fade the leaves: opacity on a preserve-3d layer flattens it
+      tl.to(".tilt", { rotationX: 0, duration: 0.55, ease: "power3.inOut" }, T + 1.05);
+      tl.to(".spin", { rotation: 0, duration: 0.55, ease: "power3.inOut" }, T + 1.05);
+      tl.to(".cam", { scale: LAND, x: 0, y: 0, duration: 0.55, ease: "power3.inOut" }, T + 1.05);
+      tl.set("#L-ui, #L-data", { visibility: "hidden" }, T + D);
+
+      // ---- Scene B lands: settings switch on as the plane settles ----
+      tl.to(".sw-t", { backgroundColor: "#635bff", duration: 0.2, stagger: 0.08, ease: "power2.out" }, T + D - 0.1);
+      tl.fromTo(".sw-t .knob", { x: 0 }, { x: 28, duration: 0.3, stagger: 0.08, ease: "back.out(1.6)" }, T + D - 0.1);
+      tl.fromTo("#protected", { opacity: 0, scale: 0.85, transformOrigin: "0% 50%" }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.6)" }, T + D + 0.05);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
