@@ -154,7 +154,7 @@
       document.querySelector("#s1 .half.bot").appendChild(stageTop.cloneNode(true));
 
       const tl = gsap.timeline({ paused: true });
-      const f = 1 / 30;
+      const f = 1 / 60;
 
       // ---- Scene A entrance ----
       tl.fromTo("#s1 .kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
@@ -163,18 +163,18 @@
 
       // ---- Text Split Reveal ----
       const T = 1.6; // split start
-      const D = 0.5; // split duration (15f @ 30fps)
+      const D = 0.5; // split duration (30f @ 60fps)
       const SPLIT_Y = 540; // cut line in frame px: .half heights and the headline's top (420) are built around it
-      const TRAVEL = SPLIT_Y + 60; // overshoot the frame edge: each half is gone by f10 and the slow tail of the ease is never seen
-      const TS = T - 12 * f; // slam starts 12f before the split
-      // The hf-transition meta covers slam + split: start = TS (1.2s), duration = 12f + D (0.9s).
+      const TRAVEL = SPLIT_Y + 60; // overshoot the frame edge: each half is gone by f20 and the slow tail of the ease is never seen
+      const TS = T - 24 * f; // slam starts 24f before the split
+      // The hf-transition meta covers slam + split: start = TS (1.2s), duration = 24f + D (0.9s).
 
-      // Slam: 1.15 → 0.985 accelerating into the frame (4f), then a 2f settle to 1.
-      tl.fromTo("#s1 .headline", { scale: 1.15 }, { scale: 0.985, duration: 4 * f, ease: "power3.in" }, TS);
-      tl.fromTo("#s1 .headline", { opacity: 0 }, { opacity: 1, duration: 2 * f, ease: "power1.out" }, TS);
-      tl.to("#s1 .headline", { scale: 1, duration: 2 * f, ease: "power2.out" }, TS + 4 * f);
+      // Slam: 1.15 → 0.985 accelerating into the frame (8f), then a 4f settle to 1.
+      tl.fromTo("#s1 .headline", { scale: 1.15 }, { scale: 0.985, duration: 8 * f, ease: "power3.in" }, TS);
+      tl.fromTo("#s1 .headline", { opacity: 0 }, { opacity: 1, duration: 4 * f, ease: "power1.out" }, TS);
+      tl.to("#s1 .headline", { scale: 1, duration: 4 * f, ease: "power2.out" }, TS + 8 * f);
       // The veil is the type's backdrop, not a fade-out: it lands with the slam and scene A stays faintly visible.
-      tl.fromTo("#s1 .veil", { opacity: 0 }, { opacity: 0.72, duration: 4 * f, ease: "power2.out" }, TS);
+      tl.fromTo("#s1 .veil", { opacity: 0 }, { opacity: 0.72, duration: 8 * f, ease: "power2.out" }, TS);
 
       // Split: the halves part on the cut line and scene B shows through the gap.
       tl.set("#s2", { opacity: 1 }, T);
@@ -183,8 +183,8 @@
       tl.set("#s1", { visibility: "hidden" }, T + D);
 
       // ---- Scene B landing: it settles back as the gap opens, so it reads as behind the halves ----
-      tl.fromTo("#s2 .cam", { scale: 1.1 }, { scale: 1, duration: 1.0, ease: "expo.out" }, T + 4 * f);
-      tl.to("#s2 .link", { strokeDashoffset: 0, duration: 0.4, stagger: 4 * f, ease: "power2.out" }, T + 9 * f);
+      tl.fromTo("#s2 .cam", { scale: 1.1 }, { scale: 1, duration: 1.0, ease: "expo.out" }, T + 8 * f);
+      tl.to("#s2 .link", { strokeDashoffset: 0, duration: 0.4, stagger: 8 * f, ease: "power2.out" }, T + 18 * f);
 
       window.__timelines["main"] = tl;
       tl.seek(0);
