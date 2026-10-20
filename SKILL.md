@@ -85,6 +85,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Liquid Blob Morph](transitions/liquid-blob-morph/SKILL.md) | Morphing | 0.8s | A button melts into a wobbling blob that floods the frame, then the next scene opens through it |
 | [Shared-Element Transition](transitions/shared-element/SKILL.md) | UI-Native | 0.6s | One card travels intact from its grid slot into the header of its detail page |
 | [Component Restructuring](transitions/component-reflow/SKILL.md) | UI-Native | 0.7s | A table collapses into a sidebar widget while a Kanban board grows into the freed space |
+| [Bento Cascade](transitions/bento-cascade/SKILL.md) | UI-Native | 0.8s | Bento tiles resize and reposition one after another into a new layout, swapping content mid-move |
 <!-- index:end -->
 
 ## Adding or changing a transition

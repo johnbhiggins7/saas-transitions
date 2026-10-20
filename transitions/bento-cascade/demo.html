@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.8" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Header: brand + segmented control (the control's slide is the telegraph). */
+      .top { position: absolute; left: 120px; top: 64px; height: 52px; display: flex; align-items: center; }
+      .top .brand { padding: 0; font-size: 24px; }
+      .seg { position: absolute; left: 1472px; top: 64px; width: 328px; height: 52px; border-radius: 12px; background: #e9edf3; }
+      .seg-pill { position: absolute; left: 4px; top: 4px; width: 140px; height: 44px; border-radius: 9px; background: var(--surface); box-shadow: 0 1px 2px rgba(10, 37, 64, 0.1), 0 4px 10px rgba(10, 37, 64, 0.06); }
+      .seg-opt { position: absolute; top: 4px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; }
+      #opt-a { left: 4px; width: 140px; color: var(--ink); }
+      #opt-b { left: 144px; width: 180px; color: var(--muted); }
+
+      /* Bento: 4 cols x 3 rows, 402x264 cells, 24px gaps, origin (120,172). Rects mirror A/B in the script. */
+      .tile { position: absolute; padding: 0; overflow: hidden; }
+      #t1 { left: 120px; top: 172px; width: 828px; height: 552px; }
+      #t2 { left: 972px; top: 172px; width: 402px; height: 264px; }
+      #t3 { left: 1398px; top: 172px; width: 402px; height: 264px; }
+      #t4 { left: 972px; top: 460px; width: 828px; height: 264px; }
+      #t5 { left: 120px; top: 748px; width: 828px; height: 264px; }
+      #t6 { left: 972px; top: 748px; width: 828px; height: 264px; }
+
+      /* Each face is laid out at its own final size and pinned top-left, so it never reflows while the tile resizes. */
+      .face { position: absolute; left: 0; top: 0; padding: 28px; }
+      .face.b { opacity: 0; }
+      #t3 .b, #t6 .b { left: auto; right: 0; } /* these tiles grow leftward: pin the incoming face to the edge that stays put */
+      .row { display: flex; align-items: center; justify-content: space-between; }
+      .tile .card-label { font-size: 17px; }
+      .tile .card-value { font-size: 52px; }
+      .chip { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex: none; }
+      .chip svg { width: 22px; height: 22px; }
+
+      /* A faces */
+      #t1 .a { width: 828px; height: 552px; }
+      #t1 .chart-svg { position: absolute; left: 28px; bottom: 28px; width: 772px; height: 300px; }
+      #t2 .a, #t3 .a { width: 402px; height: 264px; }
+      #t3 .a .tags { position: absolute; left: 28px; bottom: 28px; display: flex; gap: 8px; }
+      .spark { position: absolute; left: 28px; bottom: 28px; width: 346px; height: 60px; }
+      .goal { position: absolute; left: 28px; right: 28px; bottom: 28px; font-size: 15px; font-weight: 500; color: var(--ink-2); }
+      .goal .slider { margin-top: 12px; height: 10px; border-radius: 5px; }
+      #t3 .a .chip { position: absolute; right: 24px; top: 24px; }
+      #t4 .a, #t5 .a, #t6 .a { width: 828px; height: 264px; }
+      #t4 .bars { height: 150px; margin-top: 26px; gap: 12px; }
+      .acct { display: grid; grid-template-columns: 40px 1fr 120px 110px; align-items: center; gap: 14px; height: 52px; font-size: 17px; font-weight: 500; }
+      .acct .mrr { color: var(--ink-2); text-align: right; }
+      .risk { display: grid; grid-template-columns: 90px 1fr 64px; align-items: center; gap: 18px; height: 50px; font-size: 17px; font-weight: 500; color: var(--ink-2); }
+      .risk .slider { height: 12px; border-radius: 6px; }
+      .risk .fill { border-radius: 6px; }
+      .who { position: absolute; left: 28px; bottom: 28px; display: flex; align-items: center; font-size: 15px; font-weight: 600; color: var(--ink-2); }
+      .who .avatar { width: 36px; height: 36px; font-size: 13px; border: 2px solid var(--surface); margin-right: -8px; }
+      .who span:last-child { margin-left: 18px; }
+      .risk b { text-align: right; color: var(--ink); font-weight: 600; }
+
+      /* B faces */
+      #t1 .b { width: 402px; height: 552px; }
+      .run { display: grid; grid-template-columns: 12px 1fr auto; align-items: center; gap: 14px; height: 72px; border-bottom: 1px solid var(--border); font-size: 17px; font-weight: 500; }
+      .run i { width: 12px; height: 12px; border-radius: 50%; background: var(--green); }
+      .run span { font-size: 15px; color: var(--muted); font-weight: 500; }
+      #t2 .b, #t4 .b, #t5 .b { width: 402px; height: 264px; }
+      #t3 .b { width: 828px; height: 552px; }
+      .flow { position: absolute; left: 28px; top: 96px; width: 772px; height: 428px; border-radius: 12px; background-color: var(--surface-2); }
+      .flow svg.wires { position: absolute; inset: 0; width: 772px; height: 428px; }
+      .node { position: absolute; width: 272px; height: 100px; padding: 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(10, 37, 64, 0.06), 0 8px 20px rgba(10, 37, 64, 0.06); display: grid; grid-template-columns: 40px 1fr; gap: 4px 14px; align-content: center; }
+      .node .chip { grid-row: span 2; }
+      .node .k { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+      .node .v { font-size: 18px; font-weight: 600; }
+      #n1 { left: 32px; top: 36px; } #n2 { left: 250px; top: 164px; } #n3 { left: 468px; top: 292px; }
+      #t6 .b { width: 1254px; height: 264px; }
+      .apps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-top: 22px; }
+      .app-chip { height: 136px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); padding: 18px; display: grid; align-content: space-between; }
+      .app-chip .name { font-size: 18px; font-weight: 600; }
+      .app-chip .ok { font-size: 14px; font-weight: 600; color: #0b8f63; }
+      .app-chip .chip { width: 36px; height: 36px; color: #fff; font-weight: 700; font-size: 16px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- One scene: the six tiles persist and rearrange; each tile holds an A face and a B face. -->
+      <div id="s1" class="scene dots">
+        <div class="top"><div class="brand"><span class="brand-mark"></span>Northwind</div></div>
+        <div class="seg">
+          <div class="seg-pill"></div>
+          <div id="opt-a" class="seg-opt">Insights</div>
+          <div id="opt-b" class="seg-opt">Automations</div>
+        </div>
+
+        <!-- t1: Revenue chart (A, 2x2)  ->  Recent runs feed (B, 1x2) -->
+        <div id="t1" class="card tile">
+          <div class="face a">
+            <div class="card-label">Revenue</div>
+            <div class="card-value">$128.4k</div>
+            <span class="delta up">+12.5%</span>
+            <svg class="chart-svg" viewBox="0 0 1320 440" preserveAspectRatio="none">
+              <line class="chart-grid" x1="0" y1="110" x2="1320" y2="110" />
+              <line class="chart-grid" x1="0" y1="220" x2="1320" y2="220" />
+              <line class="chart-grid" x1="0" y1="330" x2="1320" y2="330" />
+              <path id="area" class="chart-area" d="M0,360 C110,340 165,290 220,300 S330,340 440,270 S550,190 660,210 S770,260 880,180 S990,130 1100,150 S1210,100 1320,80 L1320,440 L0,440 Z" />
+              <path id="line" class="chart-line" d="M0,360 C110,340 165,290 220,300 S330,340 440,270 S550,190 660,210 S770,260 880,180 S990,130 1100,150 S1210,100 1320,80" stroke-dasharray="1600" stroke-dashoffset="1600" />
+            </svg>
+          </div>
+          <div class="face b">
+            <div class="row"><div class="h3">Recent runs</div><span class="pill green">Live</span></div>
+            <div style="margin-top: 18px">
+              <div class="run"><i></i>Win-back offer<span>2m</span></div>
+              <div class="run"><i></i>Notify CSM<span>4m</span></div>
+              <div class="run"><i></i>Weekly digest<span>9m</span></div>
+              <div class="run"><i></i>Tag at-risk<span>12m</span></div>
+              <div class="run"><i></i>Sync to CRM<span>15m</span></div>
+              <div class="run" style="border: 0"><i></i>Invoice reminder<span>21m</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- t2: Active users  ->  Runs today -->
+        <div id="t2" class="card tile">
+          <div class="face a">
+            <div class="card-label">Active users</div>
+            <div class="card-value">8,421</div>
+            <span class="delta up">+4.1%</span>
+            <svg class="spark" viewBox="0 0 346 60" preserveAspectRatio="none"><path class="chart-line" d="M2,48 C30,46 44,38 70,40 S110,48 138,36 S180,22 208,28 S250,34 278,18 S320,12 344,8" stroke-width="3" /></svg>
+          </div>
+          <div class="face b">
+            <div class="card-label">Runs today</div>
+            <div class="card-value">1,204</div>
+            <span class="delta up">+18%</span>
+            <svg class="spark" viewBox="0 0 346 60" preserveAspectRatio="none"><path class="chart-line" d="M2,52 C28,50 46,44 70,46 S112,36 140,38 S182,30 210,24 S252,26 280,16 S322,8 344,6" stroke="#10b981" stroke-width="3" /></svg>
+          </div>
+        </div>
+
+        <!-- t3: Automations teaser (A, 1x1)  ->  Win-back flow builder (B, 2x2): the small tile becomes the hero -->
+        <div id="t3" class="card tile">
+          <div class="face a">
+            <div class="card-label">Automations</div>
+            <div class="chip" style="background: var(--accent-soft)"><svg viewBox="0 0 24 24"><path d="M13 2 L5 13 h6 l-1 9 l8-11 h-6 z" fill="#635bff" /></svg></div>
+            <div class="card-value">3 live</div>
+            <div class="tags"><span class="pill">Win-back</span><span class="pill">Digest</span><span class="pill">CRM sync</span></div>
+          </div>
+          <div class="face b">
+            <div class="row"><div class="h3">Win-back flow</div><span class="pill green">Live · 98.6% success</span></div>
+            <div class="flow dots">
+              <svg class="wires" viewBox="0 0 772 428">
+                <path d="M168,136 C168,196 200,214 250,214" fill="none" stroke="#c9c6ff" stroke-width="3" />
+                <path d="M386,264 C386,324 418,342 468,342" fill="none" stroke="#c9c6ff" stroke-width="3" />
+                <circle cx="250" cy="214" r="5" fill="#635bff" /><circle cx="468" cy="342" r="5" fill="#635bff" />
+              </svg>
+              <div id="n1" class="node">
+                <div class="chip" style="background: var(--accent-soft)"><svg viewBox="0 0 24 24"><path d="M13 2 L5 13 h6 l-1 9 l8-11 h-6 z" fill="#635bff" /></svg></div>
+                <div class="k">Trigger</div><div class="v">Churn risk &gt; 5%</div>
+              </div>
+              <div id="n2" class="node">
+                <div class="chip" style="background: #e0f4fd"><svg viewBox="0 0 24 24"><path d="M4 5 h16 v11 h-9 l-5 4 v-4 h-2 z" fill="#0ea5e9" /></svg></div>
+                <div class="k">Action</div><div class="v">Notify the CSM</div>
+              </div>
+              <div id="n3" class="node">
+                <div class="chip" style="background: #e7f8f1"><svg viewBox="0 0 24 24"><path d="M3 6 h18 v12 h-18 z M3 6 l9 7 l9-7" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linejoin="round" /></svg></div>
+                <div class="k">Action</div><div class="v">Send win-back offer</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- t4: Weekly retention bars (A, 2x1)  ->  Time saved (B, 1x1) -->
+        <div id="t4" class="card tile">
+          <div class="face a">
+            <div class="row"><div class="h3">Weekly retention</div><span class="pill indigo">12 weeks</span></div>
+            <div class="bars">
+              <div class="bar soft" style="height: 92%"></div><div class="bar soft" style="height: 84%"></div><div class="bar soft" style="height: 80%"></div>
+              <div class="bar soft" style="height: 74%"></div><div class="bar soft" style="height: 71%"></div><div class="bar soft" style="height: 69%"></div>
+              <div class="bar" style="height: 70%"></div><div class="bar" style="height: 73%"></div><div class="bar" style="height: 76%"></div>
+              <div class="bar" style="height: 79%"></div><div class="bar" style="height: 83%"></div><div class="bar" style="height: 88%"></div>
+            </div>
+          </div>
+          <div class="face b">
+            <div class="card-label">Time saved</div>
+            <div class="card-value">38h</div>
+            <span class="delta up">this week</span>
+            <div class="goal">76% of the 50h goal<div class="slider"><div class="fill" style="width: 76%; background: var(--teal)"></div></div></div>
+          </div>
+        </div>
+
+        <!-- t5: Top accounts (A, 2x1)  ->  Weekly digest toggle (B, 1x1) -->
+        <div id="t5" class="card tile">
+          <div class="face a">
+            <div class="h3">Top accounts</div>
+            <div style="margin-top: 12px">
+              <div class="acct"><span class="avatar sky">LL</span>Lumen Labs<span class="mrr">$12.4k MRR</span><span class="pill green">Healthy</span></div>
+              <div class="acct"><span class="avatar pink">AF</span>Atlas Freight<span class="mrr">$9.8k MRR</span><span class="pill amber">At risk</span></div>
+              <div class="acct"><span class="avatar amber">BS</span>Brightside<span class="mrr">$7.1k MRR</span><span class="pill green">Healthy</span></div>
+            </div>
+          </div>
+          <div class="face b">
+            <div class="row"><div class="card-label">Weekly digest</div><div class="toggle on"><div class="knob"></div></div></div>
+            <div class="h2" style="margin-top: 26px">Mondays</div>
+            <div class="small" style="margin-top: 6px; font-size: 16px">9:00 AM · 14 recipients</div>
+            <div class="who"><span class="avatar sky">MK</span><span class="avatar pink">JR</span><span class="avatar amber">SP</span><span>+11</span></div>
+          </div>
+        </div>
+
+        <!-- t6: Churn risk by plan (A, 2x1)  ->  Connected apps (B, 3x1) -->
+        <div id="t6" class="card tile">
+          <div class="face a">
+            <div class="h3">Churn risk by plan</div>
+            <div style="margin-top: 16px">
+              <div class="risk">Starter<div class="slider"><div class="fill" style="width: 78%; background: var(--amber)"></div></div><b>6.2%</b></div>
+              <div class="risk">Growth<div class="slider"><div class="fill" style="width: 36%"></div></div><b>2.4%</b></div>
+              <div class="risk">Scale<div class="slider"><div class="fill" style="width: 14%; background: var(--teal)"></div></div><b>0.9%</b></div>
+            </div>
+          </div>
+          <div class="face b">
+            <div class="row"><div class="h3">Connected apps</div><span class="small" style="font-size: 16px">5 of 5 syncing</span></div>
+            <div class="apps">
+              <div class="app-chip"><span class="chip" style="background: var(--accent)">C</span><div><div class="name">CRM</div><div class="ok">Connected</div></div></div>
+              <div class="app-chip"><span class="chip" style="background: var(--sky)">T</span><div><div class="name">Team chat</div><div class="ok">Connected</div></div></div>
+              <div class="app-chip"><span class="chip" style="background: var(--pink)">E</span><div><div class="name">Email</div><div class="ok">Connected</div></div></div>
+              <div class="app-chip"><span class="chip" style="background: var(--amber)">B</span><div><div class="name">Billing</div><div class="ok">Connected</div></div></div>
+              <div class="app-chip"><span class="chip" style="background: var(--teal)">W</span><div><div class="name">Warehouse</div><div class="ok">Connected</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".top, .seg", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.out" }, 0);
+      tl.fromTo(".tile", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.05, ease: "power3.out" }, 0.05);
+      tl.to("#line", { strokeDashoffset: 0, duration: 0.6, ease: "power2.inOut" }, 0.2);
+      tl.fromTo("#area", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.out" }, 0.4);
+      tl.fromTo("#t4 .a .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.4, stagger: 0.02, ease: "power3.out" }, 0.3);
+      tl.fromTo("#t6 .a .fill", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.5, stagger: 0.02, ease: "power3.out" }, 0.3);
+
+      // ---- Bento Cascade ----
+      const T = 1.6;         // transition start
+      const MOVE = 0.55;     // each tile's move (16.5f)
+      const STAGGER = 0.05;  // 1.5f between tiles
+      const D = MOVE + 5 * STAGGER; // 0.8s (24f) from first tile out to last tile settled
+      const EASE = "back.out(1.2)"; // 5.3% overshoot; above ~1.4 neighbours collide mid-move (see SKILL.md)
+
+      // Grid: 4 cols x 3 rows of 402x264 cells, 24px gaps, origin (120,172). A mirrors the CSS.
+      const cell = (c, r, w, h) => ({ left: 120 + c * 426, top: 172 + r * 288, width: w * 426 - 24, height: h * 288 - 24 });
+      const A = { t1: cell(0, 0, 2, 2), t2: cell(2, 0, 1, 1), t3: cell(3, 0, 1, 1), t4: cell(2, 1, 2, 1), t5: cell(0, 2, 2, 1), t6: cell(2, 2, 2, 1) };
+      const B = { t1: cell(0, 0, 1, 2), t2: cell(1, 0, 1, 1), t3: cell(2, 0, 2, 2), t4: cell(1, 1, 1, 1), t5: cell(0, 2, 1, 1), t6: cell(1, 2, 3, 1) };
+      // Vacate before fill: tiles that shrink or slide out of the way go first, the tiles that grow into the freed cells go last.
+      const ORDER = ["t1", "t2", "t4", "t5", "t3", "t6"];
+
+      // Telegraph: the segmented control switches views 6f before the first tile moves.
+      tl.fromTo(".seg-pill", { x: 0, width: 140 }, { x: 140, width: 180, duration: 0.3, ease: "power3.inOut" }, T - 0.2);
+      tl.fromTo("#opt-a", { color: "#0a2540" }, { color: "#8898aa", duration: 0.2, ease: "power1.out" }, T - 0.15);
+      tl.fromTo("#opt-b", { color: "#8898aa" }, { color: "#0a2540", duration: 0.2, ease: "power1.out" }, T - 0.15);
+
+      ORDER.forEach((id, i) => {
+        const t0 = T + i * STAGGER;
+        // Real box (left/top/width/height), not scale: scale would stretch the radius, border, shadow and text.
+        tl.fromTo(`#${id}`, A[id], { ...B[id], duration: MOVE, ease: EASE, immediateRender: false }, t0);
+        // Content swap: a 3f crossfade with the same ease on both faces, so A + B = 100% on every frame and no card flies empty.
+        // Shrinkers start 1f early: back.out moves the box ~24% (100px) in its first frame, which would crop A.
+        // The slider swaps mid-slide (same layout, so it reads as the numbers changing). Growers wait until 6f, when the
+        // moving edge is within B's 28px face padding (~92%); earlier, that edge clips B's titles.
+        const swap = t0 + { t1: -1 / 30, t4: -1 / 30, t5: -1 / 30, t2: 0.05, t3: 0.2, t6: 0.2 }[id];
+        tl.to(`#${id} .a`, { opacity: 0, duration: 0.1, ease: "power2.out" }, swap);
+        tl.fromTo(`#${id} .b`, { opacity: 0 }, { opacity: 1, duration: 0.1, ease: "power2.out" }, swap);
+        tl.fromTo(`#${id} .b`, { y: 14 }, { y: 0, duration: 0.35, ease: "power3.out" }, swap);
+      });
+
+      // Hero detail lands last: the flow's nodes pop in 2.4f after the hero's title starts (frame 14.4), riding its overshoot.
+      const tHero = T + ORDER.indexOf("t3") * STAGGER + 0.28;
+      tl.fromTo("#t3 .node", { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, stagger: 0.07, ease: "back.out(1.6)" }, tHero);
+      tl.fromTo("#t3 .wires path", { strokeDasharray: 200, strokeDashoffset: 200 }, { strokeDashoffset: 0, duration: 0.4, stagger: 0.07, ease: "power2.out" }, tHero + 0.1);
+      tl.fromTo("#t3 .wires circle", { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.07, ease: "power1.out" }, tHero + 0.3);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
