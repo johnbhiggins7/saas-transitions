@@ -70,6 +70,7 @@ Approved transitions only. A transition appears here once its render has been re
 | Transition | Category | Duration | Summary |
 | --- | --- | --- | --- |
 | [UI Deep Zoom](transitions/ui-deep-zoom/SKILL.md) | Camera & Spatial | 0.6s | The camera rushes into one small UI element until its fill becomes the next scene's background |
+| [Contextual Pullback](transitions/contextual-pullback/SKILL.md) | Camera & Spatial | 0.8s | Snaps back from a macro UI action and tilts to 2.5D, revealing the surfaces it updated |
 <!-- index:end -->
 
 ## Adding or changing a transition
