@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.5;duration=0.9" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Ports and node boxes are hard-coded: the wire is built from them (see SRC / NODES / DST in the script). */
+      #s2 { z-index: 2; } /* masked to x < head: draw() sets mask-image every frame */
+      #flow { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+      #flow > svg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
+      /* Hidden until T: at p=0 the zero-length dashes still paint round caps, a stray dot at the source port. */
+      svg.wires { opacity: 0; }
+
+      .wire { fill: none; stroke: url(#wire-grad); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 1 2; stroke-dashoffset: 1; }
+      .wire.glow { stroke-width: 18; opacity: 0.28; }
+      .trail { fill: none; stroke-linecap: round; stroke-dasharray: 0 2; }
+      #trail-tail { stroke: #635bff; stroke-width: 22; opacity: 0.45; }
+      #trail-core { stroke: #fff; stroke-width: 6; }
+      #head-pos { position: absolute; left: 0; top: 0; transform: translate(340px, 540px); } /* script moves it */
+      #head { position: absolute; left: -46px; top: -46px; width: 92px; height: 92px; border-radius: 50%; background: radial-gradient(circle, rgba(99, 91, 255, 0.55) 0, rgba(99, 91, 255, 0.2) 40%, rgba(99, 91, 255, 0) 70%); }
+      #head::after { content: ""; position: absolute; left: 30px; top: 30px; width: 32px; height: 32px; box-sizing: border-box; border-radius: 50%; background: #fff; border: 5px solid var(--accent); }
+
+      /* Top bar is shared chrome: it sits above both scenes and never changes. */
+      .topbar { position: absolute; left: 0; top: 0; width: 1920px; height: 80px; display: flex; align-items: center; gap: 14px; padding: 0 40px; background: var(--surface); border-bottom: 1px solid var(--border); font-size: 18px; font-weight: 500; color: var(--muted); }
+      .topbar .brand { padding: 0; color: var(--ink); }
+      .topbar .crumb { color: var(--ink); font-weight: 600; }
+      .topbar .btn { margin-left: auto; }
+
+      .ico { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; flex: none; }
+      .ico svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+      .title-row { display: flex; align-items: center; gap: 14px; }
+      .title-row b { display: block; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+      .title-row span { font-size: 14px; color: var(--muted); }
+      .port { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #fff; border: 3px solid var(--accent); z-index: 2; }
+      .port.l { left: 0; } .port.r { left: 100%; }
+      .ring { position: absolute; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; border: 3px solid rgba(99, 91, 255, 0.6); opacity: 0; }
+
+      /* Source and destination are shared too: the wire runs between them. */
+      .end { position: absolute; top: 460px; width: 280px; height: 160px; }
+      #src { left: 60px; } /* right port = (340, 540) */
+      #dst { left: 1580px; } /* left port = (1580, 540) */
+      .end .card { position: absolute; inset: 0; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; }
+      .live-row { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: #0b8f63; }
+      .live-row i { width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
+      .live-row .mono { margin-left: auto; color: var(--muted); font-weight: 500; }
+      #dst .empty { position: absolute; inset: 0; padding: 22px; border: 2px dashed #c3ccd8; border-radius: var(--radius); background: rgba(255, 255, 255, 0.6); display: flex; flex-direction: column; justify-content: space-between; }
+      #dst .empty .ico { background: var(--surface-2); color: var(--muted); }
+      #dst .empty .wait { font-size: 15px; color: var(--muted); }
+      #dst .live .value { display: flex; align-items: baseline; gap: 12px; font-size: 30px; font-weight: 700; letter-spacing: -0.03em; }
+      #dst .live .delta { margin: 0; }
+      #dst .live { opacity: 0; } /* hard-swapped in on impact */
+
+      .node { position: absolute; width: 230px; height: 88px; display: flex; align-items: center; gap: 14px; padding: 0 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); opacity: 0; transform-origin: 0 50%; } /* grows from its left port, along the head's travel */
+      .node .title-row b { font-size: 18px; }
+      .node .flash { position: absolute; inset: -1px; border-radius: 14px; box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.55), 0 0 36px rgba(99, 91, 255, 0.45); opacity: 0; }
+      #n1 { left: 590px; top: 316px; } /* ports (590, 360) → (820, 360) */
+      #n2 { left: 1100px; top: 676px; } /* ports (1100, 720) → (1330, 720) */
+
+      /* Scene A: event inspector between source and destination */
+      /* Tight shadow: the kit's 32px blur spills past x=1480 and lingers as a sliver after the head passes. */
+      #events { position: absolute; left: 440px; top: 230px; width: 1040px; height: 700px; padding: 32px 36px; box-shadow: 0 1px 2px rgba(10, 37, 64, 0.06), 0 22px 32px -24px rgba(10, 37, 64, 0.2); }
+      #events .panel-head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+      #events .panel-head .mono { margin-left: auto; font-size: 15px; color: var(--muted); }
+      #events .tr { grid-template-columns: 2.2fr 1.3fr 1fr 1fr; height: 58px; font-size: 17px; }
+      #events .tr.head { height: 44px; font-size: 13px; margin: 0; }
+      #events .cell-main { font-family: var(--mono); font-size: 16px; }
+
+      /* Scene B: only what lives inside x 340–1580 (the span the head sweeps) */
+      #s2 .copy { position: absolute; left: 440px; top: 140px; }
+      #s2 .copy .h2 { margin-top: 10px; }
+      #s2 .kpis { position: absolute; left: 440px; top: 800px; width: 1040px; }
+      #s2 .kpis .card { padding: 22px 24px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: raw events from the source, destination waiting -->
+      <div id="s1" class="scene dots">
+        <div id="events" class="card">
+          <div class="panel-head">
+            <div class="h3">Incoming events</div>
+            <span class="pill green">Live</span>
+            <span class="mono">checkout.webhook · last 60s</span>
+          </div>
+          <div class="table">
+            <div class="tr head"><span>Event</span><span>Customer</span><span>Amount</span><span>Status</span></div>
+            <div class="tr"><span class="cell-main">checkout.completed</span><span>Acme Co</span><span>$1,240.00</span><span class="pill green">OK</span></div>
+            <div class="tr"><span class="cell-main">checkout.completed</span><span>Globex</span><span>€86.00</span><span class="pill indigo">EUR</span></div>
+            <div class="tr"><span class="cell-main">checkout.completed</span><span>Acme Co</span><span>$1,240.00</span><span class="pill amber">Duplicate</span></div>
+            <div class="tr"><span class="cell-main">refund.created</span><span>Initech</span><span>−$42.00</span><span class="pill">Refund</span></div>
+            <div class="tr"><span class="cell-main">checkout.completed</span><span>Umbrella</span><span>£310.00</span><span class="pill indigo">GBP</span></div>
+            <div class="tr"><span class="cell-main">checkout.completed</span><span>Hooli</span><span>$64.00</span><span class="pill green">OK</span></div>
+            <div class="tr"><span class="cell-main">checkout.completed</span><span>Hooli</span><span>$64.00</span><span class="pill amber">Duplicate</span></div>
+            <div class="tr"><span class="cell-main">checkout.completed</span><span>Vandelay</span><span>€1,020.00</span><span class="pill indigo">EUR</span></div>
+            <div class="tr"><span class="cell-main">checkout.completed</span><span>Soylent</span><span>$499.00</span><span class="pill green">OK</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B: the pipeline. Masked to the left of the head; same background, so only content changes. -->
+      <div id="s2" class="scene next dots">
+        <div class="copy">
+          <div class="eyebrow">Pipeline live</div>
+          <div class="h2">Checkout to revenue in 0.8s</div>
+        </div>
+        <div class="kpis grid-3">
+          <div class="card"><div class="card-label">Events today</div><div class="card-value">48,210</div></div>
+          <div class="card"><div class="card-label">Duplicates dropped</div><div class="card-value">1,204</div></div>
+          <div class="card"><div class="card-label">Converted to USD</div><div class="card-value">3,118</div></div>
+        </div>
+      </div>
+
+      <!-- Unmasked overlay: wire, head, the nodes the head drops, and the shared chrome -->
+      <div id="flow">
+        <svg class="wires" viewBox="0 0 1920 1080">
+          <defs>
+            <linearGradient id="wire-grad" gradientUnits="userSpaceOnUse" x1="340" y1="0" x2="1580" y2="0">
+              <stop offset="0" stop-color="#0ea5e9" />
+              <stop offset="0.6" stop-color="#635bff" />
+              <stop offset="1" stop-color="#7c5cff" />
+            </linearGradient>
+            <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7" /></filter>
+          </defs>
+          <path class="wire glow" pathLength="1" filter="url(#soft)" />
+          <path class="wire" pathLength="1" />
+          <path id="trail-tail" class="trail" pathLength="1" filter="url(#soft)" />
+          <path id="trail-core" class="trail" pathLength="1" />
+        </svg>
+        <!-- Head is HTML, not an SVG <g>: GSAP's transform-origin math on SVG children offset it by its bbox. -->
+        <div id="head-pos"><div id="head"></div></div>
+
+        <div id="n1" class="node">
+          <div class="ico"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M15 5H6a2 2 0 0 0-2 2v9" /></svg></div>
+          <div class="title-row"><div><b>Dedupe</b><span>1,204 dropped</span></div></div>
+          <span class="port l"></span><span class="port r"></span><span class="flash"></span>
+        </div>
+        <div id="n2" class="node">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5" /></svg></div>
+          <div class="title-row"><div><b>Convert to USD</b><span>ECB daily rate</span></div></div>
+          <span class="port l"></span><span class="port r"></span><span class="flash"></span>
+        </div>
+
+        <div id="src" class="end">
+          <div class="card">
+            <div class="title-row">
+              <div class="ico"><svg viewBox="0 0 24 24"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z" /></svg></div>
+              <div><b>Checkout</b><span>Webhook source</span></div>
+            </div>
+            <div class="live-row"><i></i>Live<span class="mono">18 ev/s</span></div>
+          </div>
+          <span class="ring" id="src-ring" style="left: 100%"></span>
+          <span class="port r"></span>
+        </div>
+
+        <div id="dst" class="end">
+          <div class="empty">
+            <div class="title-row">
+              <div class="ico"><svg viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-5" /></svg></div>
+              <div><b>Revenue</b><span>Dashboard</span></div>
+            </div>
+            <div class="wait">Waiting for data…</div>
+          </div>
+          <div class="card live">
+            <div class="title-row">
+              <div class="ico"><svg viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-5" /></svg></div>
+              <div><b>Revenue</b><span>Dashboard</span></div>
+            </div>
+            <div class="value">$128.4k <span class="delta up">+12.5%</span></div>
+          </div>
+          <span class="ring" id="dst-ring" style="left: 0"></span>
+          <span class="port l"></span>
+        </div>
+
+        <div class="topbar">
+          <span class="brand"><span class="brand-mark"></span>Northwind</span>
+          <span>/</span><span>Flows</span><span>/</span><span class="crumb">Checkout to revenue</span>
+          <span class="btn btn-primary">Deploy</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(["#src", "#dst"], { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, ease: "power3.out" }, 0.05);
+      tl.fromTo("#events", { y: 28, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, 0.12);
+      tl.fromTo("#events .tr", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, stagger: 0.03, ease: "power2.out" }, 0.25);
+
+      // ---- Path & Stroke Leading ----
+      const T = 1.5; // transition start
+      const D = 0.9; // head travel, source port → destination port (27f @ 30fps)
+      const EASE = gsap.parseEase("power2.inOut"); // leaves the port from rest, settles into the next one
+
+      // Wire geometry, mirrored from CSS: source port, node boxes (left x, center y, width), destination port.
+      const SRC = [340, 540], DST = [1580, 540];
+      const NODES = [{ el: "#n1", x: 590, y: 360, w: 230 }, { el: "#n2", x: 1100, y: 720, w: 230 }];
+      const pts = [SRC, ...NODES.flatMap((n) => [[n.x, n.y], [n.x + n.w, n.y]]), DST];
+
+      // Node-editor wiring: cubic segments with horizontal tangents at every port; straight under each node.
+      const segs = pts.slice(1).map((b, i) => {
+        const a = pts[i], k = (b[0] - a[0]) * 0.55;
+        return [a, [a[0] + k, a[1]], [b[0] - k, b[1]], b];
+      });
+      const d = `M${SRC} ` + segs.map((s) => `C${s[1]} ${s[2]} ${s[3]}`).join(" ");
+      document.querySelectorAll(".wires path").forEach((p) => p.setAttribute("d", d));
+
+      // Arc-length table (pure geometry, so seek-safe): the head moves at the speed the ease says, not the bezier's t.
+      const bez = (s, t) => [0, 1].map((j) => (1 - t) ** 3 * s[0][j] + 3 * (1 - t) ** 2 * t * s[1][j] + 3 * (1 - t) * t * t * s[2][j] + t ** 3 * s[3][j]);
+      const LUT = [[...SRC, 0]], ends = [];
+      segs.forEach((s) => {
+        for (let i = 1; i <= 64; i++) {
+          const [x, y] = bez(s, i / 64), [px, py, pl] = LUT[LUT.length - 1];
+          LUT.push([x, y, pl + Math.hypot(x - px, y - py)]);
+        }
+        ends.push(LUT[LUT.length - 1][2]);
+      });
+      const LEN = LUT[LUT.length - 1][2];
+      const at = (p) => {
+        const L = p * LEN, i = Math.max(1, LUT.findIndex((r) => r[2] >= L));
+        const a = LUT[i - 1], b = LUT[i], f = (L - a[2]) / (b[2] - a[2] || 1);
+        return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+      };
+      // Time at which the head reaches path fraction f (inverse of EASE, by bisection).
+      const timeAt = (f) => {
+        let lo = 0, hi = 1;
+        for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; EASE(m) < f ? (lo = m) : (hi = m); }
+        return T + D * lo;
+      };
+
+      // One driver: wire, glow, trails, head and scene B's mask edge all read the same progress.
+      const headPos = document.getElementById("head-pos"), s2 = document.getElementById("s2");
+      const wires = document.querySelectorAll(".wire");
+      const trails = [[document.getElementById("trail-tail"), 0.2], [document.getElementById("trail-core"), 0.07]]; // [el, lag in u]
+      const flow = { u: 0 };
+      const draw = () => {
+        const u = flow.u, p = EASE(u), [x, y] = at(p);
+        headPos.style.transform = `translate(${x}px, ${y}px)`;
+        wires.forEach((w) => (w.style.strokeDashoffset = 1 - p)); // drawn on [0, p]
+        trails.forEach(([el, lag]) => {
+          const t0 = EASE(Math.max(0, u - lag)); // where the head was `lag` ago: trail length tracks speed
+          el.style.strokeDasharray = `${p - t0} 2`;
+          el.style.strokeDashoffset = -t0;
+        });
+        // Scene B exists only behind the head; a 16px feather softens the edge without a wide double exposure.
+        s2.style.webkitMaskImage = s2.style.maskImage = `linear-gradient(90deg, #000 ${x - 16}px, transparent ${x}px)`;
+      };
+      draw();
+
+      // Telegraph: the source port pings, the packet charges at the port.
+      // Rings use set + to, not fromTo: fromTo renders its from-state (opacity 0.9) at t=0.
+      tl.set("#src-ring", { scale: 1, opacity: 0.9 }, T - 0.5);
+      tl.to("#src-ring", { scale: 2.6, opacity: 0, duration: 0.5, ease: "power2.out" }, T - 0.5);
+      tl.fromTo("#head", { scale: 0 }, { scale: 1, duration: 0.3, ease: "back.out(2.2)" }, T - 0.3);
+
+      tl.set(["#s2", "svg.wires"], { opacity: 1 }, T);
+      tl.to(flow, { u: 1, duration: D, ease: "none", onUpdate: draw }, T); // ease is applied inside draw()
+
+      // Scene B nodes pop as the head reaches their left port, flash as it leaves the right one.
+      NODES.forEach((n, i) => {
+        const tIn = timeAt(ends[i * 2] / LEN), tOut = timeAt(ends[i * 2 + 1] / LEN);
+        // The node lands over scene A (right of the edge), so opacity is set, not faded: any fade ghosts the table through it.
+        tl.set(n.el, { opacity: 1 }, tIn - 0.033);
+        tl.fromTo(n.el, { scale: 0.6 }, { scale: 1, duration: 0.4, ease: "back.out(1.7)" }, tIn - 0.033);
+        tl.fromTo(`${n.el} .flash`, { opacity: 1 }, { opacity: 0, duration: 0.5, ease: "power2.out" }, tOut);
+      });
+
+      // Landing: the packet is absorbed by the destination port, which comes alive.
+      const tLand = T + D;
+      tl.to("#head", { scale: 0, duration: 0.18, ease: "power2.in" }, tLand - 0.06);
+      tl.to(".trail", { opacity: 0, duration: 0.3, ease: "power1.out" }, tLand - 0.1);
+      tl.to(".wire.glow", { opacity: 0.12, duration: 0.6, ease: "power2.out" }, tLand);
+      tl.set("#dst-ring", { scale: 1, opacity: 0.9 }, tLand);
+      tl.to("#dst-ring", { scale: 2.6, opacity: 0, duration: 0.5, ease: "power2.out" }, tLand);
+      // Hard swap on impact (a crossfade double-exposes "Waiting for data…" under the value). The value starts rising
+      // a frame early, hidden by .live, so the swap frame already shows it instead of an empty card body.
+      tl.set("#dst .empty", { opacity: 0 }, tLand);
+      tl.set("#dst .live", { opacity: 1 }, tLand);
+      tl.fromTo("#dst .value", { y: 14, opacity: 0.35 }, { y: 0, opacity: 1, duration: 0.45, ease: "expo.out" }, tLand - 0.04);
+      tl.to("#dst", { scale: 1.05, duration: 0.1, ease: "power2.out" }, tLand);
+      tl.to("#dst", { scale: 1, duration: 0.5, ease: "expo.out" }, tLand + 0.1);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

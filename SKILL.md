@@ -98,6 +98,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Split-Screen Takeover](transitions/split-screen-takeover/SKILL.md) | Masking | 0.6s | The divider of an old-vs-new split is dragged across, and the winning panel takes the frame |
 | [Geometric Match Cut](transitions/graphic-match-cut/SKILL.md) | Match Cuts | 0.4s | A pulsing donut hard-cuts on its peak frame to a round clock at the same position and size |
 | [Directional Momentum (Speed Match Cut)](transitions/speed-match-cut/SKILL.md) | Match Cuts | 0.53s | A card exits right at full speed, and after a hard cut the next enters left at the same speed |
+| [Path & Stroke Leading](transitions/path-stroke-leading/SKILL.md) | Match Cuts | 0.9s | A glowing data packet draws a wire across the frame, and the next scene builds behind its head |
 <!-- index:end -->
 
 ## Adding or changing a transition
