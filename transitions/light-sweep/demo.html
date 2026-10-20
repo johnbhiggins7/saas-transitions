@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.7" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* ---- Scene A: Q3 review dashboard ---- */
+      .kpis { position: absolute; left: 280px; top: 108px; width: 1368px; height: 160px; }
+      .kpis .card { height: 160px; }
+      .chart-card { position: absolute; left: 280px; top: 292px; width: 880px; height: 596px; padding: 28px 32px; }
+      .card-head { display: flex; justify-content: space-between; align-items: center; }
+      .chart-card .bars { height: 400px; margin-top: 44px; gap: 18px; }
+      .axis { display: flex; justify-content: space-around; margin-top: 16px; font-size: 15px; color: var(--muted); }
+      .accounts { position: absolute; left: 1184px; top: 292px; width: 464px; height: 596px; padding: 28px 32px; }
+      .acct { display: flex; align-items: center; gap: 14px; height: 84px; border-bottom: 1px solid var(--border); font-size: 18px; font-weight: 500; }
+      .acct:last-child { border-bottom: 0; }
+      .acct b { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+      .accounts .h3 { margin-bottom: 12px; }
+
+      /* ---- Scene B: chapter card ---- */
+      #s2 {
+        z-index: 2;
+        /* The seam: scene B shows wherever the band has already passed. Same angle and --p as the band, so the
+           2.5% feather always sits under the band's near-opaque core. */
+        -webkit-mask-image: linear-gradient(115deg, #000 calc(var(--p) * 1% - 2.5%), transparent calc(var(--p) * 1% + 2.5%));
+        mask-image: linear-gradient(115deg, #000 calc(var(--p) * 1% - 2.5%), transparent calc(var(--p) * 1% + 2.5%));
+      }
+      #s2, #sweep { --p: -12; } /* band core position along the gradient line, in % (0 = top-left corner, 100 = bottom-right) */
+      .copy { position: absolute; left: 160px; top: 372px; width: 760px; }
+      .copy .display { margin-top: 24px; font-size: 96px; }
+      .copy .body { margin-top: 28px; width: 600px; }
+      .forecast { position: absolute; left: 980px; top: 250px; width: 780px; height: 580px; padding: 32px 36px; }
+      .forecast .card-value { font-size: 56px; }
+      .forecast .chart-svg { margin-top: 28px; }
+      .fc-line { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 2 12; }
+      .fc-band { fill: rgba(99, 91, 255, 0.12); }
+      .legend .dash { background: none; border: 2px dashed var(--accent); }
+
+      /* ---- The light ---- */
+      .fx { position: absolute; pointer-events: none; z-index: 10; }
+      /* Full-frame, so the band can never show an edge: only the gradient moves (background set in the script). The
+         radial mask makes the band hottest mid-frame and dimmer toward the corners, like light across a lens. */
+      #sweep {
+        inset: 0;
+        opacity: 0;
+        -webkit-mask-image: radial-gradient(ellipse 85% 95% at 50% 46%, #000 45%, rgba(0, 0, 0, 0.92) 100%);
+        mask-image: radial-gradient(ellipse 85% 95% at 50% 46%, #000 45%, rgba(0, 0, 0, 0.92) 100%);
+      }
+      /* Corner leak: an oversized radial centred on the top-left corner. It fades to 0 well inside its box. */
+      #leak { left: -800px; top: -800px; width: 1600px; height: 1600px; opacity: 0;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.75) 0%, rgba(160, 154, 255, 0.28) 30%, rgba(99, 91, 255, 0) 68%); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4.5" data-width="1920" data-height="1080">
+      <!-- Scene A: Q3 review -->
+      <div id="s1" class="scene dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Reports</div>
+            <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+            <div class="nav-item"><span class="nav-icon"></span>Forecasts</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Q3 review</div>
+              <div class="search">Search</div>
+              <div class="avatar sky">JL</div>
+            </div>
+          </div>
+          <div class="kpis grid-3">
+            <div class="card kpi"><div class="card-label">Q3 revenue</div><div class="card-value">$412.8k</div><span class="delta up">+18.2%</span></div>
+            <div class="card kpi"><div class="card-label">Net new ARR</div><div class="card-value">$96.4k</div><span class="delta up">+9.7%</span></div>
+            <div class="card kpi"><div class="card-label">Win rate</div><div class="card-value">31%</div><span class="delta up">+2.4 pts</span></div>
+          </div>
+          <div class="card chart-card">
+            <div class="card-head">
+              <div class="h3">Weekly revenue</div>
+              <span class="pill green">Q3 closed</span>
+            </div>
+            <div class="bars">
+              <div class="bar soft" style="height: 38%"></div><div class="bar soft" style="height: 46%"></div><div class="bar soft" style="height: 41%"></div>
+              <div class="bar soft" style="height: 52%"></div><div class="bar" style="height: 49%"></div><div class="bar" style="height: 58%"></div>
+              <div class="bar" style="height: 63%"></div><div class="bar" style="height: 60%"></div><div class="bar" style="height: 71%"></div>
+              <div class="bar" style="height: 68%"></div><div class="bar" style="height: 79%"></div><div class="bar" style="height: 86%"></div>
+              <div class="bar" style="height: 94%"></div>
+            </div>
+            <div class="axis"><span>Jul</span><span>Aug</span><span>Sep</span></div>
+          </div>
+          <div class="card accounts">
+            <div class="h3">Top accounts</div>
+            <div class="acct"><span class="avatar">AC</span>Acme Corp<b>$48.2k</b></div>
+            <div class="acct"><span class="avatar teal">GX</span>Globex<b>$36.9k</b></div>
+            <div class="acct"><span class="avatar amber">IN</span>Initech<b>$29.4k</b></div>
+            <div class="acct"><span class="avatar pink">UM</span>Umbrella<b>$22.1k</b></div>
+            <div class="acct"><span class="avatar sky">HO</span>Hooli<b>$18.7k</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B: the next chapter, revealed behind the band -->
+      <div id="s2" class="scene next">
+        <div class="copy">
+          <div class="eyebrow">Chapter 02 · Forecasts</div>
+          <div class="display">See Q4 before it happens.</div>
+          <div class="body">Northwind projects revenue from your live pipeline, refreshed every hour.</div>
+        </div>
+        <div class="card forecast">
+          <div class="card-head">
+            <div class="card-label">Projected Q4 revenue</div>
+            <span id="conf" class="pill indigo">92% confidence</span>
+          </div>
+          <div class="card-value">$486k</div>
+          <svg class="chart-svg" viewBox="0 0 708 300" height="300">
+            <line class="chart-grid" x1="0" y1="75" x2="708" y2="75" />
+            <line class="chart-grid" x1="0" y1="150" x2="708" y2="150" />
+            <line class="chart-grid" x1="0" y1="225" x2="708" y2="225" />
+            <path class="chart-area" d="M0,250 C60,240 110,214 170,220 S280,190 354,170 L354,300 L0,300 Z" />
+            <path class="chart-line" d="M0,250 C60,240 110,214 170,220 S280,190 354,170" />
+            <clipPath id="fc-clip"><rect id="fc-rect" x="354" y="0" width="0" height="300" /></clipPath>
+            <g clip-path="url(#fc-clip)">
+              <path class="fc-band" d="M354,170 C440,150 540,96 708,50 L708,128 C540,152 440,180 354,170 Z" />
+              <path class="fc-line" d="M354,170 C440,158 540,120 708,88" />
+            </g>
+            <circle cx="354" cy="170" r="7" fill="#fff" stroke="#635bff" stroke-width="4" />
+          </svg>
+          <div class="legend" style="margin-top: 18px"><span><i></i>Actual</span><span><i class="dash"></i>Forecast</span></div>
+        </div>
+      </div>
+
+      <div id="leak" class="fx"></div>
+      <div id="sweep" class="fx"></div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
+      tl.fromTo([".chart-card", ".accounts"], { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, ease: "power3.out" }, 0.12);
+      tl.fromTo(".chart-card .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.6, stagger: 0.025, ease: "power3.out" }, 0.3);
+
+      // ---- Light & Glow Sweep ----
+      const T = 1.6; // transition start
+      const D = 0.7; // band travel (21f @ 30fps)
+      const ANGLE = 115; // gradient direction: the band leans like "/" and travels top-left -> bottom-right
+      // Band profile across its width: [offset from the core in % of the gradient line, colour]. White core, opaque
+      // enough to hide the seam; faintly indigo falloff; enough stops that the falloff shows no steps.
+      // Light can't darken the page: on light UI a stop darkens it by alpha x (255 - R), so keep that under ~6 everywhere.
+      const HALF = [
+        [-27, "rgba(140, 134, 255, 0)"],
+        [-20, "rgba(160, 154, 255, 0.04)"],
+        [-14, "rgba(214, 212, 255, 0.14)"],
+        [-9, "rgba(240, 239, 255, 0.38)"],
+        [-5, "rgba(250, 250, 255, 0.75)"],
+        [-2.5, "rgba(254, 254, 255, 0.96)"],
+        [0, "rgba(255, 255, 255, 0.985)"],
+      ];
+      const BAND = [...HALF, ...HALF.slice(0, -1).reverse().map(([o, c]) => [-o, c])];
+      const stop = ([o, c]) => `${c} calc(var(--p) * 1% ${o < 0 ? "-" : "+"} ${Math.abs(o)}%)`;
+      document.getElementById("sweep").style.backgroundImage = `linear-gradient(${ANGLE}deg, ${BAND.map(stop).join(", ")})`;
+
+      // Telegraph: light leaks into the corner the band will enter from.
+      tl.fromTo("#leak", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power1.in" }, T);
+      tl.to("#leak", { opacity: 0, x: 240, y: 120, duration: 0.45, ease: "power2.out" }, T + 0.2);
+
+      // One variable drives the band and the seam behind it, so the seam can never drift out from under the core.
+      tl.set("#s2", { opacity: 1 }, T);
+      tl.fromTo(["#sweep", "#s2"], { "--p": -12 }, { "--p": 112, duration: D, ease: "power1.inOut" }, T);
+      tl.fromTo("#sweep", { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "power1.out" }, T);
+      tl.to("#sweep", { opacity: 0, duration: 0.12, ease: "power1.in" }, T + D - 0.12);
+
+      // Exposure on both scenes together (same value, so the seam never shows a brightness step). Lifted, flattened,
+      // desaturated ink reads as a blown highlight; contrast(0.9) also pulls white to ~242 so the white core outshines it.
+      const LIT = "brightness(1.22) contrast(0.9) saturate(0.85)", UNLIT = "brightness(1) contrast(1) saturate(1)";
+      tl.fromTo(["#s1", "#s2"], { filter: UNLIT }, { filter: LIT, duration: D * 0.5, ease: "power2.in" }, T);
+      tl.to(["#s1", "#s2"], { filter: UNLIT, duration: 0.5, ease: "power2.out" }, T + D * 0.5);
+      tl.set("#s1", { visibility: "hidden" }, T + D);
+
+      // ---- Scene B: content drifts in the sweep's direction as it is revealed ----
+      tl.fromTo(".copy", { x: -48 }, { x: 0, duration: 1.0, ease: "expo.out" }, T + 0.12);
+      tl.fromTo(".forecast", { x: -48 }, { x: 0, duration: 1.0, ease: "expo.out" }, T + 0.28);
+      tl.fromTo("#fc-rect", { attr: { width: 0 } }, { attr: { width: 354 }, duration: 0.8, ease: "power2.out" }, T + D);
+      tl.fromTo("#conf", { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(1.6)" }, T + D + 0.2);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

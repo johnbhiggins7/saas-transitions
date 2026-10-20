@@ -102,6 +102,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Layered Parallax Push](transitions/parallax-push/SKILL.md) | Match Cuts | 0.6s | The next screen pushes the old one out with background, UI and foreground at staggered speeds |
 | [Cross-Dissolve](transitions/cross-dissolve/SKILL.md) | Soft | 0.8s | The next scene fades in over an opaque scene A with opposite scale drift, so luminance never dips |
 | [Soft Blur Transition](transitions/soft-blur/SKILL.md) | Soft | 0.7s | Scene A defocuses into a brief haze and scene B resolves out of it |
+| [Light & Glow Sweep](transitions/light-sweep/SKILL.md) | Soft | 0.7s | An oversized soft light band sweeps across and the scene swaps under its brightest moment |
 <!-- index:end -->
 
 ## Adding or changing a transition
