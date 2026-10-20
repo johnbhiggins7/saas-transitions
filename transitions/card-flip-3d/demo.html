@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.7" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Card geometry is hard-coded (CARD in the script). Perspective sits on the stage, centred on the card. */
+      .stage { position: absolute; inset: 0; perspective: 2000px; perspective-origin: 960px 540px; }
+      #flip { position: absolute; left: 280px; top: 180px; width: 1360px; height: 720px; transform-style: preserve-3d; }
+      .face { position: absolute; inset: 0; padding: 48px; border-radius: 24px; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 1px 2px rgba(10, 37, 64, 0.06); }
+      .back { transform: rotateY(180deg); } /* pre-flipped, so at #flip rotationY 180 it reads the right way round */
+      /* Light falls off toward each face's receding edge: right for the front, left for the back. */
+      .shade { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(90deg, rgba(10, 37, 64, 0.45), #0a2540); opacity: 0; pointer-events: none; z-index: 5; }
+      .back .shade { background: linear-gradient(270deg, rgba(10, 37, 64, 0.45), #0a2540); }
+      /* Floor shadow lives outside the 3D layer, so it can tighten without rotating with the card. */
+      #shadow { position: absolute; left: 360px; top: 250px; width: 1200px; height: 690px; border-radius: 48px; background: rgba(10, 37, 64, 0.28); opacity: 0.7; filter: blur(36px); }
+
+      .head { display: flex; align-items: center; gap: 20px; height: 64px; }
+      .tile { width: 64px; height: 64px; border-radius: 16px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; flex: none; }
+      .head .small { margin-top: 4px; font-size: 17px; }
+      .rule { height: 1px; background: var(--border); margin: 32px -48px 36px; }
+
+      .seg { position: absolute; right: 48px; top: 52px; width: 252px; height: 56px; padding: 4px; display: flex; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border); }
+      .seg-pill { position: absolute; left: 4px; top: 4px; width: 120px; height: 46px; border-radius: 10px; background: var(--surface); box-shadow: 0 1px 3px rgba(10, 37, 64, 0.16); }
+      .seg span { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 18px; font-weight: 600; color: var(--muted); }
+      .seg span.on { color: var(--ink); }
+      .back .seg-pill { left: 128px; }
+
+      .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; }
+      .label { font-size: 15px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+      .field + .field { margin-top: 28px; }
+      .input { height: 64px; font-size: 22px; }
+      .input.mono { font-size: 20px; justify-content: space-between; padding-right: 8px; }
+      .input .btn { height: 44px; padding: 0 16px; font-size: 16px; font-family: Inter, sans-serif; }
+      .rate { display: flex; align-items: center; gap: 24px; height: 64px; }
+      .rate .slider { flex: 1; }
+      .rate b { font-size: 22px; font-weight: 600; width: 140px; text-align: right; }
+      .scope { display: flex; align-items: center; gap: 20px; height: 100px; border-bottom: 1px solid var(--border); }
+      .scope:last-child { border-bottom: 0; }
+      .scope .t { font-size: 22px; font-weight: 600; }
+      .scope .small { margin-top: 4px; font-size: 17px; }
+
+      .back .code { border: 0; box-shadow: none; padding: 0 0 0 4px; font-size: 30px; line-height: 1.7; background: none; }
+      .ln { position: relative; z-index: 0; }
+      .ln .hl { position: absolute; left: -16px; right: 380px; top: 0; bottom: 0; border-radius: 10px; background: var(--accent-soft); z-index: -1; }
+      /* Footer bar at the same place on both faces, so the card reads as one object. */
+      .foot { position: absolute; left: 0; right: 0; bottom: 0; height: 104px; padding: 0 48px; display: flex; align-items: center; gap: 16px; border-top: 1px solid var(--border); background: var(--surface-2); border-radius: 0 0 24px 24px; font-size: 18px; color: var(--muted); }
+      .foot .grow { margin-right: auto; }
+      .foot .pill { height: 36px; padding: 0 16px; font-size: 17px; }
+      #resp { display: flex; align-items: center; gap: 16px; width: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <div id="s1" class="scene dots">
+        <div class="stage">
+          <div id="shadow"></div>
+          <div id="flip">
+            <!-- Front: the settings UI -->
+            <div class="face front card">
+              <div class="head">
+                <div class="tile">
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#635bff" stroke-width="3" stroke-linecap="round"><circle cx="11" cy="16" r="6" /><path d="M17 16 H28 M24 16 V21 M28 16 V20" /></svg>
+                </div>
+                <div>
+                  <div class="h2">API access</div>
+                  <div class="small">Production key · created Oct 2</div>
+                </div>
+              </div>
+              <div class="seg">
+                <div id="seg-pill" class="seg-pill"></div>
+                <span id="seg-ui" class="on">UI</span>
+                <span id="seg-code">&lt;/&gt; Code</span>
+              </div>
+              <div class="rule"></div>
+              <div class="cols">
+                <div>
+                  <div class="field">
+                    <div class="label">Key name</div>
+                    <div class="input">Production</div>
+                  </div>
+                  <div class="field">
+                    <div class="label">Secret key</div>
+                    <div class="input mono">nw_live_8f3a••••••••3f9a<span class="btn">Copy</span></div>
+                  </div>
+                  <div class="field">
+                    <div class="label">Rate limit</div>
+                    <div class="rate">
+                      <div class="slider"><div class="fill" style="width: 60%"></div><div class="thumb" style="left: 60%"></div></div>
+                      <b>600 / min</b>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div class="label">Scopes</div>
+                  <div class="scope"><div class="toggle on"><div class="knob"></div></div><div><div class="t">Read analytics</div><div class="small">Dashboards, reports, exports</div></div></div>
+                  <div class="scope"><div id="tg-events" class="toggle"><div class="knob"></div></div><div><div class="t">Write events</div><div class="small">Track and ingest events</div></div></div>
+                  <div class="scope"><div class="toggle"><div class="knob"></div></div><div><div class="t">Manage billing</div><div class="small">Plans, invoices, payment methods</div></div></div>
+                </div>
+              </div>
+              <div class="foot"><span class="grow">Last used 2 min ago · 12.4k requests today</span><span class="btn">Revoke</span><span class="btn btn-primary">Save changes</span></div>
+              <div class="shade"></div>
+            </div>
+
+            <!-- Back: the same key as an API request -->
+            <div class="face back card">
+              <div class="head">
+                <div class="tile">
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#635bff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M11 9 L4 16 L11 23 M21 9 L28 16 L21 23" /></svg>
+                </div>
+                <div>
+                  <div class="h2 mono" style="font-size: 34px; letter-spacing: -0.02em">create-key.ts</div>
+                  <div class="small">Node SDK · POST /v1/api_keys</div>
+                </div>
+              </div>
+              <div class="seg">
+                <div class="seg-pill"></div>
+                <span>UI</span>
+                <span class="on">&lt;/&gt; Code</span>
+              </div>
+              <div class="rule"></div>
+<div class="code"><div class="ln"><span class="tok-k">import</span> { northwind } <span class="tok-k">from</span> <span class="tok-s">"./client"</span>;</div><div class="ln"> </div><div class="ln"><span class="tok-k">const</span> key = <span class="tok-k">await</span> northwind.apiKeys.<span class="tok-f">create</span>({</div><div class="ln">  name: <span class="tok-s">"Production"</span>,</div><div class="ln"><span id="hl" class="hl"></span>  scopes: [<span class="tok-s">"analytics:read"</span>, <span class="tok-s">"events:write"</span>],</div><div class="ln">  rateLimit: <span class="tok-n">600</span>, <span class="tok-c">// requests per minute</span></div><div class="ln">});</div></div>
+              <div class="foot"><div id="resp"><span class="pill green">201 Created</span><span class="mono grow" style="color: var(--ink-2)">key.id → "key_8f3a…3f9a"</span><span class="mono">84 ms</span></div></div>
+              <div class="shade"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".stage", { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 0);
+      tl.fromTo(".front .field, .front .scope", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.04, ease: "power3.out" }, 0.15);
+      // The user enables a scope: the code on the back will reflect it.
+      tl.to("#tg-events", { backgroundColor: "#635bff", duration: 0.2, ease: "power2.out" }, 0.85);
+      tl.to("#tg-events .knob", { x: 28, duration: 0.25, ease: "back.out(1.6)" }, 0.85);
+
+      // ---- 3D Card Flip ----
+      const T = 1.6; // transition start
+      const D = 0.7; // flip duration: 21f, odd, so the edge-on 90deg falls between frames 10 and 11
+      const CARD = { x: 280, y: 180, w: 1360, h: 720 }; // #flip box in scene px (matches CSS)
+      const PERSPECTIVE = 2000; // .stage perspective (matches CSS)
+      const OVERSHOOT = 0.05; // ~3.4deg past 180 before settling
+
+      // power3.inOut plus a bump on the second half: same 90deg midpoint, lands past 180 and eases back.
+      const io = gsap.parseEase("power3.inOut");
+      const flipEase = (p) => io(p) + OVERSHOOT * Math.sin(Math.PI * Math.max(0, p * 2 - 1)) ** 2;
+      // Secondary properties are driven by the card's angle, so they can't drift out of sync with it.
+      // These eases return to 0 at p=1, so each tween ends back at its from-value.
+      const angle = (p) => Math.PI * flipEase(p);
+      const edgeOn = (p) => 1 - Math.abs(Math.cos(angle(p))); // 0 face-on, 1 edge-on
+      const sinA = (p) => Math.sin(angle(p)); // dips negative in the overshoot: a tiny scale rebound
+      // Perspective pulls the card's projection toward its near edge by about (w/2)^2 / 2P * sin(2θ).
+      const SHIFT = CARD.w ** 2 / (8 * PERSPECTIVE); // ~116px
+      const sin2A = (p) => Math.sin(2 * angle(p));
+
+      // Telegraph: the segmented control switches to Code, then the card turns.
+      tl.to("#seg-pill", { x: 124, duration: 0.24, ease: "power3.inOut" }, T - 0.34);
+      tl.to("#seg-ui", { color: "#8898aa", duration: 0.2 }, T - 0.3);
+      tl.to("#seg-code", { color: "#0a2540", duration: 0.2 }, T - 0.3);
+
+      tl.fromTo("#flip", { rotationY: 0 }, { rotationY: 180, duration: D, ease: flipEase }, T);
+      tl.fromTo("#flip", { scale: 1 }, { scale: 0.92, duration: D, ease: sinA }, T); // dips to 0.92 edge-on
+      tl.fromTo(".shade", { opacity: 0 }, { opacity: 0.3, duration: D, ease: edgeOn }, T); // faces darken as they turn from the light
+      tl.fromTo("#shadow", { scaleX: 1, opacity: 0.7, filter: "blur(36px)" }, { scaleX: 0.06, opacity: 1, filter: "blur(12px)", duration: D, ease: edgeOn }, T);
+      tl.fromTo("#shadow", { x: 0 }, { x: -SHIFT, duration: D, ease: sin2A }, T); // follow the projected card, not the pivot
+
+      // ---- Scene B landing: the request "runs" ----
+      tl.fromTo("#hl", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.5, ease: "expo.out" }, T + D - 0.05);
+      tl.fromTo("#resp", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, T + D + 0.15);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
