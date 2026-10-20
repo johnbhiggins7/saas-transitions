@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.4;duration=1.4" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      .cam { position: absolute; inset: 0; } /* camera layer: transforms go here, filters on the unscaled scene */
+
+      /* ---- Scene A: release queue ---- */
+      .kpis { position: absolute; left: 280px; top: 108px; width: 1368px; height: 150px; }
+      .kpis .card { height: 150px; }
+      .release { position: absolute; left: 280px; top: 282px; width: 1368px; height: 560px; }
+      .release-head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+      .release .tr { grid-template-columns: 2.2fr 1fr 1.4fr 0.8fr; }
+      #veil { position: absolute; inset: 0; background: var(--bg); opacity: 0; }
+
+      /* ---- The type: an SVG mask applied to scene B ---- */
+      .type-defs { position: absolute; width: 0; height: 0; }
+      .type-defs text { font-family: Inter, sans-serif; font-weight: 900; font-size: 440px; fill: #fff; }
+
+      /* ---- Scene B: release console (dark, so the letterforms read against the washed-out scene A) ---- */
+      /* Two glows on the ink: inside the letters the fill varies from teal to indigo, so they read as windows, not as ink-coloured text. */
+      #s2 { z-index: 2; color: #fff; -webkit-mask: url(#type-mask); mask: url(#type-mask);
+        background: radial-gradient(1000px 640px at 84% 10%, rgba(99, 91, 255, 0.6), rgba(99, 91, 255, 0) 70%),
+          radial-gradient(1000px 720px at 6% 96%, rgba(20, 184, 166, 0.42), rgba(20, 184, 166, 0) 70%), var(--ink); }
+      #s2 .copy { position: absolute; left: 160px; top: 120px; }
+      #s2 .eyebrow { color: #5eead4; }
+      #s2 .h1 { margin-top: 14px; }
+      #live { position: absolute; right: 160px; top: 150px; height: 44px; padding: 0 20px; border-radius: 22px; font-size: 18px; background: rgba(16, 185, 129, 0.16); color: #34d399; gap: 10px; }
+      #live i { width: 10px; height: 10px; border-radius: 50%; background: #34d399; display: inline-block; }
+      .dk { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); }
+      .steps { position: absolute; left: 160px; top: 320px; width: 1600px; height: 160px; }
+      .step { display: flex; align-items: center; gap: 20px; padding: 0 28px; }
+      .check { width: 52px; height: 52px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; flex: none; }
+      .step-name { font-size: 26px; font-weight: 650; letter-spacing: -0.015em; }
+      .step-time { font-family: var(--mono); font-size: 17px; color: rgba(255, 255, 255, 0.55); margin-top: 6px; }
+      .chart { position: absolute; left: 160px; top: 520px; width: 1600px; height: 440px; padding: 32px 40px; }
+      .chart-head { display: flex; align-items: baseline; gap: 18px; }
+      .chart-head .small { color: rgba(255, 255, 255, 0.55); font-size: 18px; margin-right: auto; }
+      .chart-head .card-value { margin: 0; }
+      .chart .bars { height: 300px; margin-top: 28px; gap: 20px; }
+      .chart .bar.soft { background: #3b3f8f; }
+      .chart .bar.hi { background: linear-gradient(#5eead4, #635bff); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4.5" data-width="1920" data-height="1080">
+      <!-- The headline lives in a mask: white letters = where scene B shows. Kerning is baked into the x lists (Inter 900, 440px, −0.025em). -->
+      <svg class="type-defs" aria-hidden="true">
+        <defs>
+          <!-- Motion blur for the letter edges. On #push-pan (translated, never scaled), so stdDeviation stays in screen px. -->
+          <filter id="edge-blur" filterUnits="userSpaceOnUse" x="-300" y="-300" width="2520" height="1680" color-interpolation-filters="sRGB">
+            <feGaussianBlur id="edge-blur-fx" stdDeviation="0" />
+          </filter>
+          <mask id="type-mask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="1920" height="1080">
+            <g id="push-pan" filter="url(#edge-blur)">
+              <g id="push-zoom">
+                <g id="w1" opacity="0"><text x="456.6 738.6 1057.6 1174.7" y="510">SHIP</text></g>
+                <g id="w2" opacity="0"><text x="133.2 339.2 665.5 943.2 1234.3 1492.9" y="890">FASTER</text></g>
+              </g>
+            </g>
+            <rect id="mask-fill" width="1920" height="1080" fill="#fff" opacity="0" />
+          </mask>
+        </defs>
+      </svg>
+
+      <!-- Scene A: release queue, stuck in review -->
+      <div id="s1" class="scene">
+        <div class="cam dots">
+          <div class="app">
+            <aside class="app-sidebar">
+              <div class="brand"><span class="brand-mark"></span>Northwind</div>
+              <div class="nav-item"><span class="nav-icon"></span>Home</div>
+              <div class="nav-item"><span class="nav-icon"></span>Analytics</div>
+              <div class="nav-item active"><span class="nav-icon"></span>Releases</div>
+              <div class="nav-item"><span class="nav-icon"></span>Workflows</div>
+              <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+            </aside>
+            <div class="app-body">
+              <div class="app-topbar">
+                <div class="page-title">Releases</div>
+                <div class="search">Search</div>
+                <div class="avatar sky">JL</div>
+              </div>
+            </div>
+            <div class="kpis grid-3">
+              <div class="card kpi"><div class="card-label">Lead time</div><div class="card-value">9.4 days</div><span class="delta down">+2.1d</span></div>
+              <div class="card kpi"><div class="card-label">Deploys this week</div><div class="card-value">3</div><span class="delta down">−40%</span></div>
+              <div class="card kpi"><div class="card-label">Open pull requests</div><div class="card-value">27</div><span class="delta down">+9</span></div>
+            </div>
+            <div class="card release">
+              <div class="release-head"><div class="h3">Release 4.2</div><span class="pill amber">Blocked · 4 checks</span></div>
+              <div class="table">
+                <div class="tr head"><span>Change</span><span>Owner</span><span>Status</span><span>Waiting</span></div>
+                <div class="tr row"><span class="cell-main">Usage-based billing</span><span><span class="avatar pink">MK</span></span><span class="pill amber">In review</span><span>4 days</span></div>
+                <div class="tr row"><span class="cell-main">Audit log export</span><span><span class="avatar teal">RS</span></span><span class="pill pink">Changes requested</span><span>6 days</span></div>
+                <div class="tr row"><span class="cell-main">SSO for teams</span><span><span class="avatar amber">DP</span></span><span class="pill amber">In review</span><span>3 days</span></div>
+                <div class="tr row"><span class="cell-main">Webhooks v2</span><span><span class="avatar sky">JL</span></span><span class="pill green">Approved</span><span>—</span></div>
+                <div class="tr row"><span class="cell-main">Dashboard filters</span><span><span class="avatar">AN</span></span><span class="pill">Waiting on QA</span><span>5 days</span></div>
+                <div class="tr row"><span class="cell-main">Rate limits v3</span><span><span class="avatar pink">MK</span></span><span class="pill amber">In review</span><span>7 days</span></div>
+                <div class="tr row"><span class="cell-main">CSV import</span><span><span class="avatar teal">RS</span></span><span class="pill amber">In review</span><span>2 days</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="veil"></div>
+      </div>
+
+      <!-- Scene B: the same release, shipped. Visible only through the letterforms until the push lands. -->
+      <div id="s2" class="scene next">
+        <div class="cam">
+          <div class="copy">
+            <div class="eyebrow">Release 4.2 · Production</div>
+            <div class="h1">Shipped in 38 minutes</div>
+          </div>
+          <span id="live" class="pill"><i></i>Live</span>
+          <div class="steps grid-3" style="grid-template-columns: repeat(4, 1fr)">
+            <div class="dk step"><span class="check"><svg width="26" height="26" viewBox="0 0 26 26"><path d="M6 13.5l4.5 4.5L20 8.5" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span><div><div class="step-name">Build</div><div class="step-time">2m 04s</div></div></div>
+            <div class="dk step"><span class="check"><svg width="26" height="26" viewBox="0 0 26 26"><path d="M6 13.5l4.5 4.5L20 8.5" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span><div><div class="step-name">Test</div><div class="step-time">11m 40s</div></div></div>
+            <div class="dk step"><span class="check"><svg width="26" height="26" viewBox="0 0 26 26"><path d="M6 13.5l4.5 4.5L20 8.5" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span><div><div class="step-name">Review</div><div class="step-time">18m 12s</div></div></div>
+            <div class="dk step"><span class="check"><svg width="26" height="26" viewBox="0 0 26 26"><path d="M6 13.5l4.5 4.5L20 8.5" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span><div><div class="step-name">Deploy</div><div class="step-time">6m 31s</div></div></div>
+          </div>
+          <div class="dk chart">
+            <div class="chart-head">
+              <div class="h3">Deploys per week</div>
+              <div class="small">last 12 weeks</div>
+              <div class="card-value">21</div>
+              <span class="delta up">7× faster</span>
+            </div>
+            <div class="bars">
+              <div class="bar soft" style="height: 14%"></div><div class="bar soft" style="height: 12%"></div><div class="bar soft" style="height: 18%"></div>
+              <div class="bar soft" style="height: 15%"></div><div class="bar soft" style="height: 22%"></div><div class="bar" style="height: 34%"></div>
+              <div class="bar" style="height: 45%"></div><div class="bar" style="height: 52%"></div><div class="bar" style="height: 64%"></div>
+              <div class="bar" style="height: 76%"></div><div class="bar" style="height: 88%"></div><div class="bar hi" style="height: 100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
+      tl.fromTo(".release", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.12);
+      tl.fromTo(".release .row", { x: -16, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: "power3.out" }, 0.3);
+
+      // ---- Kinetic Type Mask ----
+      const T = 1.4;           // slam start (transition frame 0 = video frame 42)
+      const SLAM = 0.17;       // each word: 5f
+      const W2 = 0.13;         // "FASTER" starts 4f after "SHIP"
+      const TP = T + 0.7;      // push start (transition frame 21): 12f of headline after the second slam; the cubic push keeps it legible ~8f more
+      const DP = 0.7;          // push: 21f
+      const D = TP + DP - T;   // whole transition, slam to cover (1.4s)
+
+      // Stem of the I in SHIP: the door the camera goes through. Center and size in mask px (Inter 900, 440px), hard-coded.
+      const STEM = { cx: 1121.6, cy: 350, w: 87, h: 320 };
+      const COVER = Math.max(1920 / STEM.w, 1080 / STEM.h); // 22×: the stem's width spans the frame
+      const S = COVER * 1.3;                                 // overshoot so the blurred stem edges leave the frame
+      const CREEP = 1.04;                                    // the type drifts toward camera during the hold
+
+      // scale = from × (to/from)^accel(p): constant ratio per frame, accelerating. A linear scale tween lurches at the end.
+      const accel = gsap.parseEase("power2.in"); // GSAP power2 is cubic: p³
+      const logZoom = (r) => (p) => (Math.pow(r, accel(p)) - 1) / (r - 1);
+
+      gsap.set("#w1", { svgOrigin: "960 350" });   // each word slams around its own center
+      gsap.set("#w2", { svgOrigin: "960 730" });
+      gsap.set("#push-zoom", { svgOrigin: `${STEM.cx} ${STEM.cy}` });
+      gsap.set("#s2 .cam", { transformOrigin: "960px 540px" });
+
+      // Slam: oversized and already solid, accelerating into the stop. Any opacity ramp leaves a grey ghost frame.
+      tl.set("#s2", { opacity: 1 }, T);
+      [["#w1", T], ["#w2", T + W2]].forEach(([w, t]) => {
+        tl.set(w, { opacity: 1 }, t);
+        tl.fromTo(w, { scale: 2 }, { scale: 1, duration: SLAM, ease: "power1.in", immediateRender: false }, t); // quad: power2.in would hang at 2× for 3f
+        tl.to(w, { scale: 0.985, duration: 0.07, ease: "power2.out", yoyo: true, repeat: 1 }, t + SLAM); // impact give
+      });
+      // Scene A is knocked back on the first impact: it recedes, softens and washes toward --bg.
+      tl.to("#s1 .cam", { scale: 0.94, duration: 0.45, ease: "power3.out" }, T + SLAM);
+      tl.to("#s1", { filter: "blur(10px)", duration: 0.45, ease: "power3.out" }, T + SLAM);
+      tl.to("#veil", { opacity: 0.55, duration: 0.45, ease: "power3.out" }, T + SLAM);
+
+      // Scene B is alive inside the letters: bars grow and the UI slides up behind the type, so the letters read as windows.
+      tl.fromTo("#s2 .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.5, stagger: 0.03, ease: "power3.out" }, T + 0.2);
+      tl.fromTo("#s2 .cam", { scale: 0.86, y: 60 }, { scale: 0.88, y: 0, duration: TP - T, ease: "power2.out" }, T);
+
+      // Hold: the type creeps toward camera around the stem, picking up speed into the push.
+      tl.to("#push-zoom", { scale: CREEP, duration: TP - (T + W2 + SLAM), ease: "sine.in" }, T + W2 + SLAM);
+      // Push: the type is the near plane, so it scales CREEP → S; scene B is far, so it only drifts 0.88 → 1.
+      tl.to("#push-zoom", { scale: S, duration: DP, ease: logZoom(S / CREEP) }, TP);
+      tl.to("#push-pan", { x: 960 - STEM.cx, y: 540 - STEM.cy, duration: DP, ease: "power2.inOut" }, TP);
+      tl.to("#s1 .cam", { scale: 1.06, duration: DP, ease: "power2.in" }, TP);
+      tl.to("#s2 .cam", { scale: 1, duration: DP + 0.45, ease: "power3.inOut" }, TP);
+      tl.fromTo("#edge-blur-fx", { attr: { stdDeviation: 0 } }, { attr: { stdDeviation: 8 }, duration: DP * 0.45, ease: "power2.in" }, TP + DP * 0.55);
+
+      // Handoff: the stem spans the frame at T + D·cbrt(ln(COVER/CREEP)/ln(S/CREEP)) ≈ frame 41.4; at T + D it is 1.3× wider.
+      // Make the mask solid (so later tweaks to S can't open a gap) and drop scene A.
+      tl.set("#mask-fill", { opacity: 1 }, T + D);
+      tl.set("#s1", { visibility: "hidden" }, T + D);
+
+      // ---- Landing ----
+      // The headline copy would read as clipped fragments inside the letters, so it arrives with the landing instead.
+      tl.fromTo("#s2 .copy", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, T + D - 0.05);
+      tl.fromTo("#live", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(1.6)" }, T + D - 0.05);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
