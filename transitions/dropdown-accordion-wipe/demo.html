@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.7" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* ---- Scene A: marketing site with a top nav ---- */
+      #nav { position: absolute; left: 0; top: 0; width: 1920px; height: 96px; background: var(--surface); border-bottom: 1px solid var(--border); }
+      #nav .brand { position: absolute; left: 120px; top: 32px; padding: 0; }
+      .nav-link { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 18px; border-radius: 10px; font-size: 18px; font-weight: 500; color: var(--ink-2); }
+      /* Trigger box is hard-coded: the cursor and the dropdown both anchor to it. */
+      #nav-products { position: absolute; left: 360px; top: 24px; width: 156px; color: var(--ink); }
+      .nav-links { position: absolute; left: 524px; top: 24px; display: flex; }
+      .nav-right { position: absolute; right: 120px; top: 24px; display: flex; align-items: center; gap: 12px; }
+      .nav-right .btn { height: 48px; }
+
+      .hero { position: absolute; left: 120px; top: 236px; width: 800px; }
+      .hero .h1 { font-size: 76px; margin-top: 20px; }
+      .hero .body { margin-top: 28px; width: 660px; }
+      .hero .ctas { display: flex; gap: 16px; margin-top: 44px; }
+
+      #shot { position: absolute; left: 1000px; top: 196px; width: 800px; height: 700px; padding: 32px; }
+      #shot .head { display: flex; align-items: center; justify-content: space-between; }
+      #shot .kpis { margin-top: 28px; gap: 16px; }
+      #shot .kpis .card { padding: 18px 20px; box-shadow: none; }
+      #shot .kpis .card-value { font-size: 30px; }
+      #shot .bars { position: absolute; left: 32px; right: 32px; bottom: 32px; height: 330px; gap: 16px; }
+      #ripple { left: 440px; top: 50px; }
+      #cursor { left: 432px; top: 46px; z-index: 60; } /* tip (8,4) sits at 440,50 = trigger center */
+
+      /* ---- The dropdown: a window whose four edges are CSS variables ---- */
+      #s2 { background: transparent; z-index: 2; }
+      #panel {
+        --l: 344px; --t: 84px; --r: 1136px; --b: 996px; /* insets from the frame edges; --b 996 = closed (height 0) */
+        position: absolute; left: var(--l); top: var(--t); right: var(--r); bottom: var(--b);
+        overflow: hidden; border-radius: 14px; background: var(--surface);
+        box-shadow: 0 0 0 1px var(--border), var(--shadow-lg); /* not .dropdown: its 1px border and 8px padding would offset #world; this copies its surface, radius 14px and --shadow-lg, with the border as a shadow */
+      }
+      /* Counter-positioned by the same variables, so everything inside stays in scene coordinates while the window grows. */
+      #world { position: absolute; left: calc(-1 * var(--l)); top: calc(-1 * var(--t)); width: 1920px; height: 1080px; }
+
+      .mi { position: absolute; left: 352px; width: 424px; height: 68px; border-radius: 10px; }
+      .mi .ic { position: absolute; left: 14px; top: 16px; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+      .mi .t { position: absolute; left: 64px; top: 14px; font-size: 19px; font-weight: 600; line-height: 1; letter-spacing: -0.01em; color: var(--ink); white-space: nowrap; }
+      .mi .d { position: absolute; left: 64px; top: 41px; font-size: 15px; line-height: 1; color: var(--muted); white-space: nowrap; }
+      /* The travelling label is styled as the final headline and starts at scale 19/88. */
+      #wf-title { font-size: 88px; font-weight: 700; letter-spacing: -0.04em; transform-origin: 0 0; }
+
+      /* ---- Scene B: Workflows, inside the dropdown's surface ---- */
+      #b-eyebrow { position: absolute; left: 160px; top: 132px; }
+      #b-body { position: absolute; left: 160px; top: 288px; width: 900px; }
+      #b-cta { position: absolute; right: 160px; top: 196px; }
+      #b-canvas { position: absolute; left: 160px; top: 400px; width: 1600px; height: 600px; border: 1px solid var(--border); border-radius: 20px; background-color: var(--bg); }
+      #b-canvas .head { position: absolute; left: 32px; top: 28px; display: flex; align-items: center; gap: 14px; }
+      .node { position: absolute; top: 230px; width: 400px; height: 140px; padding: 22px 24px; display: grid; grid-template-columns: 48px 1fr; column-gap: 16px; align-content: center; }
+      .node .ic { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; grid-row: span 3; }
+      .node .h3 { font-size: 22px; margin-top: 8px; }
+      .node .small { margin-top: 4px; }
+      #wires { position: absolute; left: 0; top: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: Northwind homepage -->
+      <div id="s1" class="scene">
+        <div id="nav">
+          <div class="brand"><span class="brand-mark"></span>Northwind</div>
+          <div id="nav-products" class="nav-link">Products<svg id="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M4 6 L8 10 L12 6" fill="none" stroke="#0a2540" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+          <div class="nav-links"><span class="nav-link">Solutions</span><span class="nav-link">Customers</span><span class="nav-link">Pricing</span><span class="nav-link">Docs</span></div>
+          <div class="nav-right"><span class="nav-link">Sign in</span><div class="btn btn-primary">Start free</div></div>
+        </div>
+        <div class="hero">
+          <div class="eyebrow">Analytics for operators</div>
+          <div class="h1">Every number your team runs on.</div>
+          <div class="body">Northwind connects billing, product and support data so every team works from the same live dashboard.</div>
+          <div class="ctas"><div class="btn btn-primary">Start free</div><div class="btn">Book a demo</div></div>
+        </div>
+        <div id="shot" class="card">
+          <div class="head"><div class="h3">Revenue</div><span class="pill indigo">Last 90 days</span></div>
+          <div class="kpis grid-3">
+            <div class="card"><div class="card-label">MRR</div><div class="card-value">$128.4k</div></div>
+            <div class="card"><div class="card-label">Customers</div><div class="card-value">2,316</div></div>
+            <div class="card"><div class="card-label">Net retention</div><div class="card-value">118%</div></div>
+          </div>
+          <div class="bars">
+            <div class="bar soft" style="height: 38%"></div><div class="bar soft" style="height: 46%"></div><div class="bar soft" style="height: 42%"></div>
+            <div class="bar soft" style="height: 55%"></div><div class="bar" style="height: 61%"></div><div class="bar" style="height: 58%"></div>
+            <div class="bar" style="height: 72%"></div><div class="bar" style="height: 80%"></div><div class="bar" style="height: 100%"></div>
+          </div>
+        </div>
+        <div id="ripple" class="ripple"></div>
+      </div>
+
+      <!-- Scene B lives inside the dropdown: #panel is the menu surface, then the whole frame -->
+      <div id="s2" class="scene next">
+        <div id="panel">
+          <div id="world">
+            <div class="mi mi-up" style="top: 92px">
+              <span class="ic" style="background: #eeedff"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 15 V9 M9 15 V3 M15 15 V7" stroke="#635bff" stroke-width="2.6" stroke-linecap="round" /></svg></span>
+              <span class="t">Analytics</span><span class="d">Dashboards and reports</span>
+            </div>
+            <div class="mi mi-up" style="top: 160px">
+              <span class="ic" style="background: #e0f2fe"><svg width="18" height="18" viewBox="0 0 18 18"><ellipse cx="9" cy="4.5" rx="6" ry="2.5" fill="none" stroke="#0ea5e9" stroke-width="2" /><path d="M3 4.5 V13.5 C3 15 15 15 15 13.5 V4.5" fill="none" stroke="#0ea5e9" stroke-width="2" /></svg></span>
+              <span class="t">Data sources</span><span class="d">120+ connectors</span>
+            </div>
+            <div id="mi-wf" class="mi" style="top: 228px">
+              <span class="ic" style="background: #ccfbf1"><svg width="18" height="18" viewBox="0 0 18 18"><circle cx="4" cy="4" r="2.4" fill="#14b8a6" /><circle cx="14" cy="14" r="2.4" fill="#14b8a6" /><path d="M4 6.5 V9 C4 11 6 11.5 9 11.5 H11.5" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round" /></svg></span>
+              <span id="wf-title" class="t">Workflows</span><span class="d">Automate the handoffs</span>
+            </div>
+            <div class="mi mi-low" style="top: 296px">
+              <span class="ic" style="background: #fff4e0"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M4.5 12.5 V8 A4.5 4.5 0 0 1 13.5 8 V12.5 L15 14 H3 Z" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round" /></svg></span>
+              <span class="t">Alerts</span><span class="d">Know when a metric moves</span>
+            </div>
+            <div class="mi mi-low" style="top: 364px">
+              <span class="ic" style="background: #fde8f3"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M9 2 L10.6 7.4 L16 9 L10.6 10.6 L9 16 L7.4 10.6 L2 9 L7.4 7.4 Z" fill="#ec4899" /></svg></span>
+              <span class="t">AI Insights</span><span class="d">Ask your data anything</span>
+            </div>
+
+            <div id="b-eyebrow" class="eyebrow">Products</div>
+            <div id="b-body" class="body">Automate the handoffs between billing, CRM and Slack. No code, no cron jobs.</div>
+            <div id="b-cta" class="btn btn-primary">Create workflow</div>
+            <div id="b-canvas" class="dots">
+              <div class="head"><div class="h3">Payment → Slack alert</div><span class="pill green">Live</span></div>
+              <svg id="wires" width="1600" height="600" viewBox="0 0 1600 600">
+                <path class="wire" d="M480 300 H600" fill="none" stroke="#635bff" stroke-width="3" stroke-dasharray="120" stroke-dashoffset="120" />
+                <path class="wire" d="M1000 300 H1120" fill="none" stroke="#635bff" stroke-width="3" stroke-dasharray="120" stroke-dashoffset="120" />
+              </svg>
+              <div class="card node" style="left: 80px">
+                <span class="ic" style="background: #eeedff"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="5" width="18" height="12" rx="3" fill="none" stroke="#635bff" stroke-width="2.2" /><path d="M2 9.5 H20" stroke="#635bff" stroke-width="2.2" /></svg></span>
+                <span class="pill indigo">Trigger</span><div class="h3">New payment</div><div class="small">Stripe · invoice.paid</div>
+              </div>
+              <div class="card node" style="left: 600px">
+                <span class="ic" style="background: #ccfbf1"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 17 V11 M11 17 V5 M18 17 V9" stroke="#14b8a6" stroke-width="2.6" stroke-linecap="round" /></svg></span>
+                <span class="pill">Action</span><div class="h3">Enrich account</div><div class="small">Northwind · MRR, plan, owner</div>
+              </div>
+              <div class="card node" style="left: 1120px">
+                <span class="ic" style="background: #fde8f3"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 5 H18 V14 H9 L5 18 V14 H4 Z" fill="none" stroke="#ec4899" stroke-width="2.2" stroke-linejoin="round" /></svg></span>
+                <span class="pill">Action</span><div class="h3">Post to #revenue</div><div class="small">Slack · channel message</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <svg id="cursor" class="cursor" viewBox="0 0 40 40"><path d="M8 4 L8 32 L15 25 L20 36 L25 34 L20 23 L30 23 Z" fill="#0a2540" stroke="#fff" stroke-width="2.5" stroke-linejoin="round" /></svg>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const F = 1 / 30;
+
+      // ---- Scene A entrance ----
+      tl.fromTo("#nav", { y: -24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0);
+      tl.fromTo(".hero > *", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0.08);
+      tl.fromTo("#shot", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 0.18);
+      tl.fromTo("#shot .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.5, stagger: 0.03, ease: "power3.out" }, 0.4);
+
+      // ---- Dropdown & Accordion Wipe ----
+      const T = 1.6; // click = transition start
+      const D = 0.7; // click to full cover (21f @ 30fps)
+      const OPEN_B = 640; // bottom inset when the menu is open: 1080 - 84 - 356
+      const OVER = -24; // final inset on the side and top edges, so the 14px corners leave the frame
+      const DROP_B = OVER - 144; // the bottom goes further: the 144px of rows riding below it must clear the frame too
+      const TITLE = { x: 416, y: 242, s0: 19 / 88 }; // #wf-title in the menu (scene px)
+      const HEAD = { x: 160, y: 168 }; // #wf-title as scene B's headline
+
+      // Telegraph: the cursor travels to the trigger and hovers it before the click.
+      tl.fromTo("#cursor", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power1.out" }, 0.6);
+      tl.fromTo("#cursor", { x: 820, y: 780 }, { x: 0, y: 0, duration: 0.65, ease: "power3.inOut" }, 0.7);
+      tl.fromTo("#nav-products", { backgroundColor: "rgba(241,244,249,0)" }, { backgroundColor: "rgba(241,244,249,1)", duration: 0.15, ease: "power1.out" }, 1.3);
+      tl.to("#nav-products", { scale: 0.96, duration: 0.07, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.07);
+      tl.fromTo("#ripple", { scale: 0, opacity: 0.55 }, { scale: 3.2, opacity: 0, duration: 0.45, ease: "power2.out" }, T);
+      tl.fromTo("#chev", { rotation: 0 }, { rotation: 180, duration: 0.25, ease: "power3.out" }, T);
+
+      // Open (f0-6): an ordinary dropdown. The panel's bottom inset drops from closed to open.
+      tl.set("#s2", { opacity: 1 }, T);
+      tl.fromTo("#panel", { "--b": "996px" }, { "--b": `${OPEN_B}px`, duration: 0.2, ease: "power3.out" }, T);
+      tl.fromTo("#panel", { opacity: 0 }, { opacity: 1, duration: F, ease: "none" }, T); // one frame: a half-opaque menu ghosts the hero text through it
+      tl.fromTo(".mi", { y: -10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.15, stagger: 0.02, ease: "power2.out" }, T); // done by f7, before the cascade (f8) takes over y on .mi-low
+      tl.to("#cursor", { x: 128, y: 216, duration: 0.24, ease: "power2.inOut" }, T + 2 * F); // slides onto Workflows
+      tl.fromTo("#mi-wf", { backgroundColor: "rgba(238,237,255,0)" }, { backgroundColor: "rgba(238,237,255,1)", duration: 0.1, ease: "power1.out" }, T + 6 * F);
+
+      // Cascade (f8-17): the bottom keeps going, past the frame edge.
+      // Accordion: the rows below Workflows ride the bottom edge out (same ease, same distance); the rows above lift away.
+      tl.to("#panel", { "--b": `${DROP_B}px`, duration: 0.3, ease: "power3.inOut" }, T + 8 * F);
+      tl.to(".mi-low", { y: OPEN_B - DROP_B, duration: 0.3, ease: "power3.inOut" }, T + 8 * F);
+      tl.to(".mi-up", { y: -24, opacity: 0, duration: 0.2, ease: "power2.in" }, T + 9 * F);
+      // Spread (f12-21): left, right and top open together; corners flatten as the menu becomes the page.
+      tl.to("#panel", { "--l": `${OVER}px`, "--r": `${OVER}px`, "--t": `${OVER}px`, borderRadius: 0, duration: 0.3, ease: "power3.inOut" }, T + 12 * F);
+
+      // The hovered item's label becomes scene B's headline; its row chrome and the cursor drop away.
+      tl.set("#wf-title", { scale: TITLE.s0 }, 0);
+      tl.to("#mi-wf", { backgroundColor: "rgba(238,237,255,0)", duration: 0.15, ease: "power1.in" }, T + 10 * F);
+      tl.to("#mi-wf .ic, #mi-wf .d", { opacity: 0, duration: 0.15, ease: "power1.in" }, T + 10 * F);
+      tl.to("#cursor", { opacity: 0, duration: 0.15, ease: "power1.in" }, T + 10 * F);
+      // Soft start on purpose: #panel clips its content and the label sits only 72px inside the menu's left edge,
+      // so the label must not outrun that edge before the spread (f12) carries it away.
+      tl.to("#wf-title", { x: HEAD.x - TITLE.x, y: HEAD.y - TITLE.y, scale: 1, duration: 0.5, ease: "power2.inOut" }, T + 10 * F);
+
+      tl.set("#s1", { visibility: "hidden" }, T + D);
+
+      // ---- Scene B: arrives once the window is nearly full, so the growing surface reads as a clean sheet ----
+      tl.fromTo("#b-canvas", { y: 680 }, { y: 0, duration: 0.9, ease: "expo.out" }, T + 16 * F);
+      tl.fromTo("#b-eyebrow", { x: -16, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "expo.out" }, T + 20 * F);
+      tl.fromTo("#b-body", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, T + 22 * F);
+      tl.fromTo(".node", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: "expo.out" }, T + 22 * F);
+      tl.fromTo("#b-cta", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, T + 24 * F);
+      tl.to(".wire", { strokeDashoffset: 0, duration: 0.4, stagger: 0.1, ease: "power2.inOut" }, T + 1.0);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
