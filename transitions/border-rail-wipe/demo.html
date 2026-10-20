@@ -159,7 +159,7 @@
 
       // ---- Border & Navigation Rail Wipe ----
       const T = 1.5;          // transition start
-      const D = 0.6;          // rail travel (18f @ 30fps)
+      const D = 0.6;          // rail travel (36f @ 60fps)
       const RAIL_W = 320;     // rail width (matches CSS)
       const TRAVEL = 1920 - RAIL_W; // dock flush with the right edge as scene B's inspector
 
@@ -173,7 +173,7 @@
       // Scene B drifts in behind the edge a little slower than the rail, so it reads as a layer underneath.
       tl.fromTo("#s2 .cam", { x: -140 }, { x: 0, duration: D + 0.3, ease: "power3.out" }, T);
 
-      // Hard-swap the rail's contents at its velocity peak (f9 of 18, ~270–300px/frame): the motion hides the cut,
+      // Hard-swap the rail's contents at its velocity peak (f18 of 36, ~165px/frame): the motion hides the cut,
       // and every still shows either the whole nav or the whole inspector, never a half-faded ghost.
       tl.set(".rail-nav", { opacity: 0 }, T + D / 2);
       tl.set(".rail-insp", { opacity: 1 }, T + D / 2);

@@ -2,7 +2,7 @@
 name: border-rail-wipe
 title: Border & Navigation Rail Wipe
 category: masking
-duration: 0.6s (18f @ 30fps)
+duration: 0.6s (36f @ 60fps)
 energy: medium
 description: The app's sidebar rail lifts off and slides across the frame as a wipe, revealing the next view behind its trailing edge, then docks on the far side as that view's own panel.
 ---
@@ -22,16 +22,16 @@ A wipe whose edge is a real piece of the app's interface. The navigation rail li
 
 Avoid it when scene A has no visible rail, border or panel edge (a hero, a full-bleed chart). A grey slab crossing the frame then reads as a generic wipe. Use [geometric-ribbon-wipe](../geometric-ribbon-wipe/SKILL.md) or [light-sweep](../light-sweep/SKILL.md) instead.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −17 → 0 | The row being opened highlights at −17. From −9 the rail lifts: a 72px shadow fades in over 9f, and a 4px indigo line draws down its leading edge (scaleY 0 → 1, 7f). |
-| Break away | 0 → 6 | One `--x` tween (`power3.inOut`) moves the rail and scene B's clip edge together. They cover only 237px in 6f: the rail is easing out of the layout. |
-| Peak | 6 → 12 | Speed climbs to about 270–300px per frame at f9–f10. At f9 the rail's contents hard-swap from nav to inspector. The motion hides the cut, and every frame shows a complete panel. |
-| Reveal | 0 → 27 | Scene B drifts x −140 → 0 behind the edge (`power3.out`, 27f), slower than the rail, so it reads as a layer underneath. |
-| Dock | 12 → 18 | The rail decelerates into x = 1600 and becomes scene B's right-hand inspector. The edge line fades from f15, the lift shadow from f16.5, and scene A is hidden at f18. |
-| Land | 16.5 → 32 | Wires between nodes draw on (10.5f each, 2.4f stagger). The selected node's focus ring pops at f18 (`back.out(2)`). |
+| Telegraph | −33 → 0 | The row being opened highlights at −33. From −18 the rail lifts: a 72px shadow fades in over 18f, and a 4px indigo line draws down its leading edge (scaleY 0 → 1, 15f). |
+| Break away | 0 → 12 | One `--x` tween (`power3.inOut`) moves the rail and scene B's clip edge together. They cover only 158px in 12f: the rail is easing out of the layout. |
+| Peak | 12 → 24 | Speed climbs to about 165px per frame at f18–f19. At f18 the rail's contents hard-swap from nav to inspector. The motion hides the cut, and every frame shows a complete panel. |
+| Reveal | 0 → 54 | Scene B drifts x −140 → 0 behind the edge (`power3.out`, 54f), slower than the rail, so it reads as a layer underneath. |
+| Dock | 24 → 36 | The rail decelerates into x = 1600 and becomes scene B's right-hand inspector. The edge line fades from f30, the lift shadow from f33, and scene A is hidden at f36. |
+| Land | 33 → 64 | Wires between nodes draw on (21f each, 4.8f stagger). The selected node's focus ring pops at f36 (`back.out(2)`). |
 
 ## Build it
 
@@ -46,7 +46,7 @@ Structure: `#s1` (scene A, its layout starts at `RAIL_W`) · `#s2` (scene B, cli
 ```
 
 ```js
-const T = 1.5, D = 0.6;                 // 18f
+const T = 1.5, D = 0.6;                 // 36f
 const RAIL_W = 320;
 const TRAVEL = 1920 - RAIL_W;           // dock flush right as scene B's inspector
 
@@ -70,15 +70,15 @@ The full working composition is in [demo.html](demo.html).
 
 ## Tuning
 
-- **Duration.** 0.5–0.7s for a full 1600px crossing. Below 0.5s the peak goes past 320px per frame and the rail strobes. 0.6s already peaks near 300px per frame; if the rail text judders on playback, switch to `power2.inOut` (peak about 180px per frame). A shorter crossing (docking mid-frame) can drop to 0.4s.
-- **Ease.** `power3.inOut` gives a visible break-away and dock. `power2.inOut` is calmer. Avoid `expo.inOut`: it creeps 37px in the first 5f, then peaks near 600px per frame and strobes.
+- **Duration.** 0.5–0.7s for a full 1600px crossing. Below 0.5s the peak goes past 195px per frame and the rail strobes. 0.6s already peaks near 165px per frame; if the rail text judders on playback, switch to `power2.inOut` (peak about 125px per frame). A shorter crossing (docking mid-frame) can drop to 0.4s.
+- **Ease.** `power3.inOut` gives a visible break-away and dock. `power2.inOut` is calmer. Avoid `expo.inOut`: it creeps 37px in the first 10f, then peaks near 255px per frame and strobes.
 - **Rail width.** 240–360px. Narrower reads as a line wipe and loses the "it's the sidebar" read. Wider than about 400px reads as a panel push.
 - **Scene B drift.** 80–200px. At 0, scene B looks like a still plate being uncovered. Above 200px it competes with the rail and starts to read as a [split-screen-takeover](../split-screen-takeover/SKILL.md).
 - **Tuck.** 4–12px. It only has to cover the anti-aliased clip edge, and it must stay under the rail's opaque body.
 
 ## Pitfalls
 
-- **Fading the rail contents mid-travel.** The first build faded the nav out and staggered the inspector in. Stills then showed a half-transparent ghost nav, then an empty grey slab for a frame. A hard `tl.set` swap at f9 (peak speed) can't be seen in motion and keeps every frame clean.
+- **Fading the rail contents mid-travel.** The first build faded the nav out and staggered the inspector in. Stills then showed a half-transparent ghost nav, then an empty grey slab for a frame. A hard `tl.set` swap at f18 (peak speed) can't be seen in motion and keeps every frame clean.
 - **Drifting the clipped element.** `clip-path` is in the element's own coordinates. Put the parallax `x` on `#s2` itself and the reveal edge slides away from the rail. Move a `.cam` child instead.
 - **Clip edge flush with the rail.** When the clip and the rail end on the same subpixel x, both edges are anti-aliased against scene A underneath. In this light palette, a measured flush render brightened that one column by about 4 grey levels. Against a dark scene B, the same column shows as a visible line. Tucking the edge 8px under the rail costs nothing.
 - **Two tweens for one edge.** Animating the rail's `x` and the clip inset separately lets subpixel rounding (or a later ease tweak) open a seam. Drive both from one CSS variable in one tween.
@@ -94,4 +94,4 @@ The full working composition is in [demo.html](demo.html).
 
 ## Sound
 
-A short, low-passed air swish whose peak lands on f9 (the content swap), then a soft panel click as the rail docks at f18.
+A short, low-passed air swish whose peak lands on f18 (the content swap), then a soft panel click as the rail docks at f36.
