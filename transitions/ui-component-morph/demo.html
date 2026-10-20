@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.7;duration=0.65" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Scene A copy and suggestions sit under the morphing shell; the shell grows over them. */
+      .ask { position: absolute; left: 0; top: 330px; width: 1920px; text-align: center; }
+      .ask .h1 { margin-top: 14px; }
+      .chips { position: absolute; left: 0; top: 612px; width: 1920px; display: flex; justify-content: center; align-items: center; gap: 12px; }
+      .chips .small { margin-right: 4px; }
+      .chips .pill { background: var(--surface); border: 1px solid var(--border); height: 36px; padding: 0 16px; font-size: 16px; font-weight: 500; }
+
+      /* The shell: ONE element whose box morphs from the search bar (A) to the panel (B).
+         A: 960x96 at 480,484, radius 48.  B: 1600x880 at 160,100, radius 28.  Mirrored as BAR / PANEL in the script. */
+      #shell { position: absolute; left: 480px; top: 484px; width: 960px; height: 96px; border-radius: 48px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-lg); overflow: hidden; z-index: 5; }
+
+      /* Search contents, anchored to the bar's left/right edges so they never stretch. */
+      .q { position: absolute; inset: 0; }
+      .q svg { position: absolute; left: 34px; top: 32px; width: 32px; height: 32px; }
+      .q-text { position: absolute; left: 88px; top: 0; height: 94px; display: flex; align-items: center; font-size: 31px; font-weight: 500; letter-spacing: -0.01em; color: var(--ink); white-space: nowrap; }
+      .q-text .ch { display: none; }
+      .kbd { position: absolute; right: 24px; top: 26px; height: 42px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 16px; color: var(--ink-2); }
+
+      /* Panel contents: a fixed 1600x880 layer pinned to the shell's centre, so content never drifts while the box settles. */
+      .panel { position: absolute; left: 50%; top: 50%; width: 1600px; height: 880px; margin: -440px 0 0 -800px; }
+      .p-head { position: absolute; left: 56px; top: 48px; }
+      .p-head .h2 { margin-top: 10px; }
+      .p-stat { position: absolute; right: 56px; top: 44px; text-align: right; }
+      .p-stat .card-value { font-size: 48px; margin-top: 4px; }
+      .p-stat .delta { margin-top: 6px; }
+      .rule { position: absolute; left: 56px; right: 56px; top: 176px; height: 1px; background: var(--border); }
+      .map { position: absolute; left: 40px; top: 214px; width: 960px; height: 560px; }
+      .map .land { fill: #d5dce6; }
+      .legend { position: absolute; left: 56px; top: 800px; font-size: 16px; }
+      .legend .sw-sky { background: var(--sky); } .legend .sw-teal { background: var(--teal); } .legend .sw-amber { background: var(--amber); } .legend .sw-pink { background: var(--pink); }
+      .rows { position: absolute; left: 1060px; top: 222px; width: 484px; }
+      .rows .card-label { margin-bottom: 18px; }
+      .row { height: 96px; }
+      .row-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 19px; font-weight: 600; }
+      .row-top .mono { font-size: 18px; font-weight: 500; color: var(--ink-2); }
+      .track { margin-top: 14px; height: 14px; border-radius: 7px; background: var(--surface-2); }
+      .fill { height: 14px; border-radius: 7px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4.5" data-width="1920" data-height="1080">
+      <!-- One world: the search bar and the panel are the same element at two shapes. -->
+      <div id="s1" class="scene dots">
+        <div class="ask">
+          <div class="eyebrow">Northwind Insights</div>
+          <div class="h1">What do you want to know?</div>
+        </div>
+        <div class="chips">
+          <span class="small">Try</span>
+          <span class="pill">Churn by plan</span>
+          <span class="pill">MRR this quarter</span>
+          <span class="pill">Top accounts</span>
+        </div>
+
+        <div id="shell">
+          <div class="q">
+            <svg viewBox="0 0 30 30"><circle cx="13" cy="13" r="9" fill="none" stroke="#635bff" stroke-width="3" /><path d="M20 20 L27 27" stroke="#635bff" stroke-width="3" stroke-linecap="round" /></svg>
+            <div class="q-text"><span id="typed"></span><span class="caret" id="caret"></span></div>
+            <div class="kbd" id="kbd"><span>&#8629;</span>Enter</div>
+          </div>
+
+          <div class="panel">
+            <div class="p-head">
+              <div class="eyebrow">Q3 2026 · All regions</div>
+              <div class="h2">Revenue by region</div>
+            </div>
+            <div class="p-stat">
+              <div class="card-label">Total revenue</div>
+              <div class="card-value">$4.82M</div>
+              <span class="delta up">+18.2%</span>
+            </div>
+            <div class="rule"></div>
+            <svg class="map" id="map" viewBox="0 0 960 560">
+              <g id="land"></g>
+              <g class="bubble"><circle cx="232" cy="176" r="62" fill="rgba(99,91,255,0.16)" stroke="#635bff" stroke-width="2.5" /><circle cx="232" cy="176" r="8" fill="#635bff" /></g>
+              <g class="bubble"><circle cx="506" cy="140" r="50" fill="rgba(14,165,233,0.16)" stroke="#0ea5e9" stroke-width="2.5" /><circle cx="506" cy="140" r="8" fill="#0ea5e9" /></g>
+              <g class="bubble"><circle cx="770" cy="252" r="44" fill="rgba(20,184,166,0.16)" stroke="#14b8a6" stroke-width="2.5" /><circle cx="770" cy="252" r="8" fill="#14b8a6" /></g>
+              <g class="bubble"><circle cx="336" cy="404" r="28" fill="rgba(245,158,11,0.18)" stroke="#f59e0b" stroke-width="2.5" /><circle cx="336" cy="404" r="7" fill="#f59e0b" /></g>
+              <g class="bubble"><circle cx="530" cy="330" r="20" fill="rgba(236,72,153,0.16)" stroke="#ec4899" stroke-width="2.5" /><circle cx="530" cy="330" r="6" fill="#ec4899" /></g>
+            </svg>
+            <div class="legend">
+              <span><i></i>North America</span><span><i class="sw-sky"></i>Europe</span><span><i class="sw-teal"></i>Asia-Pacific</span><span><i class="sw-amber"></i>Latin America</span><span><i class="sw-pink"></i>Middle East &amp; Africa</span>
+            </div>
+            <div class="rows">
+              <div class="card-label">By region</div>
+              <div class="row"><div class="row-top"><span>North America</span><span class="mono">$1.94M</span></div><div class="track"><div class="fill" style="width: 100%; background: #635bff"></div></div></div>
+              <div class="row"><div class="row-top"><span>Europe</span><span class="mono">$1.31M</span></div><div class="track"><div class="fill" style="width: 68%; background: #0ea5e9"></div></div></div>
+              <div class="row"><div class="row-top"><span>Asia-Pacific</span><span class="mono">$0.98M</span></div><div class="track"><div class="fill" style="width: 51%; background: #14b8a6"></div></div></div>
+              <div class="row"><div class="row-top"><span>Latin America</span><span class="mono">$0.39M</span></div><div class="track"><div class="fill" style="width: 20%; background: #f59e0b"></div></div></div>
+              <div class="row"><div class="row-top"><span>Middle East &amp; Africa</span><span class="mono">$0.20M</span></div><div class="track"><div class="fill" style="width: 10%; background: #ec4899"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ---- Static content built once, deterministically (no measuring, no randomness) ----
+      // Dot-matrix map: a 20px dot grid kept where it falls inside rough continent ellipses [cx, cy, rx, ry].
+      const LAND = [[230, 170, 170, 105], [130, 100, 90, 55], [300, 290, 50, 40], [360, 66, 46, 34], [335, 410, 72, 118], [505, 140, 72, 56], [525, 335, 90, 125], [705, 170, 195, 110], [690, 300, 58, 52], [792, 300, 62, 40], [822, 446, 76, 50]];
+      let dots = "";
+      for (let y = 20; y < 560; y += 20) for (let x = 20; x < 960; x += 20)
+        if (LAND.some(([cx, cy, rx, ry]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1)) dots += `<circle class="land" cx="${x}" cy="${y}" r="4.5"/>`;
+      document.getElementById("land").innerHTML = dots;
+      // Typed query: one span per character so typing is a seek-safe display toggle.
+      const QUERY = "Revenue by region";
+      document.getElementById("typed").innerHTML = [...QUERY].map((c) => `<span class="ch">${c === " " ? "&nbsp;" : c}</span>`).join("");
+
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".ask", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0);
+      tl.fromTo("#shell", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, 0.08);
+      tl.fromTo(".chips > *", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: "power3.out" }, 0.2);
+      tl.to(".q-text .ch", { display: "inline", duration: 0.001, stagger: 0.04 }, 0.6); // typed 0.6 -> 1.28
+
+      // ---- UI-to-UI Component Morph ----
+      const T = 1.7;  // transition start
+      const D = 0.65; // shell morph duration (~20f @ 30fps)
+      const BAR = { left: 480, top: 484, width: 960, height: 96, borderRadius: 48 };    // = #shell CSS
+      const PANEL = { left: 160, top: 100, width: 1600, height: 880, borderRadius: 28 }; // scene B box
+      const EASE = "power4.inOut";
+      const LAG = 0.1; // height trails width by 3f, so the bar visibly stretches instead of scaling up
+      // Shape progress hits 80% at 58% of a power4.inOut tween: (2(1-t))^5 / 2 = 0.2 -> t = 0.583.
+      const SETTLED = T + LAG + (D - LAG) * 0.583;
+
+      // Telegraph: Enter lights up, the bar takes a 6f press (3f down, 3f up). The eye is on the bar before it moves.
+      tl.to("#kbd", { backgroundColor: "#eeedff", borderColor: "#635bff", color: "#4b44d6", duration: 0.1, ease: "power2.out" }, T - 0.26);
+      tl.to("#shell", { scale: 0.985, duration: 0.1, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.22);
+
+      // The shell itself never crossfades: its real box (not a scale) morphs, so border, shadow and radius stay crisp.
+      // Position moves on x/y (sub-pixel); left/top snap to whole pixels and stutter on the slow tail.
+      tl.fromTo("#shell", { x: 0, width: BAR.width }, { x: PANEL.left - BAR.left, width: PANEL.width, duration: D, ease: EASE, immediateRender: false }, T);
+      tl.fromTo("#shell", { y: 0, height: BAR.height, borderRadius: BAR.borderRadius }, { y: PANEL.top - BAR.top, height: PANEL.height, borderRadius: PANEL.borderRadius, duration: D - LAG, ease: EASE, immediateRender: false }, T + LAG);
+      // Search contents clear in the first quarter, while the shell is still nearly still.
+      tl.to(".q", { opacity: 0, duration: D * 0.25, ease: "power1.out" }, T);
+      // Neighbours give way as the shell's edges approach, instead of being sliced by them mid-word.
+      tl.to(".ask", { y: -28, opacity: 0, duration: D * 0.35, ease: "power2.in" }, T + 0.06);
+      tl.to(".chips", { y: 28, opacity: 0, duration: D * 0.35, ease: "power2.in" }, T + 0.06);
+
+      // ---- Scene B contents: only once the shape is ~80% settled, centre out ----
+      // At SETTLED the edges are still ~60px short, so the middle (map, rows) goes first and the
+      // edge content (header, total) waits 2f, or it appears pressed against the moving top edge.
+      tl.fromTo("#land", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, SETTLED);
+      tl.fromTo(".rows > *", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.04, ease: "expo.out" }, SETTLED + 0.02);
+      tl.fromTo(".p-head, .p-stat", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.04, ease: "expo.out" }, SETTLED + 0.06);
+      tl.fromTo(".rule", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.5, ease: "expo.out" }, SETTLED + 0.1);
+      tl.fromTo(".bubble", { scale: 0, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.5, stagger: 0.05, ease: "back.out(1.6)" }, SETTLED + 0.16);
+      tl.fromTo(".fill", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.6, stagger: 0.05, ease: "power3.out" }, SETTLED + 0.18);
+      tl.fromTo(".legend", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.out" }, SETTLED + 0.3);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

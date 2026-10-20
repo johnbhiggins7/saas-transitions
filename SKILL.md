@@ -79,6 +79,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Perspective Tilt & Extrusion](transitions/perspective-tilt/SKILL.md) | Camera & Spatial | 0.8s | The window tilts back as an extruded slab while the next swings in and flattens |
 | [Isometric Stack Explosion](transitions/isometric-stack-explosion/SKILL.md) | Camera & Spatial | 1.6s | Tips into isometric, splits into labelled layers, then flattens one into the next scene |
 | [Device-to-Canvas Wrap](transitions/device-to-canvas-wrap/SKILL.md) | Camera & Spatial | 0.8s | Full-bleed UI pulls back into a 3D laptop screen as the device assembles around it |
+| [UI-to-UI Component Morph](transitions/ui-component-morph/SKILL.md) | Morphing | 0.65s | One container stretches and re-rounds into another component without ever cutting the surface |
 <!-- index:end -->
 
 ## Adding or changing a transition
