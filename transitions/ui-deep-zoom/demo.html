@@ -102,7 +102,7 @@
 
       // ---- UI Deep Zoom ----
       const T = 1.5; // transition start
-      const D = 0.6; // zoom duration (18f @ 30fps)
+      const D = 0.6; // zoom duration (36f @ 60fps)
       const TARGET = { x: 1575, y: 405, w: 168, h: 48 }; // #target's box in scene px (matches CSS)
       const cx = TARGET.x + TARGET.w / 2, cy = TARGET.y + TARGET.h / 2;
       const COVER = Math.max(1920 / TARGET.w, 1080 / TARGET.h); // scale at which the target fills the frame

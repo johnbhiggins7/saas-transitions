@@ -2,7 +2,7 @@
 name: ui-deep-zoom
 title: UI Deep Zoom
 category: camera-spatial
-duration: 0.6s (18f @ 30fps)
+duration: 0.6s (36f @ 60fps)
 energy: medium-high
 description: The camera rushes into one small UI element (button, node, toggle) until its fill covers the frame and becomes the background of the next scene.
 ---
@@ -21,14 +21,14 @@ The camera scales into a tiny element of scene A, such as a button, chart node, 
 
 Avoid it when the target has no solid fill (photo, gradient text, thin outline). The cover frame would be noisy. Use [container-mask-expand](../container-mask-expand/SKILL.md) for a framed card instead.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −14 → 0 | A ring pulses off the target, then the target does a 4f press (scale 0.96 yoyo). The eye lands before the camera moves. |
-| Rush | 0 → 18 | Camera layer scales 1 → ~30× around the target center in **log space**, accelerating (`power2.in` on the exponent). At the same time it translates the target to frame center (`power2.inOut`). The label fades out over the first 6f. Screen-space blur ramps 0 → 4px over the last 8f. |
-| Cover | ~17 | The target's fill covers the frame. Scene B, with the same background color, switches on underneath the remaining zoom. |
-| Land | 17 → 41 | Scene B content arrives still moving toward camera: the headline scales 1.4 → 1 and the panel rises, both on `expo.out`. Fast motion in the rush becomes long deceleration on landing. |
+| Telegraph | −27 → 0 | A ring pulses off the target, then the target does a 7f press (scale 0.96 yoyo). The eye lands before the camera moves. |
+| Rush | 0 → 36 | Camera layer scales 1 → ~30× around the target center in **log space**, accelerating (`power2.in` on the exponent). At the same time it translates the target to frame center (`power2.inOut`). The label fades out over the first 13f. Screen-space blur ramps 0 → 4px over the last 16f. |
+| Cover | ~34 | The target's fill covers the frame. Scene B, with the same background color, switches on underneath the remaining zoom. |
+| Land | 34 → 82 | Scene B content arrives still moving toward camera: the headline scales 1.4 → 1 and the panel rises, both on `expo.out`. Fast motion in the rush becomes long deceleration on landing. |
 
 ## Build it
 
