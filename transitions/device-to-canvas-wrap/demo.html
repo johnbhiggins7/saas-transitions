@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.5;duration=0.8" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* One world: the dashboard is authored at 1920×1080 INSIDE the laptop's screen. The rig (device) is what moves.
+         Rig space = screen space: the screen is 0,0 → 1920×1080, so at scale 1 the UI is pixel-exact full-bleed. */
+      #s1 { perspective: 2400px; perspective-origin: 960px 540px; background: radial-gradient(110% 80% at 50% 38%, #ffffff 0%, #f3f6fa 52%, #e6ebf2 100%); }
+      .rig { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-style: preserve-3d; } /* moved only in z: a real dolly */
+
+      /* Lid: 36px bezel, 56px chin. Starts clipped to exactly the screen rect, so no bezel exists at frame 0. */
+      .lid { position: absolute; left: -36px; top: -36px; width: 1992px; height: 1172px; background: linear-gradient(#18202e, #0d131d); border-radius: 44px 44px 18px 18px; transform-origin: 50% 100%; clip-path: inset(36px 36px 56px 36px round 0px 0px 0px 0px); }
+      .lid .cam-dot { position: absolute; left: 991px; top: 13px; width: 10px; height: 10px; border-radius: 50%; background: #2b3647; }
+      .screen { position: absolute; left: 36px; top: 36px; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+
+      /* Base: a horizontal deck hinged at the lid's bottom edge (rig y 1136), lying toward camera, plus its front lip. */
+      .deck { position: absolute; left: -36px; top: 1136px; width: 1992px; height: 900px; transform-origin: 50% 0; transform: rotateX(90deg); background: linear-gradient(#bfc7d2, #dfe4eb 12%, #eceff4 60%, #f2f4f7); border-radius: 0 0 44px 44px; }
+      .deck .keys { position: absolute; left: 236px; top: 90px; width: 1520px; height: 380px; border-radius: 18px; background: repeating-linear-gradient(90deg, #c9d0da 0 92px, #dfe4eb 92px 104px); }
+      .deck .pad { position: absolute; left: 646px; top: 540px; width: 700px; height: 300px; border-radius: 22px; background: #e1e6ed; box-shadow: inset 0 0 0 2px #d3d9e2; }
+      .lip { position: absolute; left: -36px; top: 1136px; width: 1992px; height: 34px; transform: translateZ(900px); background: linear-gradient(#e2e6ec, #aab3c0); border-radius: 0 0 26px 26px; }
+      .lip i { position: absolute; left: 846px; top: 0; width: 300px; height: 12px; border-radius: 0 0 10px 10px; background: #b7c0cc; }
+
+      .shadow { position: absolute; left: 160px; top: 932px; width: 1600px; height: 96px; background: radial-gradient(closest-side, rgba(10, 37, 64, 0.26), rgba(10, 37, 64, 0.1) 55%, rgba(10, 37, 64, 0)); }
+      .headline { position: absolute; left: 0; top: 84px; width: 1920px; text-align: center; }
+      .headline .h2 { margin-top: 14px; }
+
+      /* Frameless, full-bleed dashboard (overrides the kit's floating .app window). */
+      .screen .app { left: 0; top: 0; width: 1920px; height: 1080px; border: 0; border-radius: 0; box-shadow: none; grid-template-columns: 272px 1fr; }
+      .app-content { padding: 36px 40px; grid-template-rows: 168px 1fr; }
+      .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+      .main { display: grid; grid-template-columns: 1fr 520px; gap: 24px; min-height: 0; }
+      .chart-card { display: flex; flex-direction: column; }
+      .chart-head { display: flex; align-items: center; gap: 24px; }
+      .chart-head .pill { margin-left: auto; }
+      .chart-card .chart-svg { flex: 1; margin-top: 28px; }
+      .months { display: flex; justify-content: space-between; margin-top: 14px; font-size: 14px; color: var(--muted); }
+      .list-row { display: flex; align-items: center; gap: 14px; height: 70px; border-bottom: 1px solid var(--border); font-size: 17px; font-weight: 500; }
+      .list-row:last-child { border-bottom: 0; }
+      .list-row .mono { margin-left: auto; font-size: 16px; color: var(--ink-2); }
+      .accounts .h3 { margin-bottom: 12px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <div id="s1" class="scene">
+        <div class="shadow"></div>
+
+        <div class="rig">
+          <div class="deck"><div class="keys"></div><div class="pad"></div></div>
+          <div class="lip"><i></i></div>
+          <div class="lid">
+            <span class="cam-dot"></span>
+            <div class="screen">
+              <div class="app">
+                <aside class="app-sidebar">
+                  <div class="brand"><span class="brand-mark"></span>Northwind</div>
+                  <div class="nav-item active"><span class="nav-icon"></span>Overview</div>
+                  <div class="nav-item"><span class="nav-icon"></span>Analytics</div>
+                  <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+                  <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+                  <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+                </aside>
+                <div class="app-body">
+                  <div class="app-topbar">
+                    <div class="page-title">Overview</div>
+                    <div class="search">Search</div>
+                    <div class="avatar sky">JL</div>
+                  </div>
+                  <div class="app-content">
+                    <div class="kpis">
+                      <div class="card kpi"><div class="card-label">Revenue</div><div class="card-value">$128.4k</div><span class="delta up">+12.5%</span></div>
+                      <div class="card kpi"><div class="card-label">Active users</div><div class="card-value">8,421</div><span class="delta up">+4.1%</span></div>
+                      <div class="card kpi"><div class="card-label">Conversion</div><div class="card-value">3.9%</div><span class="delta up">+0.6%</span></div>
+                      <div class="card kpi"><div class="card-label">Churn</div><div class="card-value">1.8%</div><span class="delta down">+0.2%</span></div>
+                    </div>
+                    <div class="main">
+                      <div class="card chart-card">
+                        <div class="chart-head">
+                          <div class="h3">Revenue over time</div>
+                          <div class="legend"><span><i></i>This year</span></div>
+                          <span class="pill indigo">Last 12 months</span>
+                        </div>
+                        <svg class="chart-svg" viewBox="0 0 1000 480" preserveAspectRatio="none">
+                          <line class="chart-grid" x1="0" y1="120" x2="1000" y2="120" />
+                          <line class="chart-grid" x1="0" y1="240" x2="1000" y2="240" />
+                          <line class="chart-grid" x1="0" y1="360" x2="1000" y2="360" />
+                          <path id="area" class="chart-area" d="M0,400 C80,380 130,320 180,330 S260,370 340,300 S420,210 500,230 S580,290 660,200 S740,140 820,160 S920,110 1000,80 L1000,480 L0,480 Z" />
+                          <path id="line" class="chart-line" d="M0,400 C80,380 130,320 180,330 S260,370 340,300 S420,210 500,230 S580,290 660,200 S740,140 820,160 S920,110 1000,80" stroke-dasharray="1300" stroke-dashoffset="1300" />
+                        </svg>
+                        <div class="months"><span>Jan</span><span>Mar</span><span>May</span><span>Jul</span><span>Sep</span><span>Nov</span></div>
+                      </div>
+                      <div class="card accounts">
+                        <div class="h3">Top accounts</div>
+                        <div class="list-row"><span class="avatar">AC</span>Acme Corp<span class="mono">$24.1k</span></div>
+                        <div class="list-row"><span class="avatar pink">GL</span>Globex<span class="mono">$18.7k</span></div>
+                        <div class="list-row"><span class="avatar amber">IN</span>Initech<span class="mono">$15.2k</span></div>
+                        <div class="list-row"><span class="avatar teal">UM</span>Umbrella<span class="mono">$12.9k</span></div>
+                        <div class="list-row"><span class="avatar sky">HO</span>Hooli<span class="mono">$9.4k</span></div>
+                        <div class="list-row"><span class="avatar">SO</span>Soylent<span class="mono">$7.8k</span></div>
+                        <div class="list-row"><span class="avatar pink">VA</span>Vandelay<span class="mono">$6.1k</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="headline">
+          <div class="eyebrow">Northwind for desktop</div>
+          <div class="h2">Your numbers, on every desk.</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance (inside the screen) ----
+      tl.fromTo(".kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0);
+      tl.fromTo(".main > .card", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, ease: "power3.out" }, 0.12);
+      tl.to("#line", { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 0.3);
+      tl.fromTo("#area", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.out" }, 0.6);
+
+      // ---- Device-to-Canvas Wrap ----
+      const T = 1.5; // transition start
+      const D = 0.8; // move duration (24f @ 30fps)
+      const K = 0.55; // final screen scale: the 1920×1080 UI lands as a 1056×594 screen
+      const P = 2400; // #s1 perspective (px)
+      const zFor = (s) => P * (1 - 1 / s); // dolly depth at which the z=0 plane appears at scale s
+      const TILT = 8, TILT_PEAK = 13; // lid lean (deg): overshoots, then settles
+
+      // Telegraph: a 9f push-in (wind-up) before the pull-back.
+      tl.fromTo(".rig", { z: 0 }, { z: zFor(1.025), duration: 0.3, ease: "power2.inOut" }, T - 0.3);
+      // Dolly the device away in z instead of scaling it: 2D scale leaves the deck's depth and the lid's lean full-size.
+      tl.to(".rig", { z: zFor(K), duration: D, ease: "power2.out" }, T);
+      // The bezel grows outward from the UI's edges while the screen corners round off.
+      tl.fromTo(".lid", { clipPath: "inset(36px 36px 56px 36px round 0px 0px 0px 0px)" },
+        { clipPath: "inset(0px 0px 0px 0px round 44px 44px 18px 18px)", duration: D * 0.6, ease: "power3.out" }, T);
+      tl.fromTo(".screen", { borderRadius: 0 }, { borderRadius: 14, duration: D * 0.6, ease: "power3.out" }, T);
+      // Lid leans back past its rest angle, then settles. Second leg is a .to: a chained fromTo renders its start (13deg) at frame 0.
+      tl.fromTo(".lid", { rotationX: 0 }, { rotationX: TILT_PEAK, duration: D * 0.4, ease: "power2.out" }, T);
+      tl.to(".lid", { rotationX: TILT, duration: D * 0.6, ease: "sine.inOut" }, T + D * 0.4);
+
+      // ---- Scene B arrives with the landing ----
+      tl.fromTo(".shadow", { opacity: 0, scaleX: 0.6 }, { opacity: 1, scaleX: 1, duration: 0.7, ease: "expo.out" }, T + 0.12);
+      tl.fromTo(".headline > *", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, stagger: 0.06, ease: "expo.out" }, T + 0.3);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
