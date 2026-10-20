@@ -81,6 +81,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Device-to-Canvas Wrap](transitions/device-to-canvas-wrap/SKILL.md) | Camera & Spatial | 0.8s | Full-bleed UI pulls back into a 3D laptop screen as the device assembles around it |
 | [UI-to-UI Component Morph](transitions/ui-component-morph/SKILL.md) | Morphing | 0.65s | One container stretches and re-rounds into another component without ever cutting the surface |
 | [Icon-to-Scene Morph](transitions/icon-to-scene-morph/SKILL.md) | Morphing | 0.8s | The parts of a brand icon travel and reshape into the matching parts of real UI |
+| [Prompt-to-UI Render](transitions/prompt-to-ui-render/SKILL.md) | Morphing | 1.1s | A typed prompt compiles, the prompt bar opens into a card, and skeletons resolve into UI |
 <!-- index:end -->
 
 ## Adding or changing a transition
