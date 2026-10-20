@@ -172,7 +172,7 @@
 
       // ---- X-Ray Scanline ----
       const T = 1.5; // sweep start
-      const D = 0.8; // sweep duration (24f @ 30fps)
+      const D = 0.8; // sweep duration (48f @ 60fps)
       const X0 = 0, X1 = 2000; // line centre in px: starts on the left frame edge, ends far enough right for the bloom to leave
       // One CSS variable drives both #scan's translateX and #s2's clip-path inset, so the edge can never drift off the line.
       // Inverse of power2.inOut (GSAP power2 is CUBIC: 4p^3 / 1-(2-2p)^3/2): the time the line reaches x.
