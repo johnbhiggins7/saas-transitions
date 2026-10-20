@@ -90,6 +90,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Toggle & Theme Shift](transitions/toggle-theme-shift/SKILL.md) | UI-Native | 0.6s | A toggle sends a circular reveal from its knob that repaints the screen into a new state |
 | [Dropdown & Accordion Wipe](transitions/dropdown-accordion-wipe/SKILL.md) | UI-Native | 0.7s | A nav dropdown keeps growing until it covers the frame, with the chosen item as the headline |
 | [Expanding Container Mask](transitions/container-mask-expand/SKILL.md) | Masking | 0.6s | A card already showing the next scene grows its mask to full frame while the dashboard recedes |
+| [Border & Navigation Rail Wipe](transitions/border-rail-wipe/SKILL.md) | Masking | 0.6s | The sidebar rail slides across as the wipe edge, then docks as the next view's panel |
 <!-- index:end -->
 
 ## Adding or changing a transition

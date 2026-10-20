@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.5;duration=0.6" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Rail geometry is hard-coded (see RAIL_W / TRAVEL in the script). Full-bleed so the rail spans the frame height. */
+      #rail, #s2 { --x: 0px; } /* one variable drives the rail AND scene B's reveal edge */
+      #rail {
+        position: absolute; left: 0; top: 0; width: 320px; height: 1080px; z-index: 10;
+        background: var(--surface-2);
+        box-shadow: -1px 0 0 var(--border), 1px 0 0 var(--border); /* hairlines outside the box: off-frame when docked */
+        transform: translate3d(var(--x), 0, 0);
+      }
+      #rail-lift { position: absolute; inset: 0; box-shadow: 0 0 0 1px rgba(10, 37, 64, 0.06), 0 0 72px rgba(10, 37, 64, 0.22); opacity: 0; }
+      #rail-edge { position: absolute; right: -2px; top: 0; width: 4px; height: 1080px; background: var(--accent); transform-origin: 50% 0; }
+      .rail-nav, .rail-insp { position: absolute; inset: 0; }
+      .rail-nav { padding: 28px 22px; display: flex; flex-direction: column; gap: 6px; }
+      .rail-nav .brand { height: 60px; padding: 0 12px 28px; font-size: 23px; box-sizing: content-box; }
+      .rail-nav .nav-item { height: 52px; font-size: 19px; padding: 0 14px; }
+      .rail-user { position: absolute; left: 22px; right: 22px; bottom: 28px; display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+      .rail-user b { display: block; font-size: 17px; font-weight: 600; }
+      .rail-user span { font-size: 14px; color: var(--muted); }
+
+      .rail-insp { opacity: 0; }
+      .insp-head { height: 88px; padding: 0 28px; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid var(--border); }
+      .insp-head .h3 { font-size: 21px; }
+      .insp-body { padding: 28px; display: grid; gap: 22px; }
+      .field label { display: block; font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+      .field .input { height: 48px; font-size: 17px; }
+      .field .mono { font-size: 15px; color: var(--accent-ink); }
+      .preview { margin-top: 2px; padding: 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); display: grid; gap: 10px; }
+      .preview b { font-size: 16px; }
+      .preview i { display: block; height: 9px; border-radius: 5px; background: var(--surface-2); }
+      .zoomctl { position: absolute; left: 32px; bottom: 32px; display: flex; align-items: center; gap: 18px; height: 48px; padding: 0 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); font-size: 16px; font-weight: 600; color: var(--ink-2); }
+      .row { display: flex; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 500; }
+
+      /* Scene A: workflows list */
+      .topbar { position: absolute; top: 0; height: 88px; display: flex; align-items: center; gap: 20px; padding: 0 48px; background: var(--surface); border-bottom: 1px solid var(--border); }
+      #s1 .topbar { left: 320px; right: 0; }
+      #s1 .page-title { font-size: 30px; }
+      .kpis { position: absolute; left: 368px; top: 128px; width: 1504px; }
+      .kpis .card { height: 140px; padding: 24px 28px; }
+      .list { position: absolute; left: 368px; top: 292px; width: 1504px; padding: 8px 24px; }
+      .list .tr { height: 96px; font-size: 18px; grid-template-columns: 2.2fr 1fr 1fr 1fr; }
+      .list .tr.head { height: 52px; font-size: 14px; }
+      .list .tr:last-child { border-bottom: 0; }
+      .wf-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); flex: none; position: relative; }
+      .wf-icon::after { content: ""; position: absolute; inset: 10px; border-radius: 4px; background: #a5a0ff; }
+      #sel { position: absolute; left: 8px; right: 8px; top: 60px; height: 96px; border-radius: 10px; background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); opacity: 0; }
+
+      /* Scene B: workflow builder, revealed behind the rail's trailing edge */
+      #s2 { z-index: 2; clip-path: inset(0 calc(1920px - var(--x) - 8px) 0 0); } /* edge tucked 8px under the rail: no hairline seam */
+      .cam { position: absolute; inset: 0; }
+      #s2 .topbar { left: 0; width: 1600px; }
+      .crumb { font-size: 22px; font-weight: 600; color: var(--muted); margin-right: auto; display: flex; align-items: center; gap: 14px; }
+      .crumb b { color: var(--ink); font-weight: 700; font-size: 26px; letter-spacing: -0.02em; }
+      .canvas { position: absolute; left: 0; top: 88px; width: 1600px; height: 992px; }
+      .node { position: absolute; top: 430px; width: 280px; height: 132px; padding: 22px; display: grid; align-content: start; gap: 10px; }
+      .node .kind { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+      .node .kind i { width: 22px; height: 22px; border-radius: 7px; display: inline-block; }
+      .node .title { font-size: 21px; font-weight: 650; letter-spacing: -0.015em; }
+      .node.sel { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(99, 91, 255, 0.18), var(--shadow); }
+      .wires { position: absolute; left: 0; top: 0; width: 1600px; height: 992px; }
+      .wires path { fill: none; stroke: #b9c2d0; stroke-width: 3; stroke-linecap: round; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: workflows list (content right of the rail) -->
+      <div id="s1" class="scene">
+        <div class="topbar">
+          <div class="page-title">Workflows</div>
+          <div class="search">Search workflows</div>
+          <div class="btn btn-primary">New workflow</div>
+          <div class="avatar sky">JL</div>
+        </div>
+        <div class="kpis grid-3">
+          <div class="card kpi"><div class="card-label">Active workflows</div><div class="card-value">18</div></div>
+          <div class="card kpi"><div class="card-label">Runs this month</div><div class="card-value">18,122</div></div>
+          <div class="card kpi"><div class="card-label">Success rate</div><div class="card-value">99.2%</div></div>
+        </div>
+        <div class="card list">
+          <div id="sel"></div>
+          <div class="table" style="position: relative">
+            <div class="tr head"><span>Name</span><span>Status</span><span>Runs / 30d</span><span>Updated</span></div>
+            <div class="tr"><span class="cell-main"><i class="wf-icon"></i>Customer onboarding</span><span class="pill green">Active</span><span>12,480</span><span>2h ago</span></div>
+            <div class="tr"><span class="cell-main"><i class="wf-icon"></i>Trial expiry nudge</span><span class="pill green">Active</span><span>3,215</span><span>Yesterday</span></div>
+            <div class="tr"><span class="cell-main"><i class="wf-icon"></i>Invoice reminders</span><span class="pill amber">Paused</span><span>942</span><span>3d ago</span></div>
+            <div class="tr"><span class="cell-main"><i class="wf-icon"></i>Churn risk alert</span><span class="pill green">Active</span><span>418</span><span>5d ago</span></div>
+            <div class="tr"><span class="cell-main"><i class="wf-icon"></i>Weekly digest</span><span class="pill indigo">Draft</span><span>0</span><span>Last week</span></div>
+            <div class="tr"><span class="cell-main"><i class="wf-icon"></i>NPS survey</span><span class="pill green">Active</span><span>1,067</span><span>2w ago</span></div>
+            <div class="tr"><span class="cell-main"><i class="wf-icon"></i>Failed payment retry</span><span class="pill green">Active</span><span>286</span><span>3w ago</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B: workflow builder. Its right 320px is the rail, docked as the inspector. -->
+      <div id="s2" class="scene next">
+        <div class="cam">
+          <div class="canvas dots">
+            <svg class="wires" viewBox="0 0 1600 992">
+              <path d="M394 496 H478" /><path d="M758 496 H842" /><path d="M1122 496 H1206" />
+            </svg>
+            <div class="card node" style="left: 114px"><div class="kind"><i style="background: var(--teal)"></i>Trigger</div><div class="title">New signup</div><span class="small">Stripe · customer.created</span></div>
+            <div class="card node sel" style="left: 478px"><div class="kind"><i style="background: var(--accent)"></i>Action</div><div class="title">Send welcome email</div><span class="small">Template · Welcome</span></div>
+            <div class="card node" style="left: 842px"><div class="kind"><i style="background: var(--amber)"></i>Delay</div><div class="title">Wait 2 days</div><span class="small">Business days only</span></div>
+            <div class="card node" style="left: 1206px"><div class="kind"><i style="background: var(--pink)"></i>Condition</div><div class="title">Activated?</div><span class="small">Created first report</span></div>
+            <div class="zoomctl"><span>&minus;</span>100%<span>+</span></div>
+          </div>
+          <div class="topbar">
+            <div class="crumb">Workflows <span>/</span> <b>Customer onboarding</b> <span class="pill indigo">Draft</span></div>
+            <div class="btn">Test run</div>
+            <div class="btn btn-primary">Publish</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- The rail: scene A's sidebar, scene B's inspector, and the wipe edge in between -->
+      <div id="rail">
+        <div id="rail-lift"></div>
+        <div class="rail-nav">
+          <div class="brand"><span class="brand-mark"></span>Northwind</div>
+          <div class="nav-item"><span class="nav-icon"></span>Home</div>
+          <div class="nav-item"><span class="nav-icon"></span>Analytics</div>
+          <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+          <div class="nav-item active"><span class="nav-icon"></span>Workflows</div>
+          <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+          <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          <div class="rail-user"><div class="avatar sky">JL</div><div><b>Jamie Lee</b><span>Admin</span></div></div>
+        </div>
+        <div class="rail-insp">
+          <div class="insp-head"><div class="h3">Send welcome email</div><span class="small">Action · Email</span></div>
+          <div class="insp-body">
+            <div class="field"><label>Template</label><div class="input">Welcome to Northwind</div></div>
+            <div class="field"><label>Recipient</label><div class="input mono">{{ customer.email }}</div></div>
+            <div class="field"><label>From</label><div class="input">Ana at Northwind</div></div>
+            <div class="field row">Track opens <span class="toggle on"><span class="knob"></span></span></div>
+            <div class="field"><label>Preview</label><div class="preview"><b>Welcome aboard, Maya</b><i style="width: 92%"></i><i style="width: 100%"></i><i style="width: 64%"></i></div></div>
+            <div class="field"><div class="btn" style="width: 100%">Send test email</div></div>
+          </div>
+        </div>
+        <div id="rail-edge"></div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo("#s1 .topbar > *", { y: -12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.05, ease: "power3.out" }, 0);
+      tl.fromTo(".kpi", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0.04);
+      tl.fromTo(".list", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.14);
+      tl.fromTo(".list .tr", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, stagger: 0.04, ease: "power3.out" }, 0.22);
+      tl.fromTo("#sel", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power2.out" }, 0.95); // the workflow we're about to open
+
+      // ---- Border & Navigation Rail Wipe ----
+      const T = 1.5;          // transition start
+      const D = 0.6;          // rail travel (18f @ 30fps)
+      const RAIL_W = 320;     // rail width (matches CSS)
+      const TRAVEL = 1920 - RAIL_W; // dock flush with the right edge as scene B's inspector
+
+      // Telegraph: the rail lifts off the layout and its leading edge lights up.
+      tl.to("#rail-lift", { opacity: 1, duration: 0.3, ease: "power2.out" }, T - 0.3);
+      tl.fromTo("#rail-edge", { scaleY: 0 }, { scaleY: 1, duration: 0.25, ease: "power2.out" }, T - 0.3);
+
+      // One tween, two targets: the rail's x and scene B's clip edge read the same --x, so they can't drift apart.
+      tl.set("#s2", { opacity: 1 }, T);
+      tl.fromTo(["#rail", "#s2"], { "--x": "0px" }, { "--x": `${TRAVEL}px`, duration: D, ease: "power3.inOut" }, T);
+      // Scene B drifts in behind the edge a little slower than the rail, so it reads as a layer underneath.
+      tl.fromTo("#s2 .cam", { x: -140 }, { x: 0, duration: D + 0.3, ease: "power3.out" }, T);
+
+      // Hard-swap the rail's contents at its velocity peak (f9 of 18, ~270–300px/frame): the motion hides the cut,
+      // and every still shows either the whole nav or the whole inspector, never a half-faded ghost.
+      tl.set(".rail-nav", { opacity: 0 }, T + D / 2);
+      tl.set(".rail-insp", { opacity: 1 }, T + D / 2);
+
+      // Settle: the rail re-attaches as scene B's own sidebar.
+      tl.to("#rail-lift", { opacity: 0, duration: 0.35, ease: "power2.out" }, T + D - 0.05);
+      tl.to("#rail-edge", { opacity: 0, duration: 0.2, ease: "power1.out" }, T + D - 0.1);
+      tl.set("#s1", { visibility: "hidden" }, T + D);
+
+      // ---- Scene B landing ----
+      tl.fromTo(".wires path", { strokeDasharray: 84, strokeDashoffset: 84 }, { strokeDashoffset: 0, duration: 0.35, stagger: 0.08, ease: "power2.out" }, T + D - 0.05);
+      tl.fromTo(".node.sel", { boxShadow: "0 0 0 0px rgba(99, 91, 255, 0.18), 0 1px 2px rgba(10, 37, 64, 0.06), 0 12px 32px rgba(10, 37, 64, 0.08)" }, { boxShadow: "0 0 0 4px rgba(99, 91, 255, 0.18), 0 1px 2px rgba(10, 37, 64, 0.06), 0 12px 32px rgba(10, 37, 64, 0.08)", duration: 0.4, ease: "back.out(2)" }, T + D);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
