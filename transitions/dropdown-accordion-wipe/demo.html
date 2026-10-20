@@ -150,7 +150,7 @@
 
     <script>
       const tl = gsap.timeline({ paused: true });
-      const F = 1 / 30;
+      const F = 1 / 60; // one frame at 60fps
 
       // ---- Scene A entrance ----
       tl.fromTo("#nav", { y: -24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0);
@@ -160,7 +160,7 @@
 
       // ---- Dropdown & Accordion Wipe ----
       const T = 1.6; // click = transition start
-      const D = 0.7; // click to full cover (21f @ 30fps)
+      const D = 0.7; // click to full cover (42f @ 60fps)
       const OPEN_B = 640; // bottom inset when the menu is open: 1080 - 84 - 356
       const OVER = -24; // final inset on the side and top edges, so the 14px corners leave the frame
       const DROP_B = OVER - 144; // the bottom goes further: the 144px of rows riding below it must clear the frame too
@@ -175,39 +175,39 @@
       tl.fromTo("#ripple", { scale: 0, opacity: 0.55 }, { scale: 3.2, opacity: 0, duration: 0.45, ease: "power2.out" }, T);
       tl.fromTo("#chev", { rotation: 0 }, { rotation: 180, duration: 0.25, ease: "power3.out" }, T);
 
-      // Open (f0-6): an ordinary dropdown. The panel's bottom inset drops from closed to open.
+      // Open (f0-12): an ordinary dropdown. The panel's bottom inset drops from closed to open.
       tl.set("#s2", { opacity: 1 }, T);
       tl.fromTo("#panel", { "--b": "996px" }, { "--b": `${OPEN_B}px`, duration: 0.2, ease: "power3.out" }, T);
-      tl.fromTo("#panel", { opacity: 0 }, { opacity: 1, duration: F, ease: "none" }, T); // one frame: a half-opaque menu ghosts the hero text through it
-      tl.fromTo(".mi", { y: -10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.15, stagger: 0.02, ease: "power2.out" }, T); // done by f7, before the cascade (f8) takes over y on .mi-low
-      tl.to("#cursor", { x: 128, y: 216, duration: 0.24, ease: "power2.inOut" }, T + 2 * F); // slides onto Workflows
-      tl.fromTo("#mi-wf", { backgroundColor: "rgba(238,237,255,0)" }, { backgroundColor: "rgba(238,237,255,1)", duration: 0.1, ease: "power1.out" }, T + 6 * F);
+      tl.fromTo("#panel", { opacity: 0 }, { opacity: 1, duration: F, ease: "none" }, T); // one frame (at the render rate): a half-opaque menu ghosts the hero text through it
+      tl.fromTo(".mi", { y: -10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.15, stagger: 0.02, ease: "power2.out" }, T); // done by f14, before the cascade (f16) takes over y on .mi-low
+      tl.to("#cursor", { x: 128, y: 216, duration: 0.24, ease: "power2.inOut" }, T + 4 * F); // slides onto Workflows
+      tl.fromTo("#mi-wf", { backgroundColor: "rgba(238,237,255,0)" }, { backgroundColor: "rgba(238,237,255,1)", duration: 0.1, ease: "power1.out" }, T + 12 * F);
 
-      // Cascade (f8-17): the bottom keeps going, past the frame edge.
+      // Cascade (f16-34): the bottom keeps going, past the frame edge.
       // Accordion: the rows below Workflows ride the bottom edge out (same ease, same distance); the rows above lift away.
-      tl.to("#panel", { "--b": `${DROP_B}px`, duration: 0.3, ease: "power3.inOut" }, T + 8 * F);
-      tl.to(".mi-low", { y: OPEN_B - DROP_B, duration: 0.3, ease: "power3.inOut" }, T + 8 * F);
-      tl.to(".mi-up", { y: -24, opacity: 0, duration: 0.2, ease: "power2.in" }, T + 9 * F);
-      // Spread (f12-21): left, right and top open together; corners flatten as the menu becomes the page.
-      tl.to("#panel", { "--l": `${OVER}px`, "--r": `${OVER}px`, "--t": `${OVER}px`, borderRadius: 0, duration: 0.3, ease: "power3.inOut" }, T + 12 * F);
+      tl.to("#panel", { "--b": `${DROP_B}px`, duration: 0.3, ease: "power3.inOut" }, T + 16 * F);
+      tl.to(".mi-low", { y: OPEN_B - DROP_B, duration: 0.3, ease: "power3.inOut" }, T + 16 * F);
+      tl.to(".mi-up", { y: -24, opacity: 0, duration: 0.2, ease: "power2.in" }, T + 18 * F);
+      // Spread (f24-42): left, right and top open together; corners flatten as the menu becomes the page.
+      tl.to("#panel", { "--l": `${OVER}px`, "--r": `${OVER}px`, "--t": `${OVER}px`, borderRadius: 0, duration: 0.3, ease: "power3.inOut" }, T + 24 * F);
 
       // The hovered item's label becomes scene B's headline; its row chrome and the cursor drop away.
       tl.set("#wf-title", { scale: TITLE.s0 }, 0);
-      tl.to("#mi-wf", { backgroundColor: "rgba(238,237,255,0)", duration: 0.15, ease: "power1.in" }, T + 10 * F);
-      tl.to("#mi-wf .ic, #mi-wf .d", { opacity: 0, duration: 0.15, ease: "power1.in" }, T + 10 * F);
-      tl.to("#cursor", { opacity: 0, duration: 0.15, ease: "power1.in" }, T + 10 * F);
+      tl.to("#mi-wf", { backgroundColor: "rgba(238,237,255,0)", duration: 0.15, ease: "power1.in" }, T + 20 * F);
+      tl.to("#mi-wf .ic, #mi-wf .d", { opacity: 0, duration: 0.15, ease: "power1.in" }, T + 20 * F);
+      tl.to("#cursor", { opacity: 0, duration: 0.15, ease: "power1.in" }, T + 20 * F);
       // Soft start on purpose: #panel clips its content and the label sits only 72px inside the menu's left edge,
-      // so the label must not outrun that edge before the spread (f12) carries it away.
-      tl.to("#wf-title", { x: HEAD.x - TITLE.x, y: HEAD.y - TITLE.y, scale: 1, duration: 0.5, ease: "power2.inOut" }, T + 10 * F);
+      // so the label must not outrun that edge before the spread (f24) carries it away.
+      tl.to("#wf-title", { x: HEAD.x - TITLE.x, y: HEAD.y - TITLE.y, scale: 1, duration: 0.5, ease: "power2.inOut" }, T + 20 * F);
 
       tl.set("#s1", { visibility: "hidden" }, T + D);
 
       // ---- Scene B: arrives once the window is nearly full, so the growing surface reads as a clean sheet ----
-      tl.fromTo("#b-canvas", { y: 680 }, { y: 0, duration: 0.9, ease: "expo.out" }, T + 16 * F);
-      tl.fromTo("#b-eyebrow", { x: -16, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "expo.out" }, T + 20 * F);
-      tl.fromTo("#b-body", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, T + 22 * F);
-      tl.fromTo(".node", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: "expo.out" }, T + 22 * F);
-      tl.fromTo("#b-cta", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, T + 24 * F);
+      tl.fromTo("#b-canvas", { y: 680 }, { y: 0, duration: 0.9, ease: "expo.out" }, T + 32 * F);
+      tl.fromTo("#b-eyebrow", { x: -16, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "expo.out" }, T + 40 * F);
+      tl.fromTo("#b-body", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, T + 44 * F);
+      tl.fromTo(".node", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: "expo.out" }, T + 44 * F);
+      tl.fromTo("#b-cta", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, T + 48 * F);
       tl.to(".wire", { strokeDashoffset: 0, duration: 0.4, stagger: 0.1, ease: "power2.inOut" }, T + 1.0);
 
       window.__timelines["main"] = tl;
