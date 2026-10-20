@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.5;duration=0.6" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Everything the motion depends on is placed in root px (see FIRST / LAST in the script). */
+      .grid-head { position: absolute; left: 400px; top: 188px; width: 1368px; height: 48px; display: flex; align-items: center; gap: 14px; z-index: 2; }
+      .grid-head .btn-primary { margin-left: auto; }
+
+      /* Project card. Children are anchored to an edge (left group / right group / full width),
+         so tweening the card's box re-lays them out without scaling or distorting anything. */
+      .proj { position: absolute; width: 440px; height: 320px; padding: 0; overflow: hidden; z-index: 2; }
+      .proj .cover { position: absolute; left: 0; top: 0; right: 0; height: 104px; overflow: hidden; }
+      .proj .cover i { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.16); }
+      .proj .cover i:nth-child(1) { right: -40px; top: -70px; width: 220px; height: 220px; }
+      .proj .cover i:nth-child(2) { right: 120px; top: 44px; width: 96px; height: 96px; background: rgba(255, 255, 255, 0.1); }
+      .proj .icon { position: absolute; left: 24px; top: 72px; width: 60px; height: 60px; border-radius: 16px; background: #fff; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(10, 37, 64, 0.12); display: flex; align-items: center; justify-content: center; }
+      .proj .icon svg { width: 55%; height: 55%; }
+      .proj .title { position: absolute; left: 24px; top: 150px; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+      .proj .meta { position: absolute; left: 24px; top: 190px; font-size: 16px; color: var(--muted); white-space: nowrap; }
+      .proj .pill { position: absolute; right: 24px; top: 120px; }
+      .proj .progress { position: absolute; right: 24px; bottom: 24px; width: 392px; }
+      .proj .prow { display: flex; align-items: center; justify-content: space-between; height: 32px; }
+      .proj .faces { display: flex; }
+      .proj .faces .avatar { width: 32px; height: 32px; font-size: 11px; border: 2px solid #fff; margin-right: -6px; }
+      .proj .pct { font-size: 15px; font-weight: 600; color: var(--ink-2); }
+      .proj .track { height: 8px; border-radius: 4px; background: var(--surface-2); margin-top: 12px; overflow: hidden; }
+      .proj .track b { display: block; height: 100%; border-radius: 4px; }
+
+      #p1 { left: 400px; top: 260px; }  #p1 .cover, #p1 .track b { background: var(--sky); }
+      #p2 { left: 864px; top: 260px; }  #p2 .cover, #p2 .track b { background: var(--teal); }
+      #p3 { left: 1328px; top: 260px; } #p3 .cover, #p3 .track b { background: var(--amber); }
+      #p4 { left: 400px; top: 604px; }  #p4 .cover, #p4 .track b { background: var(--pink); }
+      #p6 { left: 1328px; top: 604px; } #p6 .cover, #p6 .track b { background: var(--green); }
+
+      /* The shared element: a sibling of both scenes, above them, starting in grid slot 5 (= FIRST). */
+      #hero { left: 864px; top: 604px; z-index: 5; box-shadow: 0 0 0 0 rgba(99, 91, 255, 0), 0 1px 2px rgba(10, 37, 64, 0.06), 0 12px 32px rgba(10, 37, 64, 0.08); }
+      #hero .cover { background: linear-gradient(120deg, #7a73ff, #635bff 55%, #4b44d6); }
+      #hero .track b { background: var(--accent); }
+
+      #crumb { color: var(--muted); opacity: 0; }
+
+      /* Scene B is a transparent layer over scene A's app chrome: in-app navigation keeps the shell. */
+      #s2 { background: transparent; z-index: 3; }
+      .tabs { position: absolute; left: 400px; top: 460px; width: 1368px; height: 48px; display: flex; gap: 36px; border-bottom: 1px solid var(--border); font-size: 17px; font-weight: 500; color: var(--ink-2); }
+      .tabs span { height: 48px; display: flex; align-items: center; }
+      .tabs .on { color: var(--accent-ink); font-weight: 600; box-shadow: inset 0 -3px 0 var(--accent); }
+      .tasks { position: absolute; left: 400px; top: 532px; width: 820px; height: 436px; }
+      .velocity { position: absolute; left: 1244px; top: 532px; width: 524px; height: 436px; }
+      .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .task { display: flex; align-items: center; gap: 16px; height: 64px; border-top: 1px solid var(--border); font-size: 17px; font-weight: 500; }
+      .task .box { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #c9d1dc; flex: none; }
+      .task .box.done { background: var(--accent); border-color: var(--accent); }
+      .task .name { flex: 1; }
+      .task .avatar { width: 32px; height: 32px; font-size: 12px; }
+      .task .pill { width: 112px; justify-content: center; }
+      .velocity .bars { height: 300px; margin-top: 28px; gap: 16px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: project grid (its app chrome stays on screen as the shell for scene B) -->
+      <div id="s1" class="scene dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Projects</div>
+            <div class="nav-item"><span class="nav-icon"></span>Analytics</div>
+            <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Projects<span id="crumb"> / Atlas redesign</span></div>
+              <div class="search">Search</div>
+              <div class="avatar sky">JL</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-head">
+          <div class="h3">All projects</div>
+          <span class="pill">6</span>
+          <div class="btn btn-primary">New project</div>
+        </div>
+
+        <div id="p1" class="card proj other">
+          <div class="cover"><i></i><i></i></div>
+          <div class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3" fill="none" stroke="#0ea5e9" stroke-width="2.4" /><path d="M3 10h18" stroke="#0ea5e9" stroke-width="2.4" /></svg></div>
+          <div class="title">Billing v2</div>
+          <div class="meta">Payments · Due Oct 30</div>
+          <span class="pill amber">At risk</span>
+          <div class="progress"><div class="prow"><div class="faces"><span class="avatar pink">MK</span><span class="avatar teal">RS</span></div><span class="pct">41%</span></div><div class="track"><b style="width: 41%"></b></div></div>
+        </div>
+        <div id="p2" class="card proj other">
+          <div class="cover"><i></i><i></i></div>
+          <div class="icon"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5" fill="none" stroke="#14b8a6" stroke-width="2.4" /></svg></div>
+          <div class="title">Mobile onboarding</div>
+          <div class="meta">iOS · Due Nov 6</div>
+          <span class="pill green">On track</span>
+          <div class="progress"><div class="prow"><div class="faces"><span class="avatar amber">DL</span><span class="avatar">AN</span></div><span class="pct">77%</span></div><div class="track"><b style="width: 77%"></b></div></div>
+        </div>
+        <div id="p3" class="card proj other">
+          <div class="cover"><i></i><i></i></div>
+          <div class="icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3" fill="none" stroke="#f59e0b" stroke-width="2.4" /><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6" fill="none" stroke="#f59e0b" stroke-width="2.4" /></svg></div>
+          <div class="title">Data warehouse</div>
+          <div class="meta">Platform · Due Dec 2</div>
+          <span class="pill indigo">Planning</span>
+          <div class="progress"><div class="prow"><div class="faces"><span class="avatar sky">TB</span></div><span class="pct">12%</span></div><div class="track"><b style="width: 12%"></b></div></div>
+        </div>
+        <div id="p4" class="card proj other">
+          <div class="cover"><i></i><i></i></div>
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5" fill="none" stroke="#ec4899" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg></div>
+          <div class="title">Partner API</div>
+          <div class="meta">Developers · Due Nov 21</div>
+          <span class="pill green">On track</span>
+          <div class="progress"><div class="prow"><div class="faces"><span class="avatar teal">EV</span><span class="avatar amber">KO</span></div><span class="pct">55%</span></div><div class="track"><b style="width: 55%"></b></div></div>
+        </div>
+        <div id="p6" class="card proj other">
+          <div class="cover"><i></i><i></i></div>
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linejoin="round" /></svg></div>
+          <div class="title">Q4 launch</div>
+          <div class="meta">Marketing · Due Dec 9</div>
+          <span class="pill">Draft</span>
+          <div class="progress"><div class="prow"><div class="faces"><span class="avatar pink">SJ</span><span class="avatar sky">HW</span></div><span class="pct">8%</span></div><div class="track"><b style="width: 8%"></b></div></div>
+        </div>
+      </div>
+
+      <!-- Scene B: project detail body, built in below the header the card becomes -->
+      <div id="s2" class="scene next">
+        <div class="tabs"><span class="on">Overview</span><span>Tasks</span><span>Timeline</span><span>Files</span><span>Activity</span></div>
+        <div class="card tasks">
+          <div class="card-head"><div class="h3">Open tasks</div><span class="pill indigo">12</span></div>
+          <div class="task"><span class="box done"></span><span class="name">Audit current navigation</span><span class="avatar pink">MK</span><span class="pill green">Done</span></div>
+          <div class="task"><span class="box done"></span><span class="name">Wireframe new dashboard</span><span class="avatar">AN</span><span class="pill green">Done</span></div>
+          <div class="task"><span class="box"></span><span class="name">Design token migration</span><span class="avatar amber">DL</span><span class="pill indigo">In progress</span></div>
+          <div class="task"><span class="box"></span><span class="name">Usability test, round 2</span><span class="avatar teal">RS</span><span class="pill amber">Review</span></div>
+          <div class="task"><span class="box"></span><span class="name">Ship beta to 10% of users</span><span class="avatar sky">JL</span><span class="pill">Backlog</span></div>
+        </div>
+        <div class="card velocity">
+          <div class="card-head"><div class="h3">Weekly velocity</div><span class="pill green">+18%</span></div>
+          <div class="bars">
+            <div class="bar soft" style="height: 38%"></div><div class="bar soft" style="height: 46%"></div><div class="bar soft" style="height: 42%"></div><div class="bar soft" style="height: 58%"></div>
+            <div class="bar" style="height: 63%"></div><div class="bar" style="height: 71%"></div><div class="bar" style="height: 84%"></div><div class="bar" style="height: 100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- The shared element: ONE node, never duplicated, never faded. It becomes scene B's header. -->
+      <div id="hero" class="card proj">
+        <div class="cover"><i></i><i></i></div>
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 2.5l8.5 4.75v9.5L12 21.5l-8.5-4.75v-9.5z" fill="none" stroke="#635bff" stroke-width="2.2" stroke-linejoin="round" /><path d="M3.5 7.25L12 12l8.5-4.75M12 12v9.5" fill="none" stroke="#635bff" stroke-width="2.2" stroke-linejoin="round" /></svg></div>
+        <div class="title">Atlas redesign</div>
+        <div class="meta">Web app · Due Nov 14</div>
+        <span class="pill green">On track</span>
+        <div class="progress"><div class="prow"><div class="faces"><span class="avatar pink">MK</span><span class="avatar">AN</span><span class="avatar amber">DL</span></div><span class="pct">68%</span></div><div class="track"><b style="width: 68%"></b></div></div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo(".grid-head", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power3.out" }, 0);
+      tl.fromTo(["#p1", "#p2", "#p3", "#p4", "#hero", "#p6"], { y: 28, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.05, ease: "power3.out" }, 0.05);
+
+      // ---- Shared-Element Transition ----
+      const T = 1.5; // transition start
+      const D = 0.6; // hero move (18f @ 30fps)
+      // Hard-coded rects in root px (match CSS). Never measure at load: entrances are mid-tween.
+      const FIRST = { x: 864, y: 604, w: 440, h: 320 }; // grid slot 5 (#hero's CSS left/top)
+      const LAST = { x: 400, y: 188, w: 1368, h: 248 }; // detail header
+      const MOVE = { duration: D, ease: "expo.inOut" }; // every hero property shares this, so the card moves as one object
+      const RING_OFF = "0 0 0 0 rgba(99,91,255,0), 0 1px 2px rgba(10,37,64,0.06), 0 12px 32px rgba(10,37,64,0.08)";
+      const RING_ON = "0 0 0 3px rgba(99,91,255,0.55), 0 2px 4px rgba(10,37,64,0.06), 0 24px 64px rgba(10,37,64,0.18)";
+
+      // Telegraph: select (ring + lift), then a 5f press. The eye is on the card before anything leaves.
+      tl.to("#hero", { boxShadow: RING_ON, y: -6, duration: 0.25, ease: "power2.out" }, T - 0.5);
+      tl.to("#hero", { scale: 0.98, duration: 0.09, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.2);
+
+      // The layout swaps out around it: neighbours drop away first (nearest first), filling expo's slow start.
+      // Opacity eases OUT so they visibly leave on frame 1; y eases IN so they still fall rather than float.
+      tl.to(".grid-head", { y: -12, duration: 0.2, ease: "power2.in" }, T);
+      tl.to(".grid-head", { opacity: 0, duration: 0.15, ease: "power2.out" }, T);
+      [["#p2", 0], ["#p4", 0.03], ["#p6", 0.03], ["#p1", 0.06], ["#p3", 0.06]].forEach(([el, d]) => {
+        tl.to(el, { y: 56, scale: 0.97, duration: 0.3, ease: "power2.in" }, T + d);
+        tl.to(el, { opacity: 0, duration: 0.3, ease: "power2.out" }, T + d);
+      });
+
+      // The hero: position on transforms (sub-pixel), size on width/height (no scale, so text and radius never distort).
+      tl.to("#hero", { x: LAST.x - FIRST.x, y: LAST.y - FIRST.y, width: LAST.w, height: LAST.h, ...MOVE }, T);
+      // Children are edge-anchored, so the box tween re-lays them out; these only nudge padding 24 -> 32 and grow type.
+      tl.to("#hero .icon", { x: 8, y: -8, width: 76, height: 76, borderRadius: 20, ...MOVE }, T);
+      tl.to("#hero .title", { x: 8, y: 4, scale: 40 / 26, transformOrigin: "0 0", ...MOVE }, T);
+      tl.to("#hero .meta", { x: 8, y: 18, ...MOVE }, T);
+      tl.to("#hero .pill", { x: -8, y: -4, ...MOVE }, T);
+      tl.to("#hero .progress", { x: -8, y: -8, width: 440, ...MOVE }, T);
+      // Lifted in flight, set down on landing: the ring and the big shadow settle in the last third.
+      tl.to("#hero", { boxShadow: RING_OFF, duration: 0.3, ease: "power2.out" }, T + D * 0.6);
+
+      // ---- Scene B builds in below the header as it lands ----
+      tl.set("#s2", { opacity: 1 }, T);
+      tl.to("#crumb", { opacity: 1, duration: 0.3, ease: "power2.out" }, T + 0.3);
+      tl.fromTo(".tabs", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "expo.out" }, T + 0.24);
+      tl.fromTo([".tasks", ".velocity"], { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.06, ease: "expo.out" }, T + 0.3);
+      tl.fromTo(".task", { x: -16, opacity: 0 }, { x: 0, opacity: 1, duration: 0.45, stagger: 0.04, ease: "power3.out" }, T + 0.45);
+      tl.fromTo(".velocity .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.55, stagger: 0.035, ease: "power3.out" }, T + 0.5);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

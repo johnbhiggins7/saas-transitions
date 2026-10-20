@@ -83,6 +83,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Icon-to-Scene Morph](transitions/icon-to-scene-morph/SKILL.md) | Morphing | 0.8s | The parts of a brand icon travel and reshape into the matching parts of real UI |
 | [Prompt-to-UI Render](transitions/prompt-to-ui-render/SKILL.md) | Morphing | 1.1s | A typed prompt compiles, the prompt bar opens into a card, and skeletons resolve into UI |
 | [Liquid Blob Morph](transitions/liquid-blob-morph/SKILL.md) | Morphing | 0.8s | A button melts into a wobbling blob that floods the frame, then the next scene opens through it |
+| [Shared-Element Transition](transitions/shared-element/SKILL.md) | UI-Native | 0.6s | One card travels intact from its grid slot into the header of its detail page |
 <!-- index:end -->
 
 ## Adding or changing a transition
