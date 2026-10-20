@@ -87,6 +87,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Component Restructuring](transitions/component-reflow/SKILL.md) | UI-Native | 0.7s | A table collapses into a sidebar widget while a Kanban board grows into the freed space |
 | [Bento Cascade](transitions/bento-cascade/SKILL.md) | UI-Native | 0.8s | Bento tiles resize and reposition one after another into a new layout, swapping content mid-move |
 | [Cursor-Triggered Expansion](transitions/cursor-click-expand/SKILL.md) | UI-Native | 0.5s | A cursor clicks a button, and the button's box grows into a modal that fills the frame |
+| [Toggle & Theme Shift](transitions/toggle-theme-shift/SKILL.md) | UI-Native | 0.6s | A toggle sends a circular reveal from its knob that repaints the screen into a new state |
 <!-- index:end -->
 
 ## Adding or changing a transition

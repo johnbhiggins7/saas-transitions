@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.8;duration=0.6" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* ---- Shared layout (app-relative px). Both scenes use identical boxes so the reveal edge reads as a repaint. ---- */
+      .smart { position: absolute; right: 472px; top: 8px; height: 60px; display: flex; align-items: center; gap: 12px; padding: 0 5px 0 18px; border-radius: 30px; border: 1px solid var(--border); background: var(--surface); font-size: 18px; font-weight: 600; color: var(--ink); }
+      .smart svg { width: 20px; height: 20px; flex: none; }
+      .smart .toggle { width: 88px; height: 48px; border-radius: 24px; margin-left: 4px; } /* toggle box = scene 1234,94 88x48 (TOGGLE in script) */
+      .smart .knob { left: 4px; top: 4px; width: 40px; height: 40px; }
+      .smart .toggle.on .knob { left: 44px; } /* kit's on-state (left 32px) is for its 64px toggle; must equal 4px + the 40px knob slide */
+      .w { position: absolute; }
+      .k1 { left: 280px; top: 108px; width: 324px; height: 156px; }
+      .k2 { left: 628px; top: 108px; width: 324px; height: 156px; }
+      .k3 { left: 976px; top: 108px; width: 324px; height: 156px; }
+      .k4 { left: 1324px; top: 108px; width: 324px; height: 156px; }
+      .chart { left: 280px; top: 288px; width: 1020px; height: 600px; }
+      .side { left: 1324px; top: 288px; width: 324px; height: 600px; }
+      .ico { position: absolute; right: 22px; top: 22px; width: 36px; height: 36px; border-radius: 10px; background: var(--surface-2); }
+      .chart-head { display: flex; align-items: center; gap: 24px; }
+      .chart-body { position: absolute; left: 24px; bottom: 24px; width: calc(100% - 48px); height: 460px; } /* kit .chart-svg sets width:100%, which beats left+right and overflows the card */
+      .ch { display: grid; gap: 30px; margin-top: 30px; }
+      .ch-row { display: grid; gap: 10px; font-size: 16px; color: var(--ink-2); }
+      .ch-row b { font-weight: 600; color: var(--ink); float: right; }
+      .track { height: 10px; border-radius: 5px; background: var(--surface-2); }
+      .track i { display: block; height: 100%; border-radius: 5px; background: var(--muted); }
+
+      /* color is inherited as a computed value from #root, so token overrides alone leave text in the old ink. */
+      #s1, #s2 { color: var(--ink); }
+
+      /* ---- Scene A: "before". Muted gray tokens; the only colour in frame is the toggle once it flips. ---- */
+      #s1 { --bg: #e3e5e9; --surface: #f1f2f4; --surface-2: #e7e9ec; --border: #d3d6db; --ink: #4b5260; --ink-2: #6b7280; --muted: #a0a6b0; --accent: #a0a6b0; --shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
+      #s1 .brand-mark, #s1 .avatar { background: #b4b9c2; }
+      #s1 .delta.up, #s1 .delta.down { background: #e2e4e8; color: #7b818c; }
+      #s1 .app { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06); }
+      #s1.dots { background-image: radial-gradient(rgba(0, 0, 0, 0.07) 1.5px, rgba(0, 0, 0, 0) 1.5px); }
+
+      /* ---- Scene B: "after". Dark tokens redefined on the scene root, so every kit class repaints. ---- */
+      #s2 { z-index: 2; clip-path: circle(0px at 1278px 118px); --bg: #0b1220; --surface: #131c2f; --surface-2: #1b2640; --border: rgba(148, 163, 184, 0.16); --ink: #eef2f9; --ink-2: #b3bfd2; --muted: #7d8ca5; --accent: #7c74ff; --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 14px 36px rgba(0, 0, 0, 0.4); }
+      #s2 .app { background: #0f1729; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5); }
+      #s2 .app-sidebar { background: #0c1424; }
+      #s2 .nav-icon { background: rgba(255, 255, 255, 0.12); }
+      #s2 .nav-item.active { background: rgba(124, 116, 255, 0.16); box-shadow: none; }
+      #s2 .delta.up { background: rgba(16, 185, 129, 0.16); color: #34d399; }
+      #s2.dots { background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1.5px, rgba(255, 255, 255, 0) 1.5px); }
+      #s2 .smart { border-color: rgba(124, 116, 255, 0.5); background: rgba(124, 116, 255, 0.1); }
+      #s2 .toggle { box-shadow: 0 0 24px rgba(99, 91, 255, 0.7); }
+      #s2 .card { border-top-color: rgba(255, 255, 255, 0.1); }
+      .smart .toggle.on { background: #635bff; } /* same ON colour in both scenes: the reveal is born inside it */
+
+      #wave { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 3; pointer-events: none; }
+      #ripple { left: 1252px; top: 122px; z-index: 4; }
+      #cursor { left: 1244px; top: 118px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4.2" data-width="1920" data-height="1080">
+      <!-- Scene A: the cluttered, muted "before" dashboard -->
+      <div id="s1" class="scene dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Overview</div>
+            <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+            <div class="nav-item"><span class="nav-icon"></span>Reports</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Overview</div>
+              <div class="search">Search</div>
+              <div class="avatar sky">JL</div>
+            </div>
+          </div>
+          <div class="smart">
+            <svg viewBox="0 0 20 20"><path d="M10 1 L12.2 7.8 L19 10 L12.2 12.2 L10 19 L7.8 12.2 L1 10 L7.8 7.8 Z" fill="#8a909b" /></svg>
+            Smart layout
+            <div id="tgl" class="toggle"><div id="knob" class="knob"></div></div>
+          </div>
+          <div class="card w k1 a-card"><div class="ico"></div><div class="card-label">Revenue</div><div class="card-value">$128.4k</div><span class="delta up">+12.5%</span></div>
+          <div class="card w k2 a-card"><div class="ico"></div><div class="card-label">Active users</div><div class="card-value">8,421</div><span class="delta up">+4.1%</span></div>
+          <div class="card w k3 a-card"><div class="ico"></div><div class="card-label">Conversion</div><div class="card-value">3.2%</div><span class="delta up">+0.4%</span></div>
+          <div class="card w k4 a-card"><div class="ico"></div><div class="card-label">Churn</div><div class="card-value">1.8%</div><span class="delta up">−0.2%</span></div>
+          <div class="card w chart a-card">
+            <div class="chart-head"><div class="h3">Revenue over time</div><div class="legend"><span><i></i>This year</span></div></div>
+            <svg class="chart-body chart-svg" viewBox="0 0 1320 440" preserveAspectRatio="none">
+              <line class="chart-grid" x1="0" y1="110" x2="1320" y2="110" /><line class="chart-grid" x1="0" y1="220" x2="1320" y2="220" /><line class="chart-grid" x1="0" y1="330" x2="1320" y2="330" />
+              <path d="M0,360 C110,340 165,290 220,300 S330,340 440,270 S550,190 660,210 S770,260 880,180 S990,130 1100,150 S1210,100 1320,80" fill="none" stroke="#a7acb5" stroke-width="3" stroke-dasharray="10 8" vector-effect="non-scaling-stroke" />
+            </svg>
+          </div>
+          <div class="card w side a-card">
+            <div class="h3">Top channels</div>
+            <div class="ch">
+              <div class="ch-row">Organic<b>42%</b><div class="track"><i style="width: 84%"></i></div></div>
+              <div class="ch-row">Paid<b>28%</b><div class="track"><i style="width: 56%"></i></div></div>
+              <div class="ch-row">Referral<b>18%</b><div class="track"><i style="width: 36%"></i></div></div>
+              <div class="ch-row">Email<b>12%</b><div class="track"><i style="width: 24%"></i></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene B: the same dashboard, dark and organized, revealed by a circle born in the toggle -->
+      <div id="s2" class="scene next dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Overview</div>
+            <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+            <div class="nav-item"><span class="nav-icon"></span>Reports</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Overview</div>
+              <div class="search">Search</div>
+              <div class="avatar sky">JL</div>
+            </div>
+          </div>
+          <div class="smart">
+            <svg viewBox="0 0 20 20"><path d="M10 1 L12.2 7.8 L19 10 L12.2 12.2 L10 19 L7.8 12.2 L1 10 L7.8 7.8 Z" fill="#a5a0ff" /></svg>
+            Smart layout
+            <div class="toggle on"><div class="knob"></div></div>
+          </div>
+          <div class="card w k1 b-card"><div class="ico" style="background: rgba(124, 116, 255, 0.22)"></div><div class="card-label">Revenue</div><div class="card-value">$128.4k</div><span class="delta up">+12.5%</span></div>
+          <div class="card w k2 b-card"><div class="ico" style="background: rgba(45, 212, 191, 0.22)"></div><div class="card-label">Active users</div><div class="card-value">8,421</div><span class="delta up">+4.1%</span></div>
+          <div class="card w k3 b-card"><div class="ico" style="background: rgba(244, 114, 182, 0.22)"></div><div class="card-label">Conversion</div><div class="card-value">3.2%</div><span class="delta up">+0.4%</span></div>
+          <div class="card w k4 b-card"><div class="ico" style="background: rgba(251, 191, 36, 0.22)"></div><div class="card-label">Churn</div><div class="card-value">1.8%</div><span class="delta up">−0.2%</span></div>
+          <div class="card w chart b-card">
+            <div class="chart-head"><div class="h3">Revenue over time</div><div class="legend"><span><i></i>This year</span></div></div>
+            <svg class="chart-body chart-svg" viewBox="0 0 1320 440" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="b-line" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#7c74ff" /><stop offset="1" stop-color="#2dd4bf" /></linearGradient>
+                <linearGradient id="b-area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7c74ff" stop-opacity="0.35" /><stop offset="1" stop-color="#7c74ff" stop-opacity="0" /></linearGradient>
+              </defs>
+              <line class="chart-grid" x1="0" y1="110" x2="1320" y2="110" /><line class="chart-grid" x1="0" y1="220" x2="1320" y2="220" /><line class="chart-grid" x1="0" y1="330" x2="1320" y2="330" />
+              <path d="M0,360 C110,340 165,290 220,300 S330,340 440,270 S550,190 660,210 S770,260 880,180 S990,130 1100,150 S1210,100 1320,80 L1320,440 L0,440 Z" fill="url(#b-area)" />
+              <path d="M0,360 C110,340 165,290 220,300 S330,340 440,270 S550,190 660,210 S770,260 880,180 S990,130 1100,150 S1210,100 1320,80" fill="none" stroke="url(#b-line)" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+            </svg>
+          </div>
+          <div class="card w side b-card">
+            <div class="h3">Top channels</div>
+            <div class="ch">
+              <div class="ch-row">Organic<b>42%</b><div class="track"><i style="width: 84%; background: #7c74ff"></i></div></div>
+              <div class="ch-row">Paid<b>28%</b><div class="track"><i style="width: 56%; background: #2dd4bf"></i></div></div>
+              <div class="ch-row">Referral<b>18%</b><div class="track"><i style="width: 36%; background: #f472b6"></i></div></div>
+              <div class="ch-row">Email<b>12%</b><div class="track"><i style="width: 24%; background: #fbbf24"></i></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wavefront: a thin ring riding the reveal edge -->
+      <svg id="wave" viewBox="0 0 1920 1080">
+        <circle cx="1278" cy="118" r="0" fill="none" stroke="#8b85ff" stroke-width="22" opacity="0" stroke-opacity="0.18" />
+        <circle cx="1278" cy="118" r="0" fill="none" stroke="#a5a0ff" stroke-width="3" opacity="0" />
+      </svg>
+      <div id="ripple" class="ripple"></div>
+      <svg id="cursor" class="cursor" viewBox="0 0 40 40"><path d="M8 4 L8 32 L15 25 L20 36 L25 34 L20 23 L30 23 Z" fill="#0a2540" stroke="#fff" stroke-width="2.5" stroke-linejoin="round" /></svg>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // Per-card misalignment of the "before" layout: [x, y, rotation]. Scene B starts here too, then snaps to 0.
+      // far = the card's corner farthest from the toggle, in scene px (CSS box + app offset 120,80).
+      const CARDS = {
+        k1: { mess: [-18, 14, -2.8], far: [400, 344] },
+        k2: { mess: [10, -14, 2.4], far: [748, 344] },
+        k3: { mess: [20, 14, -1.8], far: [1096, 344] },
+        k4: { mess: [10, -6, 3], far: [1768, 344] },
+        chart: { mess: [-12, 14, 0.8], far: [400, 968] },
+        side: { mess: [6, -10, -2.2], far: [1768, 968] },
+      };
+
+      // ---- Scene A entrance: cards drop in already crooked ----
+      Object.entries(CARDS).forEach(([k, { mess: [x, y, r] }], i) => {
+        tl.fromTo(`#s1 .${k}`, { x, y: y + 24, rotation: r, opacity: 0 }, { y, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.05 + i * 0.05);
+      });
+
+      // ---- Toggle & Theme Shift ----
+      const T = 1.8; // reveal start
+      const D = 0.6; // reveal duration (18f @ 30fps)
+      const TOGGLE = { x: 1234, y: 94, w: 88, h: 48 }; // #tgl in scene px (matches .smart CSS)
+      const OX = TOGGLE.x + TOGGLE.w / 2, OY = TOGGLE.y + TOGGLE.h / 2; // reveal origin = toggle centre
+      const R = Math.hypot(Math.max(OX, 1920 - OX), Math.max(OY, 1080 - OY)) + 24; // reach the farthest corner, not "100%"
+      const EASE = "power2.out";
+      // Inverse of power2.out, which in GSAP is cubic (1 - (1 - p)^3): the time the wavefront reaches distance d. Change it with EASE.
+      const reach = (d) => T + D * (1 - Math.cbrt(1 - Math.min(d / R, 1)));
+
+      // Telegraph: cursor travels to the toggle, presses, the knob slides on and the track turns indigo.
+      tl.fromTo("#cursor", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power1.out" }, 0.75);
+      tl.fromTo("#cursor", { x: 320, y: 620 }, { x: 0, y: 0, duration: 0.6, ease: "power3.inOut" }, 0.75);
+      tl.to("#cursor", { scale: 0.86, duration: 0.07, ease: "power2.out", yoyo: true, repeat: 1, transformOrigin: "20% 10%" }, T - 0.22);
+      tl.to("#tgl", { scale: 0.94, duration: 0.07, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.22);
+      // immediateRender: false, or fromTo paints the visible from-state at 0s and parks a dot on the knob for the whole establish.
+      tl.fromTo("#ripple", { scale: 0.6, opacity: 0.55 }, { scale: 3.6, opacity: 0, duration: 0.45, ease: "power2.out", immediateRender: false }, T - 0.18);
+      // Knob flips on mouse-up and lands on T, so the circle is born the frame it settles. A gap reads as two separate events.
+      tl.fromTo("#knob", { x: 0 }, { x: 40, duration: 0.18, ease: "power3.out" }, T - 0.15);
+      tl.to("#tgl", { backgroundColor: "#635bff", duration: 0.15, ease: "power2.out" }, T - 0.15);
+
+      // Reveal: scene B is clipped to a circle born at the toggle centre. Same units (px) at both ends or GSAP can't interpolate.
+      tl.set("#s2", { opacity: 1 }, T);
+      tl.fromTo("#s2", { clipPath: `circle(0px at ${OX}px ${OY}px)` }, { clipPath: `circle(${R}px at ${OX}px ${OY}px)`, duration: D, ease: EASE }, T);
+      tl.fromTo("#wave circle", { attr: { r: 0 }, opacity: 1 }, { attr: { r: R }, duration: D, ease: EASE }, T);
+      tl.to("#wave circle", { opacity: 0, duration: D * 0.6, ease: "power1.in" }, T + D * 0.4);
+      tl.set("#s1", { visibility: "hidden" }, T + D); // R clears the farthest corner, so scene B fully covers by now
+
+      // Landing: scene B cards are revealed at the crooked "before" positions (so the edge reads as a repaint),
+      // then each snaps square once the wavefront has fully passed it. Snapping earlier tears the card at the edge.
+      Object.entries(CARDS).forEach(([k, { mess: [x, y, r], far }]) => {
+        const t = reach(Math.hypot(far[0] - OX, far[1] - OY) + 32); // +32: the crooked corner sits up to ~20px past the square one
+        tl.fromTo(`#s2 .${k}`, { x, y, rotation: r }, { x: 0, y: 0, rotation: 0, duration: 0.5, ease: "back.out(1.4)", immediateRender: true }, t);
+      });
+      // The cursor eases off the lit track so the hold shows the hero toggle unobstructed (a pointer move, not an exit).
+      tl.to("#cursor", { x: 36, y: 56, duration: 0.5, ease: "power2.inOut" }, T + D + 0.25);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
