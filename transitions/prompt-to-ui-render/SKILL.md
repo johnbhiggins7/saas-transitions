@@ -2,7 +2,7 @@
 name: prompt-to-ui-render
 title: Prompt-to-UI Render
 category: morphing
-duration: 1.1s (34f @ 30fps)
+duration: 1.1s (66f @ 60fps)
 energy: medium-high
 description: A typed prompt shimmers and compiles into a skeleton line, then the prompt bar itself opens into a card whose skeleton tiles resolve into real UI behind a render sweep.
 ---
@@ -22,16 +22,16 @@ A glint crosses a typed prompt. Each letter lights indigo→sky just ahead of it
 
 Avoid it for features that don't generate anything. A prompt that compiles into UI promises AI, so on a plain settings or list screen it reads as a gimmick. Use [cursor-click-expand](../cursor-click-expand/SKILL.md) instead.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −8 → 0 | Send presses (scale 0.88, yoyo) and a ring pulses off it. The caret goes at −5. |
-| Compile | 0 → 10 | `--p` runs −32 → 115 (`power2.inOut`). That one custom property moves four things: the glint, a sheen on the text (p → p+30), a mask that erases the text (p → p+12) and a mask that reveals a skeleton line behind it. The first letter lights at 2 and starts erasing at 3, and the last one is gone by 8. The glint fades in over 2 → 4 and out over 5 → 8. An indigo focus ring fades in on the bar. |
-| Unfold | 3 → 24 | Width leads (`expo.inOut`, 3 → 20) and height follows (`expo.inOut`, 6 → 24), so the bar widens, then drops open like a drawer around its own center. The headline and chips fall away over 6 → 15. |
-| Skeleton | 10 → 27 | Six tiles pop in (opacity, scale 0.96 → 1, 0.04s stagger) while the frame is still opening. About 12f pass between the first tile popping in and its resolve. |
-| Render pass | 19 → 34 | A 420px sweep (white over grey, faint indigo over white) crosses the card on `sine.inOut`. Each tile cross-fades from skeleton to content when the sweep's center is 60px into it: the title and first KPI at 22, the last KPI at 28, send → Share at 30. |
-| Settle | 25 → 54 | The line draws over 25 → 49, the area fills behind it over 39 → 54, and the bars grow over 29 → 54. The focus ring fades out over 24 → 36. |
+| Telegraph | −16 → 0 | Send presses (scale 0.88, yoyo) and a ring pulses off it. The caret goes at −10. |
+| Compile | 0 → 20 | `--p` runs −32 → 115 (`power2.inOut`). That one custom property moves four things: the glint, a sheen on the text (p → p+30), a mask that erases the text (p → p+12) and a mask that reveals a skeleton line behind it. The first letter lights at 5 and starts erasing at 8, and the last one is gone by 14. The glint fades in over 4 → 8 and out over 11 → 17. An indigo focus ring fades in on the bar. |
+| Unfold | 6 → 48 | Width leads (`expo.inOut`, 6 → 39) and height follows (`expo.inOut`, 12 → 48), so the bar widens, then drops open like a drawer around its own center. The headline and chips fall away over 12 → 30. |
+| Skeleton | 20 → 53 | Six tiles pop in (opacity, scale 0.96 → 1, 0.04s stagger) while the frame is still opening. About 24f pass between the first tile popping in and its resolve. |
+| Render pass | 37 → 67 | A 420px sweep (white over grey, faint indigo over white) crosses the card on `sine.inOut`. Each tile cross-fades from skeleton to content when the sweep's center is 60px into it: the title and first KPI at 45, the last KPI at 57, send → Share at 60. |
+| Settle | 50 → 108 | The line draws over 50 → 98, the area fills behind it over 78 → 108, and the bars grow over 58 → 108. The focus ring fades out over 48 → 72. |
 
 ## Build it
 
@@ -86,16 +86,16 @@ Typing uses one `<span>` per character, revealed with `tl.set(span, { display: "
 
 ## Tuning
 
-- **Compile length (0.25–0.4s).** Under 8f the text-to-skeleton swap reads as a flicker. Over 12f the viewer waits on a bar. The `--p` range must clear the lit stretch on the left (≤ −30) and the skeleton feather on the right (≥ 112).
+- **Compile length (0.25–0.4s).** Under 15f the text-to-skeleton swap reads as a flicker. Over 24f the viewer waits on a bar. The `--p` range must clear the lit stretch on the left (≤ −30) and the skeleton feather on the right (≥ 112).
 - **Width/height lag (0.05–0.15s).** At 0 it reads as a plain box scaling up. Past 0.15s it splits into two separate moves.
-- **Ease.** `expo.inOut` packs the unfold into about 10 frames, which suits a snappy launch. `power3.inOut` spreads it out for a calmer explainer.
-- **Skeleton dwell (tiles at T+0.34 → first resolve at about T+0.75).** Under 8f the skeleton state doesn't register. Over 20f the card looks stuck loading.
+- **Ease.** `expo.inOut` packs the unfold into about 20 frames, which suits a snappy launch. `power3.inOut` spreads it out for a calmer explainer.
+- **Skeleton dwell (tiles at T+0.34 → first resolve at about T+0.75).** Under 16f the skeleton state doesn't register. Over 40f the card looks stuck loading.
 - **Sweep (`SW` 0.4–0.7s).** `SW` *is* the resolve stagger, because `at()` derives every tile's time from it. Change `SW` or `R0`, never individual tile times.
 
 ## Pitfalls
 
 - **Lit stretch showing at rest.** The sheen runs 30% ahead of `p`, so with a rest value of −15 the first 15% of the text ("Bu") stays tinted indigo through the whole typing beat. Start `p` at −32, so the ink stop sits at −2%.
-- **Glint drifting on an empty bar.** The last letter erases at frame 8, but `--p` keeps travelling to 115. While the glint faded out late (from T+0.26), it slid alone over the skeleton for three frames. Fade it from T+0.18.
+- **Glint drifting on an empty bar.** The last letter erases at frame 14, but `--p` keeps travelling to 115. While the glint faded out late (from T+0.26), it slid alone over the skeleton for six frames. Fade it from T+0.18.
 - **Tweening `left`/`top`.** Strict lint rejects it (`gsap_non_transform_motion`), and layout properties snap to whole pixels and stutter in the expo tail. Move the shell with `x`/`y` and size it with `width`/`height`.
 - **`fromTo` renders its from-state at build time.** The press ring showed at 0.9 opacity from frame 0. Add `immediateRender: false` to any telegraph whose from-state is visible.
 - **Typing with `opacity`.** Hidden characters keep their width, so the caret sits at the end of the full string. Toggle `display` with `tl.set`.
@@ -103,10 +103,10 @@ Typing uses one `<span>` per character, revealed with `tl.set(span, { display: "
 
 ## Variants
 
-- **Code-to-UI.** Replace the prompt with a `.code` block, and give each line its own `--p` tween, staggered 2–3f. The code card then unfolds into the component it describes.
+- **Code-to-UI.** Replace the prompt with a `.code` block, and give each line its own `--p` tween, staggered 4–6f. The code card then unfolds into the component it describes.
 - **Terminal-to-UI.** Start from a dark terminal shell and tween its `backgroundColor` to `--surface` during the unfold. Pair it with [xray-scanline](../xray-scanline/SKILL.md) for a "what's underneath" follow-up.
 - **In-app slot.** Set `CARD` to an empty slot inside an `.app` window, so the generated card lands in the product instead of floating on the canvas.
 
 ## Sound
 
-Soft key ticks under the typing and a crisp click on send (frame −8). A rising synth shimmer peaks as the card opens (about frame 15), then a quick run of soft ticks rides the render sweep (frames 22–30).
+Soft key ticks under the typing and a crisp click on send (frame −16). A rising synth shimmer peaks as the card opens (about frame 30), then a quick run of soft ticks rides the render sweep (frames 45–60).
