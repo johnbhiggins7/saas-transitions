@@ -89,6 +89,7 @@ Approved transitions only. A transition appears here once its render has been re
 | [Cursor-Triggered Expansion](transitions/cursor-click-expand/SKILL.md) | UI-Native | 0.5s | A cursor clicks a button, and the button's box grows into a modal that fills the frame |
 | [Toggle & Theme Shift](transitions/toggle-theme-shift/SKILL.md) | UI-Native | 0.6s | A toggle sends a circular reveal from its knob that repaints the screen into a new state |
 | [Dropdown & Accordion Wipe](transitions/dropdown-accordion-wipe/SKILL.md) | UI-Native | 0.7s | A nav dropdown keeps growing until it covers the frame, with the chosen item as the headline |
+| [Expanding Container Mask](transitions/container-mask-expand/SKILL.md) | Masking | 0.6s | A card already showing the next scene grows its mask to full frame while the dashboard recedes |
 <!-- index:end -->
 
 ## Adding or changing a transition

@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.6" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Scene A: bento dashboard. Boxes are app-relative (app sits at 120,80); the window card is
+         hard-coded because #s2's clip-path starts on exactly this rect (see WIN in the script). */
+      .cam { position: absolute; inset: 0; } /* camera layer: transform here, filter on the unscaled #s1 */
+      .bento { position: absolute; }
+      .kpi-a { left: 280px; top: 108px; width: 420px; height: 164px; }
+      .kpi-b { left: 280px; top: 296px; width: 420px; height: 164px; }
+      .channels { left: 280px; top: 484px; width: 420px; height: 404px; }
+      .signups { left: 724px; top: 644px; width: 452px; height: 244px; }
+      .upgrades { left: 1200px; top: 644px; width: 448px; height: 244px; }
+      /* WIN = scene (844,188) 924×512, radius 16. Same fill as #s2 so the window has no seam. */
+      #win { left: 724px; top: 108px; width: 924px; height: 512px; background: #0a2540; border: none; padding: 0; }
+      #win-ring { left: 724px; top: 108px; width: 924px; height: 512px; border-radius: 16px; }
+
+      .chan { display: grid; gap: 40px; margin-top: 32px; }
+      .chan-row { display: grid; gap: 8px; font-size: 16px; color: var(--ink-2); }
+      .chan-row b { float: right; color: var(--ink); font-weight: 600; }
+      .signups .bars { height: 130px; margin-top: 18px; gap: 12px; }
+      .up-row { display: flex; align-items: center; gap: 12px; height: 46px; font-size: 16px; font-weight: 500; }
+      .up-row .pill { margin-left: auto; }
+      .up-row .avatar { width: 32px; height: 32px; font-size: 13px; }
+
+      /* Follows the mask rect so the growing window lifts off the receding dashboard. Outer box-shadow only, no fill. */
+      #win-shadow { position: absolute; left: 0; top: 0; transform: translate(844px, 188px); width: 924px; height: 512px; border-radius: 16px; z-index: 1; opacity: 0; box-shadow: 0 28px 80px rgba(10, 37, 64, 0.4), 0 4px 14px rgba(10, 37, 64, 0.2); }
+
+      /* Scene B: Journeys spotlight, full-frame from the start, clipped to the window rect. */
+      #s2 {
+        z-index: 2;
+        background-color: #0a2540;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1.5px, rgba(255, 255, 255, 0) 1.5px),
+          radial-gradient(900px 620px at 1306px 444px, rgba(99, 91, 255, 0.38), rgba(99, 91, 255, 0) 70%);
+        background-size: 32px 32px, 100% 100%;
+        clip-path: inset(188px 152px 380px 844px round 16px);
+      }
+      #win-chrome { position: absolute; left: 844px; top: 188px; width: 924px; height: 80px; padding: 0 24px; display: flex; align-items: center; gap: 14px; color: #fff; font-size: 20px; font-weight: 600; }
+      #win-chrome .pill { background: rgba(16, 185, 129, 0.16); color: #6ee7b7; }
+      #win-chrome .pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #34d399; margin-right: 8px; }
+      #expand { margin-left: auto; width: 40px; height: 40px; border-radius: 10px; background: rgba(255, 255, 255, 0.12); display: flex; align-items: center; justify-content: center; }
+
+      #s2 .copy { position: absolute; left: 160px; top: 150px; width: 640px; }
+      #s2 .eyebrow { color: #a5a0ff; }
+      #s2 .h1 { color: #fff; margin-top: 16px; }
+      #s2 .body { color: rgba(255, 255, 255, 0.64); margin-top: 20px; }
+      .edges { position: absolute; inset: 0; }
+      .edge { fill: none; stroke: rgba(165, 160, 255, 0.6); stroke-width: 3; stroke-dasharray: 8 10; stroke-linecap: round; }
+      .node {
+        position: absolute; width: 280px; height: 104px; padding: 18px 20px; border-radius: 14px;
+        background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); color: #fff;
+        display: grid; grid-template-columns: 36px 1fr; column-gap: 14px; align-content: center;
+      }
+      .node i { grid-row: span 2; width: 36px; height: 36px; border-radius: 10px; align-self: center; }
+      .node span { font-size: 15px; color: rgba(255, 255, 255, 0.6); }
+      .node b { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+      .node.hot { background: #635bff; border-color: #8b85ff; box-shadow: 0 16px 48px rgba(99, 91, 255, 0.45); }
+      .node.hot span { color: rgba(255, 255, 255, 0.8); }
+      .stat { position: absolute; top: 816px; width: 272px; height: 120px; padding: 22px 24px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: #fff; }
+      .stat span { font-size: 15px; color: rgba(255, 255, 255, 0.6); }
+      .stat b { display: block; font-size: 36px; font-weight: 700; letter-spacing: -0.03em; margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- Scene A: bento dashboard with one live window card -->
+      <div id="s1" class="scene dots">
+        <div class="cam">
+          <div class="app">
+            <aside class="app-sidebar">
+              <div class="brand"><span class="brand-mark"></span>Northwind</div>
+              <div class="nav-item active"><span class="nav-icon"></span>Overview</div>
+              <div class="nav-item"><span class="nav-icon"></span>Journeys</div>
+              <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+              <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+              <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+            </aside>
+            <div class="app-body">
+              <div class="app-topbar">
+                <div class="page-title">Overview</div>
+                <div class="search">Search</div>
+                <div class="avatar sky">JL</div>
+              </div>
+            </div>
+            <div class="card bento kpi-a"><div class="card-label">Active journeys</div><div class="card-value">12,480</div><span class="delta up">+8.2%</span></div>
+            <div class="card bento kpi-b"><div class="card-label">Trial → Pro</div><div class="card-value">18.4%</div><span class="delta up">+2.1%</span></div>
+            <div class="card bento channels">
+              <div class="h3">Top channels</div>
+              <div class="chan">
+                <div class="chan-row"><div>Organic search <b>42%</b></div><div class="slider"><div class="fill" style="width: 42%"></div></div></div>
+                <div class="chan-row"><div>Referrals <b>27%</b></div><div class="slider"><div class="fill" style="width: 27%"></div></div></div>
+                <div class="chan-row"><div>Paid social <b>18%</b></div><div class="slider"><div class="fill" style="width: 18%"></div></div></div>
+                <div class="chan-row"><div>Partners <b>13%</b></div><div class="slider"><div class="fill" style="width: 13%"></div></div></div>
+              </div>
+            </div>
+            <div id="win-ring" class="bento"></div>
+            <div id="win" class="card bento"></div>
+            <div class="card bento signups">
+              <div class="card-label">Weekly signups</div>
+              <div class="bars">
+                <div class="bar soft" style="height: 40%"></div><div class="bar soft" style="height: 52%"></div><div class="bar soft" style="height: 47%"></div><div class="bar soft" style="height: 61%"></div>
+                <div class="bar" style="height: 66%"></div><div class="bar" style="height: 74%"></div><div class="bar" style="height: 83%"></div><div class="bar" style="height: 100%"></div>
+              </div>
+            </div>
+            <div class="card bento upgrades">
+              <div class="card-label">Recent upgrades</div>
+              <div style="margin-top: 10px">
+                <div class="up-row"><div class="avatar pink">AC</div>Acme Corp<span class="pill indigo">Pro</span></div>
+                <div class="up-row"><div class="avatar amber">GX</div>Globex<span class="pill green">Team</span></div>
+                <div class="up-row"><div class="avatar teal">IN</div>Initech<span class="pill indigo">Pro</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="win-shadow"></div>
+
+      <!-- Scene B: Journeys spotlight. Already full-frame and unscaled; the window card is just its clip. -->
+      <div id="s2" class="scene next">
+        <svg class="edges" viewBox="0 0 1920 1080">
+          <path class="edge" d="M440,572 C480,572 480,752 520,752" />
+          <path class="edge" d="M800,752 C850,752 850,472 900,472" />
+          <path class="edge" d="M1180,472 C1310,472 1310,312 1440,312" />
+          <path class="edge" d="M1180,472 C1240,472 1240,612 1300,612" />
+        </svg>
+        <div class="node" style="left: 160px; top: 520px"><i style="background: #0ea5e9"></i><span>Visited pricing</span><b>48.2k</b></div>
+        <div class="node" style="left: 520px; top: 700px"><i style="background: #14b8a6"></i><span>Started trial</span><b>9,316</b></div>
+        <div class="node" style="left: 900px; top: 420px"><i style="background: #f59e0b"></i><span>Connected data</span><b>5,702</b></div>
+        <div class="node" style="left: 1300px; top: 560px"><i style="background: #ec4899"></i><span>Invited team</span><b>3,148</b></div>
+        <div class="node hot" style="left: 1440px; top: 260px"><i style="background: rgba(255, 255, 255, 0.9)"></i><span>Upgraded to Pro</span><b>1,714</b></div>
+
+        <div id="win-chrome">
+          Journeys<span class="pill">Live</span>
+          <div id="expand">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3h5v5M8 17H3v-5M17 3l-6 6M3 17l6-6" /></svg>
+          </div>
+        </div>
+
+        <div class="copy">
+          <div class="eyebrow">Journeys</div>
+          <div class="h1">Every journey,<br />end to end.</div>
+          <div class="body">Watch customers move from first visit to paid plan, live.</div>
+        </div>
+        <div class="stat" style="left: 900px"><span>Trial → Pro</span><b>18.4%</b></div>
+        <div class="stat" style="left: 1194px"><span>Median time to upgrade</span><b>3.2 days</b></div>
+        <div class="stat" style="left: 1488px"><span>Biggest drop-off</span><b>Invite step</b></div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // Window card in scene px (matches #win: app-relative 724,108 + app offset 120,80).
+      const WIN = { x: 844, y: 188, w: 924, h: 512, r: 16 };
+      const clip = (dy = 0) =>
+        `inset(${WIN.y + dy}px ${1920 - WIN.x - WIN.w}px ${1080 - WIN.y - WIN.h - dy}px ${WIN.x}px round ${WIN.r}px)`;
+      const FULL = "inset(0px 0px 0px 0px round 0px)"; // same token count and units as clip(), or GSAP can't interpolate it
+      const cx = WIN.x + WIN.w / 2, cy = WIN.y + WIN.h / 2;
+
+      // ---- Scene A entrance (the window rises with its card: same time, ease and offset) ----
+      tl.fromTo("#s1 .bento.card:not(#win)", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.05, ease: "power3.out" }, 0);
+      tl.fromTo("#win", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.1);
+      tl.fromTo("#s2", { opacity: 0, clipPath: clip(24) }, { opacity: 1, clipPath: clip(0), duration: 0.5, ease: "power3.out" }, 0.1);
+      tl.fromTo(".chan .fill", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.6, stagger: 0.05, ease: "power3.out" }, 0.3);
+      tl.fromTo(".signups .bar", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.5, stagger: 0.03, ease: "power3.out" }, 0.35);
+      // Scene B is live inside the window the whole time: flow dashes march at constant speed across the cut.
+      tl.fromTo(".edge", { strokeDashoffset: 0 }, { strokeDashoffset: -216, duration: 4, ease: "none" }, 0);
+
+      // ---- Expanding Container Mask ----
+      const T = 1.6; // transition start
+      const D = 0.6; // mask expansion (18f @ 30fps)
+
+      // Telegraph: a ring leaves the card, then the expand control presses.
+      tl.fromTo("#win-ring", { boxShadow: "0 0 0 0px rgba(99,91,255,0.55)" }, { boxShadow: "0 0 0 22px rgba(99,91,255,0)", duration: 0.5, ease: "power2.out" }, T - 0.4);
+      tl.to("#expand", { scale: 0.86, duration: 0.1, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.16);
+      tl.to("#win-chrome", { opacity: 0, duration: 0.15, ease: "power1.in" }, T);
+
+      // The mask grows; scene B underneath does not move or scale. immediateRender:false so this
+      // fromTo doesn't stamp clip(0) over the entrance tween's start state at seek(0).
+      tl.fromTo("#s2", { clipPath: clip(0) }, { clipPath: FULL, duration: D, ease: "expo.inOut", immediateRender: false }, T);
+      // Shadow tracks the same rect on the same ease, and fades up during expo's slow first frames: the card lifts, then opens.
+      // x/y not left/top: strict lint rejects left/top (they snap to whole pixels and stutter in the slow tail).
+      tl.fromTo("#win-shadow", { x: WIN.x, y: WIN.y, width: WIN.w, height: WIN.h, borderRadius: WIN.r }, { x: 0, y: 0, width: 1920, height: 1080, borderRadius: 0, duration: D, ease: "expo.inOut", immediateRender: false }, T);
+      tl.fromTo("#win-shadow", { opacity: 0 }, { opacity: 1, duration: D * 0.4, ease: "power2.out", immediateRender: false }, T);
+
+      // Scene A recedes around the window's center, so the shrinking card always stays inside the growing mask.
+      tl.set("#s1 .cam", { transformOrigin: `${cx}px ${cy}px` }, 0);
+      tl.to("#s1 .cam", { scale: 0.96, duration: D, ease: "expo.inOut" }, T);
+      // fromTo, not to: tweening from the computed "none" interpolates from brightness(0) and flashes black.
+      tl.fromTo("#s1", { filter: "brightness(1)" }, { filter: "brightness(0.78)", duration: D, ease: "expo.inOut", immediateRender: false }, T);
+      tl.set("#s1", { visibility: "hidden" }, T + D);
+
+      // ---- Scene B landing: only the content the window never showed arrives; the nodes stay locked ----
+      tl.fromTo("#s2 .copy", { y: 32, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "expo.out" }, T + 0.3);
+      tl.fromTo("#s2 .stat", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, ease: "expo.out" }, T + 0.36);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
