@@ -2,7 +2,7 @@
 name: toggle-theme-shift
 title: Toggle & Theme Shift
 category: ui-native
-duration: 0.6s (18f @ 30fps)
+duration: 0.6s (36f @ 60fps)
 energy: medium
 description: Flipping a toggle sends a circular reveal out from its knob that repaints the whole screen into a new state and palette, e.g. a muted, crooked "before" dashboard into an aligned dark-mode "after".
 ---
@@ -21,17 +21,17 @@ A cursor flips a toggle, and the next scene grows out of the toggle's centre as 
 
 Avoid it when scene B is a different screen. The repaint only reads if the layout under the edge matches. Use [cursor-click-expand](../cursor-click-expand/SKILL.md) instead, or [split-screen-takeover](../split-screen-takeover/SKILL.md) to hold old and new side by side.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −31 → −7 | The cursor fades in and glides to the toggle (`power3.inOut`, 18f, arriving at −13). It is the only moving thing in a gray frame. |
-| Press | −7 → −2 | Mouse-down: the cursor squeezes to 0.86 and the toggle to 0.94 (2f down, 2f up). A ripple spreads from −5. |
-| Flip | −4.5 → 0 | The knob slides 40px (`power3.out`, 5.4f) and the track turns `#635bff`, the first colour in scene A. It is visually settled by frame 0, the frame the circle is born, and fully done at about f1. |
-| Reveal | 0 → 14 | Scene B's `clip-path: circle()` grows from the toggle centre to R = 1624px on `power2.out` (cubic in GSAP): 483px at f2, 1143px at f6, ~1480px at f10. It covers the last (bottom-left) corner at ~14f; the last 4f run off-screen. A 3px lavender ring and a 22px glow ride the edge and fade over frames 7 → 18. |
-| Repaint | 0 → 14 | Under the edge, scene B's cards sit at scene A's exact crooked transforms, so the edge reads as one layout being repainted, not a new screen sliding in. |
-| Snap | 1 → 22 | Each B card squares up (x, y, rotation → 0, `back.out(1.4)`, 15f) once the edge clears its far corner: Conversion at 1f, Churn and Active users at ~2.5f, Revenue at ~4.5f, Top channels at 5f, the chart at 7f. The straightening ripples outward from the toggle. |
-| Settle | 25 → 40 | The cursor eases 36px right and 56px down off the lit track (`power2.inOut`, 15f), so the hold shows the toggle unobstructed. |
+| Telegraph | −63 → −13 | The cursor fades in and glides to the toggle (`power3.inOut`, 36f, arriving at −27). It is the only moving thing in a gray frame. |
+| Press | −13 → −5 | Mouse-down: the cursor squeezes to 0.86 and the toggle to 0.94 (4f down, 4f up). A ripple spreads from −11. |
+| Flip | −9 → 0 | The knob slides 40px (`power3.out`, 10.8f) and the track turns `#635bff`, the first colour in scene A. It is visually settled by frame 0, the frame the circle is born, and fully done at about f2. |
+| Reveal | 0 → 28 | Scene B's `clip-path: circle()` grows from the toggle centre to R = 1624px on `power2.out` (cubic in GSAP): 483px at f4, 1143px at f12, ~1480px at f20. It covers the last (bottom-left) corner at ~28f; the last 8f run off-screen. A 3px lavender ring and a 22px glow ride the edge and fade over frames 14 → 36. |
+| Repaint | 0 → 28 | Under the edge, scene B's cards sit at scene A's exact crooked transforms, so the edge reads as one layout being repainted, not a new screen sliding in. |
+| Snap | 2.5 → 44 | Each B card squares up (x, y, rotation → 0, `back.out(1.4)`, 30f) once the edge clears its far corner: Conversion at ~2.5f, Churn and Active users at ~5f, Revenue at 9f, Top channels at 10f, the chart at 14f. The straightening ripples outward from the toggle. |
+| Settle | 51 → 81 | The cursor eases 36px right and 56px down off the lit track (`power2.inOut`, 30f), so the hold shows the toggle unobstructed. |
 
 ## Build it
 
@@ -80,14 +80,14 @@ The full working composition is in [demo.html](demo.html).
 ## Tuning
 
 - **Duration.** 0.5–0.7s. Under ~0.45s the circle reads as a flash. Over ~0.8s the last corner crawls in.
-- **Ease.** `power2.out` (cubic) clears the last corner at ~14f. `power1.out` (quad) uses ~16f. `power3.out` (quart) clears by ~12f and wastes the tail off-screen. Change `reach()` with the ease: GSAP's powerN is degree N+1, so `power2.out` (`1 − (1 − p)³`) takes a cube root, `power1.out` a square root and `power3.out` a fourth root. The wrong root puts every radius ~40% off and fires the snaps early or late. Avoid `.inOut` eases: their first frames are a dot hidden under the cursor.
+- **Ease.** `power2.out` (cubic) clears the last corner at ~28f. `power1.out` (quad) uses ~32f. `power3.out` (quart) clears by ~24f and wastes the tail off-screen. Change `reach()` with the ease: GSAP's powerN is degree N+1, so `power2.out` (`1 − (1 − p)³`) takes a cube root, `power1.out` a square root and `power3.out` a fourth root. The wrong root puts every radius ~40% off and fires the snaps early or late. Avoid `.inOut` eases: their first frames are a dot hidden under the cursor.
 - **Origin and R.** Always the toggle centre and the distance to the farthest corner. A toggle near a frame corner pushes R towards the full diagonal (~2200px). There, D = 0.7s keeps the edge speed close to this demo's.
 - **Mess amplitude.** ±10–20px and ±1.8–3°. Under ~1.5° the snap disappears at thumbnail size. Over ~4° scene A looks broken rather than untidy. With 24px gutters, keep neighbours' relative x offset under ~16px so tilted cards don't touch.
 - **Ring.** A 3px stroke plus a 22px glow at 0.18 stroke-opacity. Drop the glow for a calmer cut, or both rings for a plain theme flip.
 
 ## Pitfalls
 
-- **A gap between flip and reveal.** `power3.out` moves the knob ~94% of the way in half its duration. A 0.2s slide starting at T−0.22 looked done about 4f before the circle appeared, so it read as two events. Start the knob at T−0.15 so it lands on T.
+- **A gap between flip and reveal.** `power3.out` moves the knob ~94% of the way in half its duration. A 0.2s slide starting at T−0.22 looked done about 8f before the circle appeared, so it read as two events. Start the knob at T−0.15 so it lands on T.
 - **fromTo paints its from-state at 0s.** The ripple's visible start (opacity 0.55) left a lavender dot on the knob through the whole establish. Set `immediateRender: false` on any later `fromTo` whose start state is visible.
 - **Kit chart overflow.** `.chart-svg { width: 100% }` beats `left/right: 24px` on an absolutely positioned SVG, so the chart overflowed its card by 48px. It went unnoticed until the card tilted and the dashed line crossed the border. Use `width: calc(100% - 48px)`.
 - **Text keeps the old ink.** `color` inherits from `#root` as a computed value, so redefining `--ink` on `#s2` repaints surfaces but not text. Re-declare `color: var(--ink)` on each scene.
@@ -103,4 +103,4 @@ The full working composition is in [demo.html](demo.html).
 
 ## Sound
 
-A crisp switch click at mouse-down (frame −7), then a soft airy shimmer that swells until the edge clears the last corner (~14f). Add optional faint ticks on the card snaps.
+A crisp switch click at mouse-down (frame −13), then a soft airy shimmer that swells until the edge clears the last corner (~28f). Add optional faint ticks on the card snaps.
