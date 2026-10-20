@@ -141,16 +141,16 @@
       tl.fromTo("#donut-label", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 0.6);
 
       // ---- Graphic Match Cut ----
-      const T = 1.6;          // pulse starts (frame 48)
-      const D = 0.4;          // pulse window, 12f: 6f up in scene A, 6f settle in scene B
-      const CUT = T + D / 2;  // 1.8s = frame 54, the first frame of scene B
+      const T = 1.6;          // pulse starts (frame 96 @ 60fps)
+      const D = 0.4;          // pulse window, 24f: 12f up in scene A, 12f settle in scene B
+      const CUT = T + D / 2;  // 1.8s = frame 108, the first frame of scene B
       const PEAK = 1.1;       // both objects hit this scale on the cut, around the same center
 
       tl.to("#donut", { scale: PEAK, duration: D / 2, ease: "power2.out" }, T);
-      // The hard cut: two sets on the same frame, no fade, no overlap. Frame 53 is the last donut frame.
+      // The hard cut: two sets on the same frame, no fade, no overlap. Frame 107 is the last donut frame.
       tl.set("#s2", { opacity: 1 }, CUT);
       tl.set("#s1", { visibility: "hidden" }, CUT);
-      // inOut, not out: velocity is ~0 on both sides of the cut, so frames 53 and 54 are the same size.
+      // inOut, not out: velocity is ~0 on both sides of the cut, so frames 107 and 108 are the same size.
       tl.fromTo("#clock", { scale: PEAK }, { scale: 1, duration: D / 2, ease: "power2.inOut" }, CUT);
 
       // ---- Scene B builds around the clock after the cut ----
