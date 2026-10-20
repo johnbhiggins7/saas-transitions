@@ -143,7 +143,8 @@
 
       // ---- 3D Card Flip ----
       const T = 1.6; // transition start
-      const D = 0.7; // flip duration: 21f, odd, so the edge-on 90deg falls between frames 10 and 11
+      const D = 0.7; // flip duration: 42f @ 60fps
+      const TF = T + 1 / 120; // 42f is even: started on a frame, f21 would be exactly 90deg (an empty, culled card). Half a frame late puts 90deg between f21 and f22
       const CARD = { x: 280, y: 180, w: 1360, h: 720 }; // #flip box in scene px (matches CSS)
       const PERSPECTIVE = 2000; // .stage perspective (matches CSS)
       const OVERSHOOT = 0.05; // ~3.4deg past 180 before settling
@@ -165,11 +166,11 @@
       tl.to("#seg-ui", { color: "#8898aa", duration: 0.2 }, T - 0.3);
       tl.to("#seg-code", { color: "#0a2540", duration: 0.2 }, T - 0.3);
 
-      tl.fromTo("#flip", { rotationY: 0 }, { rotationY: 180, duration: D, ease: flipEase }, T);
-      tl.fromTo("#flip", { scale: 1 }, { scale: 0.92, duration: D, ease: sinA }, T); // dips to 0.92 edge-on
-      tl.fromTo(".shade", { opacity: 0 }, { opacity: 0.3, duration: D, ease: edgeOn }, T); // faces darken as they turn from the light
-      tl.fromTo("#shadow", { scaleX: 1, opacity: 0.7, filter: "blur(36px)" }, { scaleX: 0.06, opacity: 1, filter: "blur(12px)", duration: D, ease: edgeOn }, T);
-      tl.fromTo("#shadow", { x: 0 }, { x: -SHIFT, duration: D, ease: sin2A }, T); // follow the projected card, not the pivot
+      tl.fromTo("#flip", { rotationY: 0 }, { rotationY: 180, duration: D, ease: flipEase }, TF);
+      tl.fromTo("#flip", { scale: 1 }, { scale: 0.92, duration: D, ease: sinA }, TF); // dips to 0.92 edge-on
+      tl.fromTo(".shade", { opacity: 0 }, { opacity: 0.3, duration: D, ease: edgeOn }, TF); // faces darken as they turn from the light
+      tl.fromTo("#shadow", { scaleX: 1, opacity: 0.7, filter: "blur(36px)" }, { scaleX: 0.06, opacity: 1, filter: "blur(12px)", duration: D, ease: edgeOn }, TF);
+      tl.fromTo("#shadow", { x: 0 }, { x: -SHIFT, duration: D, ease: sin2A }, TF); // follow the projected card, not the pivot
 
       // ---- Scene B landing: the request "runs" ----
       tl.fromTo("#hl", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.5, ease: "expo.out" }, T + D - 0.05);
