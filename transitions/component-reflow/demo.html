@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.7" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* Layout geometry is hard-coded (app px) and mirrored in the script.
+         Content area: x 280..1648, y 108..888. Two components share it with a 24px gutter.
+         A: board 348 wide | table 996 wide.   B: board 996 wide | table-widget 348x360 + progress card below.
+         CSS holds #progress at its B box and .col at its A height; the script tweens both. */
+
+      /* ---- Board: grows 348 -> 996. Columns are fixed 308px, so tickets never squish; they move. ---- */
+      #board { position: absolute; left: 280px; top: 108px; width: 348px; height: 780px; padding: 0; z-index: 2; }
+      .b-title { position: absolute; left: 24px; top: 26px; display: flex; align-items: baseline; gap: 10px; }
+      .b-title .h3 { font-size: 22px; }
+      #expand, #expand-ring { position: absolute; right: 20px; top: 22px; width: 40px; height: 40px; border-radius: 10px; }
+      #expand { display: flex; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); color: var(--ink-2); box-shadow: 0 1px 2px rgba(10, 37, 64, 0.08); }
+      #expand svg { width: 18px; height: 18px; }
+      #expand-ring { box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.5); opacity: 0; }
+      .col { position: absolute; left: 20px; top: 80px; width: 308px; height: 680px; padding: 0; display: block; border-radius: 14px; }
+      #col1 { z-index: 3; } #col2 { z-index: 2; } #col3 { z-index: 1; } /* B columns start stacked under column 1 */
+      .col-title { position: absolute; left: 16px; top: 14px; display: flex; gap: 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
+      .col-title b { color: var(--muted); font-weight: 600; }
+      .tk { position: absolute; left: 32px; width: 284px; height: 92px; padding: 14px 16px; gap: 10px; z-index: 5; }
+      .tk .meta { display: flex; justify-content: space-between; align-items: center; }
+      .tk .avatar { width: 28px; height: 28px; font-size: 12px; }
+      .tk .pill { height: 26px; font-size: 13px; padding: 0 10px; }
+      /* A slots: top = 92 + slot * 102 */
+      #tk1 { top: 92px; } #tk2 { top: 194px; } #tk3 { top: 296px; } #tk4 { top: 398px; } #tk5 { top: 500px; } #tk6 { top: 602px; }
+
+      /* ---- Table: collapses 996x780 -> 348x360, anchored top-right. ---- */
+      #table { position: absolute; left: 652px; top: 108px; width: 996px; height: 780px; padding: 0; overflow: hidden; z-index: 2; }
+      .t-title { position: absolute; left: 24px; top: 24px; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+      .t-title .h3 { font-size: 22px; }
+      .t-link { position: absolute; right: 24px; top: 30px; font-size: 15px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+      /* Rows span the card (left/right 0) so their rule shrinks with it. Name rides the left edge,
+         status rides the right edge; owner + priority are the columns a narrow layout drops. */
+      .t-row { position: absolute; left: 0; right: 0; height: 56px; border-bottom: 1px solid var(--border); font-size: 16px; white-space: nowrap; }
+      .t-row.head { top: 72px; height: 40px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+      .t-row > * { position: absolute; }
+      .t-row .name { left: 24px; top: 0; line-height: 56px; font-weight: 500; color: var(--ink); }
+      .t-row .owner { left: 420px; top: 14px; display: flex; align-items: center; gap: 10px; color: var(--ink-2); }
+      .t-row .owner .avatar { width: 28px; height: 28px; font-size: 12px; }
+      .t-row .prio { left: 650px; top: 14px; }
+      .t-row .status { right: 24px; top: 14px; }
+      .t-row.head > * { top: 0; line-height: 40px; }
+      .t-row .pill { height: 28px; }
+
+      /* ---- Progress card: B only, docked 24px under the table; rises into the space the table vacated. ---- */
+      #progress { position: absolute; left: 1300px; top: 492px; width: 348px; height: 396px; z-index: 1; opacity: 0; } /* hidden in A: it waits below the table, under the window edge */
+      #progress .card-value { font-size: 56px; margin-top: 12px; }
+      #progress .slider { margin-top: 28px; height: 10px; border-radius: 5px; }
+      #progress .fill { width: 68%; border-radius: 5px; }
+      .p-rows { margin-top: 32px; display: grid; gap: 14px; font-size: 16px; color: var(--ink-2); }
+      .p-rows div { display: flex; justify-content: space-between; }
+      .p-rows i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 10px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <!-- One world: the same two components, re-laid-out. No second scene. -->
+      <div id="s1" class="scene dots">
+        <div class="app">
+          <aside class="app-sidebar">
+            <div class="brand"><span class="brand-mark"></span>Northwind</div>
+            <div class="nav-item"><span class="nav-icon"></span>Home</div>
+            <div class="nav-item active"><span class="nav-icon"></span>Projects</div>
+            <div class="nav-item"><span class="nav-icon"></span>Issues</div>
+            <div class="nav-item"><span class="nav-icon"></span>Reports</div>
+            <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+          </aside>
+          <div class="app-body">
+            <div class="app-topbar">
+              <div class="page-title">Platform team</div>
+              <div class="search">Search</div>
+              <div class="avatar sky">JL</div>
+            </div>
+          </div>
+
+          <!-- Board -->
+          <div id="board" class="card">
+            <div class="b-title"><span class="h3">Sprint 24</span><span class="small">6 tickets</span></div>
+            <div id="expand-ring"></div>
+            <div id="expand">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3h5v5M17 3l-6 6M8 17H3v-5M3 17l6-6" /></svg>
+            </div>
+            <div id="col1" class="col"><div class="col-title">To do <b>2</b></div></div>
+            <div id="col2" class="col"><div class="col-title">In progress <b>2</b></div></div>
+            <div id="col3" class="col"><div class="col-title">Done <b>2</b></div></div>
+
+            <div id="tk1" class="ticket tk">Audit log filters<div class="meta"><span class="pill">To do</span><span class="avatar sky">JL</span></div></div>
+            <div id="tk2" class="ticket tk">Usage-based pricing<div class="meta"><span class="pill amber">In progress</span><span class="avatar pink">MC</span></div></div>
+            <div id="tk3" class="ticket tk">SAML SSO for Teams<div class="meta"><span class="pill green">Done</span><span class="avatar amber">AR</span></div></div>
+            <div id="tk4" class="ticket tk">Slack alert digest<div class="meta"><span class="pill">To do</span><span class="avatar teal">SI</span></div></div>
+            <div id="tk5" class="ticket tk">Invoice PDF redesign<div class="meta"><span class="pill amber">In progress</span><span class="avatar">DK</span></div></div>
+            <div id="tk6" class="ticket tk">Retry failed webhooks<div class="meta"><span class="pill green">Done</span><span class="avatar sky">JL</span></div></div>
+          </div>
+
+          <!-- Table, which becomes the sidebar widget -->
+          <div id="table" class="card">
+            <div class="t-title"><span class="h3">Open issues</span><span class="pill indigo">12</span></div>
+            <div class="t-link">View all</div>
+            <div class="t-row head"><span class="name" style="color: inherit; font-weight: 600">Issue</span><span class="owner mid">Owner</span><span class="prio mid">Priority</span><span class="status">Status</span></div>
+            <div class="t-row" style="top: 112px"><span class="name">SSO redirect loop</span><span class="owner mid"><span class="avatar pink">MC</span>Maya Chen</span><span class="prio mid pill pink">High</span><span class="status pill indigo">Open</span></div>
+            <div class="t-row" style="top: 168px"><span class="name">CSV export timeout</span><span class="owner mid"><span class="avatar sky">JL</span>Jon Lee</span><span class="prio mid pill amber">Medium</span><span class="status pill amber">In review</span></div>
+            <div class="t-row" style="top: 224px"><span class="name">Webhook retries</span><span class="owner mid"><span class="avatar amber">AR</span>Ana Ruiz</span><span class="prio mid pill pink">High</span><span class="status pill pink">Blocked</span></div>
+            <div class="t-row" style="top: 280px"><span class="name">Invoice PDF blank</span><span class="owner mid"><span class="avatar teal">SI</span>Sam Ito</span><span class="prio mid pill">Low</span><span class="status pill indigo">Open</span></div>
+            <div class="t-row extra" style="top: 336px"><span class="name">Chart tooltip lag</span><span class="owner mid"><span class="avatar">DK</span>Dev Kapoor</span><span class="prio mid pill">Low</span><span class="status pill">Triaged</span></div>
+            <div class="t-row extra" style="top: 392px"><span class="name">Seat count mismatch</span><span class="owner mid"><span class="avatar pink">MC</span>Maya Chen</span><span class="prio mid pill amber">Medium</span><span class="status pill indigo">Open</span></div>
+            <div class="t-row extra" style="top: 448px"><span class="name">Dark mode contrast</span><span class="owner mid"><span class="avatar sky">JL</span>Jon Lee</span><span class="prio mid pill">Low</span><span class="status pill amber">In review</span></div>
+            <div class="t-row extra" style="top: 504px"><span class="name">API 429s on bulk import</span><span class="owner mid"><span class="avatar amber">AR</span>Ana Ruiz</span><span class="prio mid pill pink">High</span><span class="status pill indigo">Open</span></div>
+            <div class="t-row extra" style="top: 560px"><span class="name">Search ignores tags</span><span class="owner mid"><span class="avatar teal">SI</span>Sam Ito</span><span class="prio mid pill amber">Medium</span><span class="status pill">Triaged</span></div>
+            <div class="t-row extra" style="top: 616px"><span class="name">Timezone in reports</span><span class="owner mid"><span class="avatar">DK</span>Dev Kapoor</span><span class="prio mid pill">Low</span><span class="status pill indigo">Open</span></div>
+            <div class="t-row extra" style="top: 672px"><span class="name">Onboarding email copy</span><span class="owner mid"><span class="avatar pink">MC</span>Maya Chen</span><span class="prio mid pill">Low</span><span class="status pill">Triaged</span></div>
+          </div>
+
+          <!-- Next item in the right-hand column: rides up with the table's bottom edge into the space it gave up -->
+          <div id="progress" class="card">
+            <div class="card-label">Sprint 24 progress</div>
+            <div class="card-value">68%</div>
+            <div class="slider"><div class="fill" id="pfill"></div></div>
+            <div class="p-rows">
+              <div><span><i style="background: var(--green)"></i>Done</span><span class="mono">18</span></div>
+              <div><span><i style="background: var(--amber)"></i>In progress</span><span class="mono">5</span></div>
+              <div><span><i style="background: #d5dce6"></i>To do</span><span class="mono">3</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance ----
+      tl.fromTo("#board, #table", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, ease: "power3.out" }, 0);
+      tl.fromTo(".tk", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.05, ease: "power3.out" }, 0.2);
+      tl.fromTo("#table .t-row", { opacity: 0 }, { opacity: 1, duration: 0.4, stagger: 0.025, ease: "power1.out" }, 0.2);
+
+      // ---- Component Reflow ----
+      const T = 1.6; // transition start
+      const D = 0.6; // container reflow (18f @ 30fps); tickets trail it, last one lands at T + 0.7
+      const SHIFT = 996 - 348; // the gutter between the two components travels 648px right
+      const BOARD = { a: 348, b: 996 }; // #board width
+      const TABLE = { a: { width: 996, height: 780 }, b: { width: 348, height: 360 } }; // #table box; x moves by SHIFT
+      const COL = 324; // column pitch: 308 wide + 16 gap
+      const COL_H = { a: 680, b: 460 }; // .col height
+      // Ticket deltas from the stacked list (A) to their column slot (B): dx = col * 324, dy = 40 + (row - slot) * 102
+      const REST = "0 1px 2px rgba(10, 37, 64, 0.06)";   // .ticket shadow
+      const LIFT = "0 14px 32px rgba(10, 37, 64, 0.16)";
+      const MOVES = [[0, 40], [COL, -62], [2 * COL, -164], [0, -164], [COL, -266], [2 * COL, -368]];
+
+      // One spring-like ease for everything: back.out(1) on a p^1.5 clock. Soft first frame, fast by frame 2,
+      // ~3.7% overshoot at p≈0.76, settled at p=1. Reads like a layout spring, but stays seek-safe.
+      const backOut = gsap.parseEase("back.out(1)");
+      const reflow = (p) => backOut(Math.pow(p, 1.5));
+
+      // Telegraph: the board's expand control pulses, then presses.
+      tl.fromTo("#expand-ring", { opacity: 0, scale: 1 }, { opacity: 0.9, duration: 0.05, ease: "none" }, T - 0.45);
+      tl.fromTo("#expand-ring", { opacity: 0.9, scale: 1 }, { opacity: 0, scale: 1.4, duration: 0.45, ease: "power2.out", immediateRender: false }, T - 0.4);
+      tl.fromTo("#expand", { scale: 1 }, { scale: 0.9, duration: 0.1, ease: "power2.out", yoyo: true, repeat: 1, immediateRender: false }, T - 0.22);
+      tl.fromTo("#expand", { backgroundColor: "#ffffff", borderColor: "#e3e8ef", color: "#425466" }, { backgroundColor: "#eeedff", borderColor: "#635bff", color: "#635bff", duration: 0.12, ease: "power2.out", immediateRender: false }, T - 0.22);
+
+      // Containers: real width/height (scale would stretch borders, radius and text); position on x only.
+      // Both share one ease and duration, so the gutter between them stays exactly 24px every frame.
+      tl.fromTo("#board", { width: BOARD.a }, { width: BOARD.b, duration: D, ease: reflow, immediateRender: false }, T);
+      tl.fromTo("#table", { x: 0, ...TABLE.a }, { x: SHIFT, ...TABLE.b, duration: D, ease: reflow, immediateRender: false }, T);
+      // Columns fan out from under column 1 on the same clock; column 3's right edge tracks the card's edge.
+      tl.fromTo("#col2", { x: 0 }, { x: COL, duration: D, ease: reflow, immediateRender: false }, T);
+      tl.fromTo("#col3", { x: 0 }, { x: 2 * COL, duration: D, ease: reflow, immediateRender: false }, T);
+      // A needs 680px for the six-ticket list; B holds two per column, so the lanes shorten instead of ending in empty grey.
+      // Starts 0.15s late so the bottom edge never rises past a ticket still leaving the lower slots (starting on T it rises ~38px past tk6 at f5).
+      tl.fromTo(".col", { height: COL_H.a }, { height: COL_H.b, duration: 0.5, ease: reflow, immediateRender: false }, T + 0.15);
+
+      // The table drops the columns a narrow layout can't hold before the right-anchored Status column slides over them (~f3),
+      // and fades the rows below the widget's height so the rising bottom edge never slices text.
+      tl.fromTo("#table .mid", { opacity: 1 }, { opacity: 0, duration: 0.18, ease: "power2.out", immediateRender: false }, T - 0.08);
+      tl.fromTo("#table .extra", { opacity: 1 }, { opacity: 0, duration: 0.2, stagger: { each: 0.015, from: "end" }, ease: "power2.out", immediateRender: false }, T - 0.08);
+
+      // Tickets: each re-sorts into its status column, staggered 0.025s so they follow the columns open.
+      // Each lifts (scale + deeper shadow) for the flight, so tickets crossing each other read as cards being re-dealt.
+      MOVES.forEach(([dx, dy], i) => {
+        const at = T + 0.03 + i * 0.025;
+        tl.fromTo(`#tk${i + 1}`, { x: 0, y: 0 }, { x: dx, y: dy, duration: 0.55, ease: reflow, immediateRender: false }, at);
+        tl.fromTo(`#tk${i + 1}`, { scale: 1, boxShadow: REST }, { scale: 1.04, boxShadow: LIFT, duration: 0.22, ease: "power2.out", yoyo: true, repeat: 1, immediateRender: false }, at);
+      });
+
+      // ---- Landing: column titles label the new columns; the progress card rides in docked under the table ----
+      tl.fromTo(".col-title", { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.04, ease: "power2.out" }, T + 0.3);
+      // Docked to the table on both axes like the next item in a flex column: same x and width as the table, and
+      // y riding its bottom edge, on the same ease and duration. It rises from under the window edge (.app clips it).
+      // +8 starts it fully below the clip at T (docked exactly, its top 8px would pop in); that extra gap closes by ~f9.
+      // A fade ghosts "68%" over white; uncovering it from under the table shows a blank card for 3f.
+      tl.set("#progress", { opacity: 1 }, T);
+      tl.fromTo("#progress", { x: -SHIFT, width: TABLE.a.width, y: TABLE.a.height - TABLE.b.height + 8 }, { x: 0, width: TABLE.b.width, y: 0, duration: D, ease: reflow, immediateRender: false }, T);
+      tl.fromTo("#pfill", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.7, ease: "power3.out" }, T + 0.55);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
