@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="hf-transition" content="start=1.6;duration=0.8" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="stylesheet" href="../../shared/ui-kit.css" />
+    <style>
+      /* One world, three depth planes. Each .layer is an unscaled full-frame wrapper that owns the
+         perspective and the depth-of-field blur; its .plane carries translateZ. Z values mirror LAYERS in the script.
+         Deliberately no shared .cam/preserve-3d world: per-plane filters would flatten it (see SKILL.md Pitfalls). */
+      .layer { position: absolute; inset: 0; perspective: 1200px; overflow: hidden; }
+      .plane { position: absolute; inset: 0; }
+      #deep .plane { transform: translateZ(-1800px); }
+      #mid .plane { transform: translateZ(-800px); }
+
+      /* Deep plane: the destination dashboard. The dot grid is oversized so its edges stay off-frame at 0.4x. */
+      .floor { position: absolute; left: -2000px; top: -1100px; width: 5920px; height: 3280px; }
+      .kpis { position: absolute; left: 280px; top: 108px; width: 1368px; height: 168px; }
+      .kpis .card { height: 168px; }
+      .chart-card { position: absolute; left: 280px; top: 300px; width: 1368px; height: 588px; }
+      .chart-head { display: flex; align-items: center; gap: 24px; }
+      .chart-head .pill { margin-left: auto; }
+      /* Fixed width: the kit's .chart-svg { width: 100% } would beat left/right and stretch the chart past the card. */
+      .chart-body { position: absolute; left: 24px; bottom: 24px; width: 1320px; height: 440px; }
+      #spike-guide { position: absolute; left: 1123px; top: 122px; width: 2px; height: 440px; background: rgba(99, 91, 255, 0.25); }
+      #spike-dot { position: absolute; left: 1112px; top: 202px; width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 5px solid var(--accent); box-shadow: 0 0 0 8px rgba(99, 91, 255, 0.18); }
+      #spike-tip { position: absolute; left: 846px; top: 160px; width: 244px; padding: 16px 18px; border-radius: 12px; background: var(--ink); color: #fff; box-shadow: var(--shadow-lg); }
+      #spike-tip .small { color: rgba(255, 255, 255, 0.64); }
+      #spike-tip .v { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-top: 4px; }
+      #spike-tip .delta { margin-top: 8px; }
+
+      /* Mid plane (0.6x at rest): settings and team cards, natural UI sizes. */
+      .m-card { position: absolute; }
+      #m-seg { left: 680px; top: 84px; width: 560px; }
+      #m-team { left: 60px; top: 873px; width: 560px; }
+      #m-alerts { left: 1547px; top: 473px; width: 560px; }
+      .m-card .h3 { margin-bottom: 18px; }
+      .pills { display: flex; gap: 10px; flex-wrap: wrap; }
+      .row { display: flex; align-items: center; gap: 14px; height: 56px; font-size: 18px; color: var(--ink-2); }
+      .row .grow { flex: 1; }
+
+      /* Foreground plane (1x at rest): the alert modal and notifications. Inner edges sit ~300px off center
+         so the camera axis stays clear and they part outward as the camera passes. */
+      #f-modal { position: absolute; left: 64px; top: 252px; width: 548px; }
+      #f-modal .h2 { margin-top: 18px; }
+      #f-modal .body { margin-top: 12px; font-size: 20px; }
+      #f-modal .bars { height: 72px; margin-top: 24px; gap: 8px; }
+      .actions { display: flex; gap: 12px; margin-top: 28px; justify-content: flex-end; }
+      #f-btn-ring { position: absolute; right: 32px; bottom: 32px; width: 192px; height: 48px; border-radius: 10px; box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.45); opacity: 0; }
+      .notif { position: absolute; left: 1320px; width: 520px; display: flex; gap: 16px; align-items: center; padding: 20px 22px; box-shadow: var(--shadow-lg); }
+      .notif .grow { flex: 1; font-size: 17px; font-weight: 500; line-height: 1.4; }
+      .notif .grow span { color: var(--muted); font-weight: 400; }
+      #f-n1 { top: 196px; }
+      #f-n2 { top: 324px; }
+      #f-toast { position: absolute; left: 1320px; top: 856px; }
+      .ok { width: 40px; height: 40px; border-radius: 50%; background: #e7f8f1; flex: none; display: flex; align-items: center; justify-content: center; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+      <div id="s1" class="scene">
+        <!-- Deep plane: destination analytics (scene B) -->
+        <div id="deep" class="layer">
+          <div class="plane">
+            <div class="floor dots"></div>
+            <div class="app">
+              <aside class="app-sidebar">
+                <div class="brand"><span class="brand-mark"></span>Northwind</div>
+                <div class="nav-item"><span class="nav-icon"></span>Home</div>
+                <div class="nav-item active"><span class="nav-icon"></span>Analytics</div>
+                <div class="nav-item"><span class="nav-icon"></span>Customers</div>
+                <div class="nav-item"><span class="nav-icon"></span>Billing</div>
+                <div class="nav-item"><span class="nav-icon"></span>Settings</div>
+              </aside>
+              <div class="app-body">
+                <div class="app-topbar">
+                  <div class="page-title">EMEA revenue</div>
+                  <div class="search">Search</div>
+                  <div class="avatar sky">JL</div>
+                </div>
+              </div>
+              <div class="kpis grid-3">
+                <div class="card"><div class="card-label">Revenue this week</div><div class="card-value">$48.2k</div><span class="delta up">+24.0%</span></div>
+                <div class="card"><div class="card-label">Orders</div><div class="card-value">1,284</div><span class="delta up">+11.2%</span></div>
+                <div class="card"><div class="card-label">Avg. order value</div><div class="card-value">$37.50</div><span class="delta up">+3.4%</span></div>
+              </div>
+              <div class="card chart-card">
+                <div class="chart-head">
+                  <div class="h3">Daily revenue</div>
+                  <div class="legend"><span><i></i>Last 14 days</span></div>
+                  <span class="pill indigo">EMEA</span>
+                </div>
+                <svg class="chart-body chart-svg" viewBox="0 0 1320 440" preserveAspectRatio="none">
+                  <line class="chart-grid" x1="0" y1="110" x2="1320" y2="110" />
+                  <line class="chart-grid" x1="0" y1="220" x2="1320" y2="220" />
+                  <line class="chart-grid" x1="0" y1="330" x2="1320" y2="330" />
+                  <path class="chart-area" d="M0,330 C80,320 120,300 200,310 S320,330 400,300 S520,280 600,290 S720,300 800,270 S940,240 1000,200 S1060,90 1100,92 S1220,150 1320,140 L1320,440 L0,440 Z" />
+                  <path class="chart-line" d="M0,330 C80,320 120,300 200,310 S320,330 400,300 S520,280 600,290 S720,300 800,270 S940,240 1000,200 S1060,90 1100,92 S1220,150 1320,140" />
+                </svg>
+                <div id="spike-guide"></div>
+                <div id="spike-dot"></div>
+                <div id="spike-tip">
+                  <div class="small">Tue, Oct 14</div>
+                  <div class="v">$9,840</div>
+                  <span class="delta up">+24% vs last Tue</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mid plane -->
+        <div id="mid" class="layer">
+          <div class="plane">
+            <div id="m-seg" class="card m-card">
+              <div class="h3">Segment</div>
+              <div class="pills"><span class="pill indigo">EMEA</span><span class="pill">Enterprise</span><span class="pill">Last 14 days</span><span class="pill green">Paid</span></div>
+            </div>
+            <div id="m-team" class="card m-card">
+              <div class="h3">Watching this metric</div>
+              <div class="row"><span class="avatar pink">AR</span><span class="grow">Amara Reyes</span><span class="pill">Finance</span></div>
+              <div class="row"><span class="avatar teal">TK</span><span class="grow">Tomás Kerr</span><span class="pill">Sales</span></div>
+            </div>
+            <div id="m-alerts" class="card m-card">
+              <div class="h3">Alerts</div>
+              <div class="row"><span class="grow">Revenue anomalies</span><span class="toggle on"><span class="knob"></span></span></div>
+              <div class="row"><span class="grow">Weekly digest</span><span class="toggle"><span class="knob"></span></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foreground plane: what the viewer is looking at in scene A -->
+        <div id="fg" class="layer">
+          <div class="plane">
+            <div id="f-modal" class="modal">
+              <span class="pill amber">Anomaly detected</span>
+              <div class="h2">EMEA revenue is up 24% this week</div>
+              <div class="body">Driven by 38 enterprise renewals on Tuesday.</div>
+              <div class="bars">
+                <div class="bar soft" style="height: 38%"></div><div class="bar soft" style="height: 44%"></div><div class="bar soft" style="height: 41%"></div>
+                <div class="bar soft" style="height: 50%"></div><div class="bar soft" style="height: 47%"></div><div class="bar" style="height: 100%"></div><div class="bar soft" style="height: 62%"></div>
+              </div>
+              <div class="actions">
+                <div class="btn">Dismiss</div>
+                <div id="f-btn" class="btn btn-primary" style="width: 192px">Open analytics</div>
+              </div>
+              <div id="f-btn-ring"></div>
+            </div>
+            <div id="f-n1" class="card notif"><span class="avatar amber">LP</span><div class="grow">Lena approved the Q4 budget <span>· 2m</span></div></div>
+            <div id="f-n2" class="card notif">
+              <span class="ok"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M5 10.5l3.2 3.2L15 7" fill="none" stroke="#0b8f63" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+              <div class="grow">Stripe sync complete <span>· 12,480 rows</span></div>
+            </div>
+            <div id="f-toast" class="toast"><i></i>Weekly digest sent to 14 people</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- Scene A entrance: back to front, so the depth order is read before the move ----
+      tl.fromTo("#deep .app", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 0);
+      tl.fromTo(".m-card", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0.1);
+      tl.fromTo("#f-modal, .notif, #f-toast", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, stagger: 0.06, ease: "power3.out" }, 0.25);
+      tl.set("#spike-guide, #spike-dot, #spike-tip", { opacity: 0 }, 0);
+
+      // ---- Z-Space Push ----
+      const T = 1.6; // transition start
+      const D = 0.8; // push duration (24f @ 30fps)
+      const P = 1200; // perspective (px) on every .layer
+      const PUSH = 1800; // camera travel: the deep plane ends at z = 0, scale 1
+      const LAYERS = [
+        { el: "#deep", z: -1800 },
+        { el: "#mid", z: -800 },
+        { el: "#fg", z: 0 },
+      ];
+      const HIDE_Z = 0.85 * P; // past this a plane is ~7x and off-frame; hide it before it crosses the camera
+      const APERTURE = 12; // screen blur (px) per unit of |scale - 1|
+      const MAX_BLUR = 36;
+
+      // Moving every plane by the same dz on one ease = moving the camera.
+      const move = gsap.parseEase("power3.inOut");
+      const zAt = (z0, p) => z0 + PUSH * move(p);
+      // Defocus in screen px grows with |projected scale - 1|: sharp at z = 0, soft behind, very soft up close.
+      const defocus = (z) => (z >= HIDE_Z ? MAX_BLUR : Math.min(MAX_BLUR, APERTURE * Math.abs(P / (P - z) - 1)));
+      // Layers that fly past never get sharper than at rest: a fixed focal plane would snap them into focus
+      // right as they cross z = 0 at the frame edge, and steal the eye from the destination.
+      const blurAt = (z0, p) => (z0 + PUSH > 0 ? Math.max(defocus(z0), defocus(zAt(z0, p))) : defocus(zAt(z0, p)));
+      // Progress at which the camera has travelled `dz` (bisection on the ease; deterministic).
+      const pAtTravel = (dz) => {
+        let lo = 0, hi = 1;
+        for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; PUSH * move(m) < dz ? (lo = m) : (hi = m); }
+        return hi;
+      };
+
+      // Telegraph: the CTA the push answers.
+      tl.fromTo("#f-btn-ring", { opacity: 0.9, scale: 1 }, { opacity: 0, scale: 1.25, duration: 0.5, ease: "power2.out" }, T - 0.35);
+      tl.to("#f-btn", { scale: 0.96, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 1 }, T - 0.12); // bottoms out at T: the click becomes the push
+
+      LAYERS.forEach(({ el, z }) => {
+        tl.fromTo(`${el} .plane`, { z }, { z: z + PUSH, duration: D, ease: move }, T);
+        // DOF lives on the unscaled wrapper so the radius is in screen px, then follows the plane's depth.
+        const b0 = blurAt(z, 0), b1 = blurAt(z, 1);
+        tl.fromTo(el, { filter: `blur(${b0}px)` }, { filter: `blur(${b1}px)`, duration: D, ease: (p) => (blurAt(z, p) - b0) / (b1 - b0) }, T);
+        // Every plane that passes z = 0 gets hidden: at HIDE_Z, or when the push ends if it stops short (the mid plane, z = 1000).
+        if (z + PUSH > 0) tl.set(el, { visibility: "hidden" }, T + D * pAtTravel(Math.min(HIDE_Z, z + PUSH) - z));
+      });
+
+      // ---- Landing: scene B's annotation arrives as the camera settles ----
+      const tLand = T + D * 0.78;
+      tl.fromTo("#spike-guide", { opacity: 0, scaleY: 0, transformOrigin: "50% 100%" }, { opacity: 1, scaleY: 1, duration: 0.5, ease: "expo.out" }, tLand);
+      tl.fromTo("#spike-dot", { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)" }, tLand + 0.06);
+      tl.fromTo("#spike-tip", { opacity: 0, x: 24, scale: 0.94, transformOrigin: "100% 50%" }, { opacity: 1, x: 0, scale: 1, duration: 0.6, ease: "expo.out" }, tLand + 0.12);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
