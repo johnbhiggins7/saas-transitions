@@ -142,7 +142,7 @@
 
       // ---- Component Reflow ----
       const T = 1.6; // transition start
-      const D = 0.6; // container reflow (18f @ 30fps); tickets trail it, last one lands at T + 0.7
+      const D = 0.6; // container reflow (36f @ 60fps); tickets trail it, last one lands at T + 0.7
       const SHIFT = 996 - 348; // the gutter between the two components travels 648px right
       const BOARD = { a: 348, b: 996 }; // #board width
       const TABLE = { a: { width: 996, height: 780 }, b: { width: 348, height: 360 } }; // #table box; x moves by SHIFT
@@ -153,7 +153,7 @@
       const LIFT = "0 14px 32px rgba(10, 37, 64, 0.16)";
       const MOVES = [[0, 40], [COL, -62], [2 * COL, -164], [0, -164], [COL, -266], [2 * COL, -368]];
 
-      // One spring-like ease for everything: back.out(1) on a p^1.5 clock. Soft first frame, fast by frame 2,
+      // One spring-like ease for everything: back.out(1) on a p^1.5 clock. Soft first frames, fast by frame 4,
       // ~3.7% overshoot at p≈0.76, settled at p=1. Reads like a layout spring, but stays seek-safe.
       const backOut = gsap.parseEase("back.out(1)");
       const reflow = (p) => backOut(Math.pow(p, 1.5));
@@ -172,10 +172,10 @@
       tl.fromTo("#col2", { x: 0 }, { x: COL, duration: D, ease: reflow, immediateRender: false }, T);
       tl.fromTo("#col3", { x: 0 }, { x: 2 * COL, duration: D, ease: reflow, immediateRender: false }, T);
       // A needs 680px for the six-ticket list; B holds two per column, so the lanes shorten instead of ending in empty grey.
-      // Starts 0.15s late so the bottom edge never rises past a ticket still leaving the lower slots (starting on T it rises ~38px past tk6 at f5).
+      // Starts 0.15s late so the bottom edge never rises past a ticket still leaving the lower slots (starting on T it rises ~38px past tk6 at f10).
       tl.fromTo(".col", { height: COL_H.a }, { height: COL_H.b, duration: 0.5, ease: reflow, immediateRender: false }, T + 0.15);
 
-      // The table drops the columns a narrow layout can't hold before the right-anchored Status column slides over them (~f3),
+      // The table drops the columns a narrow layout can't hold before the right-anchored Status column slides over them (~f6),
       // and fades the rows below the widget's height so the rising bottom edge never slices text.
       tl.fromTo("#table .mid", { opacity: 1 }, { opacity: 0, duration: 0.18, ease: "power2.out", immediateRender: false }, T - 0.08);
       tl.fromTo("#table .extra", { opacity: 1 }, { opacity: 0, duration: 0.2, stagger: { each: 0.015, from: "end" }, ease: "power2.out", immediateRender: false }, T - 0.08);
@@ -192,8 +192,8 @@
       tl.fromTo(".col-title", { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.04, ease: "power2.out" }, T + 0.3);
       // Docked to the table on both axes like the next item in a flex column: same x and width as the table, and
       // y riding its bottom edge, on the same ease and duration. It rises from under the window edge (.app clips it).
-      // +8 starts it fully below the clip at T (docked exactly, its top 8px would pop in); that extra gap closes by ~f9.
-      // A fade ghosts "68%" over white; uncovering it from under the table shows a blank card for 3f.
+      // +8 starts it fully below the clip at T (docked exactly, its top 8px would pop in); that extra gap closes by ~f18.
+      // A fade ghosts "68%" over white; uncovering it from under the table shows a blank card for 6f.
       tl.set("#progress", { opacity: 1 }, T);
       tl.fromTo("#progress", { x: -SHIFT, width: TABLE.a.width, y: TABLE.a.height - TABLE.b.height + 8 }, { x: 0, width: TABLE.b.width, y: 0, duration: D, ease: reflow, immediateRender: false }, T);
       tl.fromTo("#pfill", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.7, ease: "power3.out" }, T + 0.55);

@@ -2,7 +2,7 @@
 name: component-reflow
 title: Component Restructuring
 category: ui-native
-duration: 0.7s (21f @ 30fps)
+duration: 0.7s (42f @ 60fps)
 energy: medium
 description: A wide table collapses into a compact sidebar widget while a Kanban board grows into the space it vacated and its tickets re-deal into status columns, all on one shared spring.
 ---
@@ -22,23 +22,23 @@ The frame never cuts. The components inside it change size and position like a r
 
 Avoid it when scene B is a different screen. Reflow implies the same content persists. Use [cursor-click-expand](../cursor-click-expand/SKILL.md) or [ui-deep-zoom](../ui-deep-zoom/SKILL.md) to navigate somewhere new.
 
-## Anatomy (30fps)
+## Anatomy (60fps)
 
 | Beat | Frames | What happens |
 | --- | --- | --- |
-| Telegraph | −14 → 0 | A ring pulses off the board's expand control. At −7 the control presses (scale 0.9 yoyo, 6f) and tints indigo. |
-| Drop | −2 → 6 | The table fades out the Owner and Priority columns by f3, before the right-anchored Status column slides over them. Rows 5–11 fade out bottom-up by f6, so the rising bottom edge never slices text. |
-| Reflow | 0 → 18 | Board width 348 → 996. Table x +648, width 996 → 348, height 780 → 360. All of it runs on one ease: 25% by f3, 88% by f9, 3.7% overshoot at f14, settled at f18. The board-to-table gutter stays 24px throughout. Columns 2 and 3 slide out from under column 1. The progress card rides up from below the window edge on the table's x, width and bottom edge, so both right-column cards share a left edge every frame. It starts 8px low so nothing shows at f0; that extra gap closes by f9. |
-| Lanes | 4.5 → 19.5 | The columns shorten 680 → 460 on the same ease, 0.15s late, so their bottom edge never passes a ticket still leaving the lower slots. |
-| Re-deal | 1 → 21 | Each ticket flies to its status column, staggered 0.025s (0.75f), 16.5f each. Each lifts to 1.04 scale with a deeper shadow mid-flight, then sets down with the same overshoot. The last one lands at f21. |
-| Land | 9 → 38 | Column titles drop in (f9–22) and the progress bar fills to 68% (f17–38). |
+| Telegraph | −27 → 0 | A ring pulses off the board's expand control. At −13 the control presses (scale 0.9 yoyo, 12f) and tints indigo. |
+| Drop | −5 → 12 | The table fades out the Owner and Priority columns by f6, before the right-anchored Status column slides over them. Rows 5–11 fade out bottom-up by f12, so the rising bottom edge never slices text. |
+| Reflow | 0 → 36 | Board width 348 → 996. Table x +648, width 996 → 348, height 780 → 360. All of it runs on one ease: 25% by f6, 88% by f18, 3.7% overshoot at f28, settled at f36. The board-to-table gutter stays 24px throughout. Columns 2 and 3 slide out from under column 1. The progress card rides up from below the window edge on the table's x, width and bottom edge, so both right-column cards share a left edge every frame. It starts 8px low so nothing shows at f0; that extra gap closes by f18. |
+| Lanes | 9 → 39 | The columns shorten 680 → 460 on the same ease, 0.15s late, so their bottom edge never passes a ticket still leaving the lower slots. |
+| Re-deal | 2 → 42 | Each ticket flies to its status column, staggered 0.025s (1.5f), 33f each. Each lifts to 1.04 scale with a deeper shadow mid-flight, then sets down with the same overshoot. The last one lands at f42. |
+| Land | 18 → 75 | Column titles drop in (f18–44) and the progress bar fills to 68% (f33–75). |
 
 ## Build it
 
 Structure: one `.scene` and no second scene. Both components are absolutely placed in app pixels and animated on real `width`/`height`/`x`. Their children are anchored with `left`/`right` so they re-lay themselves out instead of stretching. Tickets sit in their A slots and move by hard-coded deltas.
 
 ```js
-const T = 1.6, D = 0.6;                       // containers 18f; tickets trail to T + 0.7
+const T = 1.6, D = 0.6;                       // containers 36f; tickets trail to T + 0.7
 const SHIFT = 996 - 348;                      // the gutter travels 648px right
 const TABLE = { a: { width: 996, height: 780 }, b: { width: 348, height: 360 } };
 const COL = 324;                              // column pitch: 308 + 16 gap
@@ -58,7 +58,7 @@ tl.fromTo("#col3", { x: 0 }, { x: 2 * COL, duration: D, ease: reflow, ...ir }, T
 // Lanes fit two tickets in B; trail 0.15s so the rising bottom edge clears the last tickets out.
 tl.fromTo(".col", { height: 680 }, { height: 460, duration: 0.5, ease: reflow, ...ir }, T + 0.15);
 // Next item in the right-hand column, docked on both axes: the table's x and width, riding its bottom edge.
-// +8 keeps it fully under the window clip at T; the extra gap is gone by f9.
+// +8 keeps it fully under the window clip at T; the extra gap is gone by f18.
 tl.set("#progress", { opacity: 1 }, T);
 tl.fromTo("#progress", { x: -SHIFT, width: TABLE.a.width, y: TABLE.a.height - TABLE.b.height + 8 },
   { x: 0, width: TABLE.b.width, y: 0, duration: D, ease: reflow, ...ir }, T);
@@ -80,18 +80,18 @@ The full working composition is in [demo.html](demo.html).
 ## Tuning
 
 - **Overshoot (`back.out(s)`).** s = 0.8 gives 2.3% overshoot, 1.0 gives 3.7% and 1.2 gives 5.3%. Above about 5% the containers wobble and it reads as bouncy rather than a layout settling.
-- **Clock exponent (`p^1.5`).** At 1, back.out jumps to 21% on frame 1 (5% with p^1.5) and the move pops. At 2 the start goes soft, but the overshoot drifts late and the move feels lazy.
+- **Clock exponent (`p^1.5`).** At 1, back.out jumps to 21% by frame 2 (5% with p^1.5) and the move pops. At 2 the start goes soft, but the overshoot drifts late and the move feels lazy.
 - **Duration.** 0.5–0.7s for the containers. Below 0.45s the tickets' paths are unreadable. Over 0.8s it reads as an animated resize, not a reflow.
 - **Ticket stagger.** 0.02–0.04s. Past 0.05s the last ticket lands after the board has settled and reads as a second beat.
 
 ## Pitfalls
 
-- **Fading the newcomer in.** An opacity fade on the progress card ghosted "68%" over white for about 4 frames. Revealing it from under the shrinking table showed a blank card for 3 frames. Dock it to the edge that is moving instead, so it travels like the next item in a flex column.
+- **Fading the newcomer in.** An opacity fade on the progress card ghosted "68%" over white for about 8 frames. Revealing it from under the shrinking table showed a blank card for 6 frames. Dock it to the edge that is moving instead, so it travels like the next item in a flex column.
 - **`scale` instead of `width`/`height`.** Scaling stretches the borders, the radius and the text. Animate the real box and anchor the children to its edges.
 - **Separate eases for neighbours.** If the board and the table use different curves, the gutter between them breathes, and they collide or open a gap during the overshoot. Give every container one shared ease and duration.
-- **Docking on one axis only.** The progress card rode up with the table's bottom edge but kept its own left edge, so the right column stacked a wide table over a narrow card (f2–f10), and the board's overshoot ran within 2px of the card at f14. Dock the newcomer on both axes: the same x and width tween as the item above it.
-- **Resizing the columns.** Columns that grow with the board squash the ticket text. Fixed 308px columns slide out from under column 1 instead. The trade-off: they read as one grey slab until about f11, when the gaps open. Their height can shrink, but late: started on T, the lane's bottom edge rose 38px past tk6 at f5.
-- **Edge-anchored content colliding.** When the card narrows, the right-anchored Status pill slides over the middle columns by about f3. Fade those columns out from −2f. Rows below the target height get sliced mid-glyph by the rising `overflow: hidden` edge, so fade them out bottom-up first.
+- **Docking on one axis only.** The progress card rode up with the table's bottom edge but kept its own left edge, so the right column stacked a wide table over a narrow card (f4–f20), and the board's overshoot ran within 2px of the card at f28. Dock the newcomer on both axes: the same x and width tween as the item above it.
+- **Resizing the columns.** Columns that grow with the board squash the ticket text. Fixed 308px columns slide out from under column 1 instead. The trade-off: they read as one grey slab until about f22, when the gaps open. Their height can shrink, but late: started on T, the lane's bottom edge rose 38px past tk6 at f10.
+- **Edge-anchored content colliding.** When the card narrows, the right-anchored Status pill slides over the middle columns by about f6. Fade those columns out from −5f. Rows below the target height get sliced mid-glyph by the rising `overflow: hidden` edge, so fade them out bottom-up first.
 - **Parked elements peeking out.** Docked exactly, the progress card's top 8px sits inside the window in A. Keep it at `opacity: 0` until `T`, and start its rise 8px lower, or that strip pops in on f0.
 
 ## Variants
@@ -103,4 +103,4 @@ The full working composition is in [demo.html](demo.html).
 
 ## Sound
 
-A soft slide whoosh peaking around f8, a click on the −7f press, and light card-shuffle ticks from f14 to f21 as the tickets set down.
+A soft slide whoosh peaking around f16, a click on the −13f press, and light card-shuffle ticks from f28 to f42 as the tickets set down.
